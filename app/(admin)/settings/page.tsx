@@ -70,17 +70,36 @@ export default async function SettingsPage({ searchParams }: SettingsPageProps) 
                   bg="rgba(255,255,255,0.04)"
                 />
               </FormField>
-              <FormField label="Admin login" htmlFor="settings-admin-login">
-                <Input
-                  id="settings-admin-login"
-                  name="adminLogin"
-                  defaultValue={config.admin.login}
-                  placeholder="selflify-admin"
-                  required
-                  bg="rgba(255,255,255,0.04)"
-                />
-              </FormField>
             </Stack>
+
+            <Box rounded="xl" borderWidth="1px" borderColor="rgba(255,255,255,0.08)" px="4" py="4">
+              <Text fontWeight="700">Admin access</Text>
+              <Stack gap="4" mt="4">
+                <FormField label="Admin login" htmlFor="settings-admin-login">
+                  <Input
+                    id="settings-admin-login"
+                    name="adminLogin"
+                    defaultValue={config.admin.login}
+                    placeholder="selflify-admin"
+                    required
+                    bg="rgba(255,255,255,0.04)"
+                  />
+                </FormField>
+                <FormField
+                  label="Admin password"
+                  htmlFor="settings-admin-password"
+                  hint="Enter a new password only if you want to change the current one."
+                >
+                  <Input
+                    id="settings-admin-password"
+                    name="adminPassword"
+                    type="password"
+                    placeholder="Set a new password"
+                    bg="rgba(255,255,255,0.04)"
+                  />
+                </FormField>
+              </Stack>
+            </Box>
 
             <FormField
               label="Cloudflare API token"
@@ -123,19 +142,6 @@ export default async function SettingsPage({ searchParams }: SettingsPageProps) 
                 </Text>
               </label>
             </Box>
-            <FormField
-              label="Admin password"
-              htmlFor="settings-admin-password"
-              hint="Leave this blank to keep the current password."
-            >
-              <Input
-                id="settings-admin-password"
-                name="adminPassword"
-                type="password"
-                placeholder="Set a new password"
-                bg="rgba(255,255,255,0.04)"
-              />
-            </FormField>
 
             <Box rounded="xl" borderWidth="1px" borderColor="rgba(255,255,255,0.08)" px="4" py="4">
               <Text fontWeight="700">Runtime paths</Text>
