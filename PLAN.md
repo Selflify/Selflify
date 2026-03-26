@@ -141,7 +141,7 @@
 
 ### 8. Local dev mode
 
-- Локальный `npm run dev` работает только с fixture paths, а не с production `/var/www`.
+- Локальный `yarn dev` работает только с fixture paths, а не с production `/var/www`.
 - В dev используется отдельный `.dev/` или `/tmp/selflify-dev/` root.
 - Cloudflare интеграция в dev заменяется на mock adapter.
 - `Caddy reload` в dev не выполняется; вместо этого делается только локальная валидация генерируемого `Caddyfile`.

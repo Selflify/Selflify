@@ -2,6 +2,8 @@
 
 Filesystem-backed admin panel for managing static SPA preview environments.
 
+The project uses `Yarn 4` as the package manager.
+
 ## Current state
 
 Implemented:
@@ -22,12 +24,12 @@ Implemented:
 Useful local commands:
 
 ```bash
-npm run lint
-npm run lint:fix
-npm run format
-npm run format:check
-npm run test:run
-npm run test:coverage
+yarn lint
+yarn lint:fix
+yarn format
+yarn format:check
+yarn test:run
+yarn test:coverage
 ```
 
 ## Local development
@@ -35,7 +37,7 @@ npm run test:coverage
 1. Install dependencies:
 
 ```bash
-npm install
+yarn install
 ```
 
 2. Ensure `AUTH_SECRET` is set in `.env` or export it in your shell.
@@ -43,7 +45,7 @@ npm install
 3. Start the app:
 
 ```bash
-npm run dev -- --hostname 127.0.0.1 --port 3100
+yarn dev --hostname 127.0.0.1 --port 3100
 ```
 
 The application will read `selflify.config.json` by default.
@@ -83,7 +85,7 @@ This runs:
 To migrate the old `sites.json` into the new config format:
 
 ```bash
-npm run migrate:config
+yarn migrate:config
 ```
 
 Use `--force` to overwrite an existing `selflify.config.json`.

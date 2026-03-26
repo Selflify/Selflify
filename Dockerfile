@@ -7,21 +7,22 @@ FROM node:20-alpine AS base
 
 WORKDIR /workspace
 ENV NEXT_TELEMETRY_DISABLED=1
+RUN corepack enable
 
 FROM base AS deps
 
-COPY package.json package-lock.json ./
-RUN npm ci
+COPY package.json yarn.lock .yarnrc.yml ./
+RUN yarn install --immutable
 
 FROM deps AS dev
 
 COPY --from=caddy-builder /usr/bin/caddy /usr/bin/caddy
-CMD ["npm", "run", "dev", "--", "--hostname", "0.0.0.0", "--port", "3000"]
+CMD ["yarn", "dev", "--hostname", "0.0.0.0", "--port", "3000"]
 
 FROM deps AS builder
 
 COPY . .
-RUN npm run build
+RUN yarn build
 
 FROM base AS runner
 
