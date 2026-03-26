@@ -77,6 +77,10 @@ web_modules/
 # Next.js build output
 .next
 out
+tmp_scaffold
+.dev/var-www
+.dev/caddy-data
+.dev/caddy-config
 
 # Nuxt.js build / generate output
 .nuxt

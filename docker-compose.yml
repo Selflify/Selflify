@@ -1,0 +1,44 @@
+services:
+  selflify:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: selflify
+    restart: unless-stopped
+    environment:
+      AUTH_SECRET: ${AUTH_SECRET}
+      SELFLIFY_CONFIG_PATH: /workspace/selflify.config.json
+      SELFLIFY_CADDY_CONFIG_PATH: /workspace/Caddyfile
+      SELFLIFY_CADDY_BIN: /usr/bin/caddy
+      SELFLIFY_CADDY_ADMIN_ADDRESS: http://caddy:2019
+    volumes:
+      - ./selflify.config.json:/workspace/selflify.config.json
+      - ./Caddyfile:/workspace/Caddyfile
+      - /var/www:/var/www
+    expose:
+      - "3000"
+
+  caddy:
+    build:
+      context: .
+      dockerfile: docker/caddy/Dockerfile
+    container_name: caddy
+    restart: unless-stopped
+    depends_on:
+      - selflify
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - ./data:/data
+      - ./config:/config
+      - ./logs:/var/log/caddy
+      - /var/www:/var/www
+    expose:
+      - "2019"
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"

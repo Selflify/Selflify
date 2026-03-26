@@ -1,0 +1,43 @@
+services:
+  selflify:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: dev
+    container_name: selflify-dev
+    command: sh -lc "npm install && npm run dev -- --hostname 0.0.0.0 --port 3000"
+    environment:
+      AUTH_SECRET: ${AUTH_SECRET:-selflify-development-secret-change-me}
+      SELFLIFY_CONFIG_PATH: /workspace/selflify.config.json
+      SELFLIFY_PREVIEW_ROOT: /workspace/.dev/var-www
+      SELFLIFY_CADDY_CONFIG_PATH: /workspace/.dev/Caddyfile
+      SELFLIFY_CADDY_BIN: /usr/bin/caddy
+      SELFLIFY_CADDY_ADMIN_ADDRESS: http://caddy:2019
+      SELFLIFY_MOCK_CLOUDFLARE: "1"
+      SELFLIFY_SKIP_CADDY_RELOAD: "1"
+    ports:
+      - "3000:3000"
+    volumes:
+      - .:/workspace
+      - selflify_node_modules:/workspace/node_modules
+
+  caddy:
+    build:
+      context: .
+      dockerfile: docker/caddy/Dockerfile
+    container_name: selflify-dev-caddy
+    depends_on:
+      - selflify
+    ports:
+      - "8080:80"
+      - "8443:443"
+    volumes:
+      - ./.dev/Caddyfile:/etc/caddy/Caddyfile
+      - ./.dev/caddy-data:/data
+      - ./.dev/caddy-config:/config
+      - ./.dev/var-www:/var/www
+    expose:
+      - "2019"
+
+volumes:
+  selflify_node_modules:
