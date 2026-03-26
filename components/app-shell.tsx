@@ -30,7 +30,7 @@ export function AppShell({ domain, children }: AppShellProps) {
             <Text textTransform="uppercase" letterSpacing="0.18em" fontSize="xs" color="brand.300">
               Selflify
             </Text>
-            <Heading size="lg" mt="2">
+            <Heading mt="2" fontSize={{ base: "xl", lg: "1.1rem" }} lineHeight="1.1" whiteSpace="nowrap">
               Preview Control
             </Heading>
             <Text color="muted" fontSize="sm" mt="2">
