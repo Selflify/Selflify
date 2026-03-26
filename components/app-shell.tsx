@@ -11,10 +11,12 @@ type AppShellProps = {
 export function AppShell({ domain, children }: AppShellProps) {
   return (
     <Flex minH="100vh">
-      <Box
+      <Flex
         as="aside"
+        direction="column"
         w={{ base: "full", lg: "18rem" }}
         maxW={{ base: "none", lg: "18rem" }}
+        minH={{ base: "auto", lg: "100vh" }}
         borderRightWidth={{ base: "0", lg: "1px" }}
         borderColor="rgba(255,255,255,0.08)"
         px={{ base: "5", lg: "6" }}
@@ -23,7 +25,7 @@ export function AppShell({ domain, children }: AppShellProps) {
         top="0"
         alignSelf="flex-start"
       >
-        <Flex justify="space-between" align="center" gap="4" mb="8">
+        <Box mb="8">
           <Box>
             <Text textTransform="uppercase" letterSpacing="0.18em" fontSize="xs" color="brand.300">
               Selflify
@@ -35,14 +37,17 @@ export function AppShell({ domain, children }: AppShellProps) {
               {domain}
             </Text>
           </Box>
-          <LogoutButton />
-        </Flex>
+        </Box>
 
         <Stack gap="2">
           <NavItem href="/sites" label="Sites" />
           <NavItem href="/settings" label="Settings" />
         </Stack>
-      </Box>
+
+        <Flex mt={{ base: "6", lg: "auto" }} pt={{ base: "0", lg: "6" }}>
+          <LogoutButton />
+        </Flex>
+      </Flex>
 
       <Box flex="1" px={{ base: "5", md: "8", xl: "10" }} py={{ base: "6", md: "8" }}>
         {children}
