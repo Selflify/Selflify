@@ -9,7 +9,6 @@ services:
     environment:
       AUTH_SECRET: ${AUTH_SECRET:-selflify-development-secret-change-me}
       SELFLIFY_CONFIG_PATH: /workspace/selflify.config.json
-      SELFLIFY_PREVIEW_ROOT: /workspace/.dev/var-www
       SELFLIFY_CADDY_CONFIG_PATH: /workspace/.dev/Caddyfile
       SELFLIFY_CADDY_BIN: /usr/bin/caddy
       SELFLIFY_CADDY_ADMIN_ADDRESS: http://caddy:2019
@@ -20,6 +19,7 @@ services:
     volumes:
       - .:/workspace
       - selflify_node_modules:/workspace/node_modules
+      - ./.dev/var-www:/var/www
 
   cleanup:
     build:

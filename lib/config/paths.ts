@@ -17,8 +17,7 @@ export function getConfigPath(): string {
 }
 
 export function getDefaultPreviewRoot(): string {
-  const fallback = process.env.NODE_ENV === "development" ? "./.dev/var-www" : "/var/www";
-  return resolveOrDefault(process.env.SELFLIFY_PREVIEW_ROOT, fallback);
+  return resolveOrDefault(process.env.SELFLIFY_PREVIEW_ROOT, "/var/www");
 }
 
 export function getDefaultOrphanRoot(): string {

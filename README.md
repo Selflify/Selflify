@@ -50,11 +50,11 @@ yarn dev --hostname 127.0.0.1 --port 3100
 ```
 
 The application will read `selflify.config.json` by default.
+The base preview root also comes from `selflify.config.json` and defaults to `/var/www`.
 
 Useful optional overrides:
 
 ```bash
-SELFLIFY_PREVIEW_ROOT=./.dev/var-www
 SELFLIFY_CADDY_CONFIG_PATH=./.dev/Caddyfile
 SELFLIFY_CADDY_BIN=caddy
 SELFLIFY_CADDY_ADMIN_ADDRESS=http://caddy:2019
@@ -62,6 +62,12 @@ SELFLIFY_BACKUP_ROOT=./.selflify/backups
 SELFLIFY_BACKUP_KEEP=20
 SELFLIFY_MOCK_CLOUDFLARE=1
 SELFLIFY_SKIP_CADDY_RELOAD=1
+```
+
+If you run `yarn dev` directly on your host and want fixture files instead of `/var/www`, add:
+
+```bash
+SELFLIFY_PREVIEW_ROOT=./.dev/var-www
 ```
 
 In local development, the recommended behavior is:
@@ -79,7 +85,7 @@ docker compose -f docker-compose.dev.yml up --build
 This runs:
 
 - `selflify` on `http://localhost:3000`
-- `cleanup` worker against `.dev/var-www`
+- `cleanup` worker against `/var/www` mounted from `.dev/var-www`
 - `caddy` on `http://localhost:8080`
 
 ## Production rollout
