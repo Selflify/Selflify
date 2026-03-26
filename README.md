@@ -82,6 +82,10 @@ This runs:
 - `cleanup` worker against `.dev/var-www`
 - `caddy` on `http://localhost:8080`
 
+## Production rollout
+
+Production rollout, migration, smoke checks and rollback steps are documented in [docs/production-rollout.md](/Users/aleksnick/dev/Selflify/docs/production-rollout.md).
+
 ## Config migration
 
 To migrate the old `sites.json` into the new config format:
