@@ -80,7 +80,10 @@ web_modules/
 out
 tmp_scaffold
 .selflify
-.dev/var-www
+.dev/var-www/**
+!.dev/var-www/
+!.dev/var-www/**/
+!.dev/var-www/**/index.html
 .dev/caddy-data
 .dev/caddy-config
 .dev/logs
