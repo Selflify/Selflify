@@ -1,5 +1,6 @@
 import crypto from "node:crypto";
 import fs from "node:fs/promises";
+import os from "node:os";
 import path from "node:path";
 
 import { writeOperationBackups } from "@/lib/config/backups";
@@ -7,7 +8,8 @@ import type { SelflifyConfig } from "@/lib/config/schema";
 import { readSelflifyConfig, writeSelflifyConfig } from "@/lib/config/service";
 import { reloadCaddy, validateCaddyfile, writeGeneratedCaddyfile } from "@/lib/system/caddy";
 
-const LOCK_PATH = path.join(process.cwd(), ".selflify.operation.lock");
+const LOCK_PATH =
+  process.env.SELFLIFY_LOCK_PATH ?? path.join(os.tmpdir(), "selflify.operation.lock");
 const RETRY_DELAY_MS = 120;
 const RETRY_ATTEMPTS = 80;
 
