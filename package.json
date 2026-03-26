@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
+    "test": "vitest",
     "typecheck": "tsc --noEmit",
     "migrate:config": "node ./scripts/migrate-to-selflify-config.mjs"
   },
