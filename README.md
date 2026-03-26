@@ -12,13 +12,16 @@ Implemented:
 - Chakra UI dark admin shell
 - `next-auth` credentials auth
 - single source of truth in `selflify.config.json`
-- site inventory, site details, settings and setup/login flows
+- setup/login flow plus a combined `Sites` overview instead of separate dashboard + sites lists
+- site details and global settings screens
 - Caddyfile generation and zero-downtime reload hooks
 - Cloudflare DNS sync adapter
+- config operations with revision checks, backups and rollback hooks
 - cleanup script for stale preview deploys and orphaned site directories
 - scheduled cleanup worker in `docker-compose`
 - production `docker-compose.yml`
 - development `docker-compose.dev.yml`
+- dev fixture deploy directories in `.dev/var-www`
 
 ## Tooling
 
@@ -51,6 +54,7 @@ yarn dev --hostname 127.0.0.1 --port 3100
 
 The application will read `selflify.config.json` by default.
 The base preview root also comes from `selflify.config.json` and defaults to `/var/www`.
+If no admin account is configured yet, the app will redirect to `/setup`.
 
 Useful optional overrides:
 
@@ -76,6 +80,14 @@ In local development, the recommended behavior is:
 - validate generated `Caddyfile`, but do not call `caddy reload`
 - keep a small rolling backup set for config and Caddy snapshots
 
+## Main flows
+
+- `/setup`: create the first account when `selflify.config.json` does not have credentials yet
+- `/login`: sign in with the configured credentials
+- `/sites`: metrics + site inventory + site creation modal
+- `/sites/[site]`: update the site, inspect deploys, remove preview deploys or delete the site
+- `/settings`: domain, Caddy, Cloudflare and credentials settings
+
 ## Dev compose
 
 ```bash
@@ -87,6 +99,21 @@ This runs:
 - `selflify` on `http://localhost:3000`
 - `cleanup` worker against `/var/www` mounted from `.dev/var-www`
 - `caddy` on `http://localhost:8080`
+
+Inside the containers, the base preview root is always `/var/www`.
+In development, `docker-compose.dev.yml` mounts local fixture files from `.dev/var-www` into that path.
+
+## Dev fixtures
+
+The repo contains minimal static fixture deploys for the current sites in [`.dev/var-www`](/Users/aleksnick/dev/Selflify/.dev/var-www).
+
+Examples:
+
+- [`.dev/var-www/app/stable/index.html`](/Users/aleksnick/dev/Selflify/.dev/var-www/app/stable/index.html)
+- [`.dev/var-www/app/pr-6825/index.html`](/Users/aleksnick/dev/Selflify/.dev/var-www/app/pr-6825/index.html)
+- [`.dev/var-www/storybook/release-3-189-30/index.html`](/Users/aleksnick/dev/Selflify/.dev/var-www/storybook/release-3-189-30/index.html)
+
+They exist so that local `Caddy` and the `Sites` screen can immediately see stable and preview deploy directories without waiting for real builds.
 
 ## Production rollout
 
