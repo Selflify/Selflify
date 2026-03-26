@@ -46,8 +46,11 @@ const config = defineConfig({
         body: { value: "var(--font-manrope)" },
       },
       radii: {
-        xl: { value: "1.25rem" },
-        "2xl": { value: "1.75rem" },
+        sm: { value: "0.375rem" },
+        md: { value: "0.5rem" },
+        lg: { value: "0.625rem" },
+        xl: { value: "0.875rem" },
+        "2xl": { value: "1.125rem" },
       },
       shadows: {
         panel: { value: "0 22px 60px rgba(0, 0, 0, 0.38)" },

@@ -39,7 +39,6 @@ export function AppShell({ domain, children }: AppShellProps) {
         </Flex>
 
         <Stack gap="2">
-          <NavItem href="/dashboard" label="Dashboard" />
           <NavItem href="/sites" label="Sites" />
           <NavItem href="/settings" label="Settings" />
         </Stack>

@@ -2,6 +2,7 @@ import { Box, Button, Heading, Input, Stack, Text } from "@chakra-ui/react";
 import { redirect } from "next/navigation";
 
 import { FlashMessage } from "@/components/flash-message";
+import { FormField } from "@/components/form-field";
 import { setupAction } from "@/app/actions";
 import { isAdminConfigured, readSelflifyConfig } from "@/lib/config/service";
 
@@ -58,24 +59,30 @@ export default async function SetupPage({ searchParams }: SetupPageProps) {
 
           <form action={setupAction}>
             <Stack gap="4">
-              <Input
-                name="login"
-                placeholder="Admin login"
-                autoComplete="username"
-                required
-                bg="rgba(255,255,255,0.04)"
-                borderColor="rgba(255,255,255,0.08)"
-              />
-              <Input
-                name="password"
-                type="password"
-                placeholder="Strong password"
-                autoComplete="new-password"
-                required
-                minLength={8}
-                bg="rgba(255,255,255,0.04)"
-                borderColor="rgba(255,255,255,0.08)"
-              />
+              <FormField label="Admin login" htmlFor="setup-login">
+                <Input
+                  id="setup-login"
+                  name="login"
+                  placeholder="selflify-admin"
+                  autoComplete="username"
+                  required
+                  bg="rgba(255,255,255,0.04)"
+                  borderColor="rgba(255,255,255,0.08)"
+                />
+              </FormField>
+              <FormField label="Password" htmlFor="setup-password">
+                <Input
+                  id="setup-password"
+                  name="password"
+                  type="password"
+                  placeholder="Strong password"
+                  autoComplete="new-password"
+                  required
+                  minLength={8}
+                  bg="rgba(255,255,255,0.04)"
+                  borderColor="rgba(255,255,255,0.08)"
+                />
+              </FormField>
               <Button type="submit" bg="brand.600" color="white" _hover={{ bg: "brand.500" }}>
                 Create admin account
               </Button>

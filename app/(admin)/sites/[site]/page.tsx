@@ -3,6 +3,7 @@ import { Box, Button, Flex, Heading, Input, Stack, Text } from "@chakra-ui/react
 
 import { deleteDeployAction, deleteSiteAction, updateSiteAction } from "@/app/actions";
 import { FlashMessage } from "@/components/flash-message";
+import { FormField } from "@/components/form-field";
 import { FormSubmitButton } from "@/components/form-submit-button";
 import { requireAdminSession } from "@/lib/auth/guards";
 import { listDeploys } from "@/lib/sites/service";
@@ -49,26 +50,54 @@ export default async function SiteDetailsPage({ params, searchParams }: SiteDeta
         <form action={updateSiteAction.bind(null, site.slug)}>
           <input type="hidden" name="configRevision" value={String(config.configRevision)} />
           <Stack gap="4">
-            <Input value={site.slug} readOnly bg="rgba(255,255,255,0.02)" />
-            <Input name="name" defaultValue={site.name} required bg="rgba(255,255,255,0.04)" />
-            <Input
-              name="mainBranch"
-              defaultValue={site.mainBranch}
-              required
-              bg="rgba(255,255,255,0.04)"
-            />
-            <Input
-              name="previewLogin"
-              defaultValue={site.previewAuth.login ?? ""}
-              placeholder="Preview login"
-              bg="rgba(255,255,255,0.04)"
-            />
-            <Input
-              name="previewPassword"
-              type="password"
-              placeholder="Leave blank to keep the existing preview password"
-              bg="rgba(255,255,255,0.04)"
-            />
+            <FormField label="Site slug" htmlFor="site-settings-slug">
+              <Input
+                id="site-settings-slug"
+                value={site.slug}
+                readOnly
+                bg="rgba(255,255,255,0.02)"
+              />
+            </FormField>
+            <FormField label="Display name" htmlFor="site-settings-name">
+              <Input
+                id="site-settings-name"
+                name="name"
+                defaultValue={site.name}
+                required
+                bg="rgba(255,255,255,0.04)"
+              />
+            </FormField>
+            <FormField label="Main branch" htmlFor="site-settings-main-branch">
+              <Input
+                id="site-settings-main-branch"
+                name="mainBranch"
+                defaultValue={site.mainBranch}
+                required
+                bg="rgba(255,255,255,0.04)"
+              />
+            </FormField>
+            <FormField label="Preview login" htmlFor="site-settings-preview-login">
+              <Input
+                id="site-settings-preview-login"
+                name="previewLogin"
+                defaultValue={site.previewAuth.login ?? ""}
+                placeholder="Optional"
+                bg="rgba(255,255,255,0.04)"
+              />
+            </FormField>
+            <FormField
+              label="Preview password"
+              htmlFor="site-settings-preview-password"
+              hint="Leave this blank to keep the existing preview password."
+            >
+              <Input
+                id="site-settings-preview-password"
+                name="previewPassword"
+                type="password"
+                placeholder="Set a new preview password"
+                bg="rgba(255,255,255,0.04)"
+              />
+            </FormField>
             <FormSubmitButton
               alignSelf="flex-start"
               bg="brand.600"

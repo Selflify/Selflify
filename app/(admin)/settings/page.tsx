@@ -2,6 +2,7 @@ import { Box, Heading, Input, SimpleGrid, Stack, Text } from "@chakra-ui/react";
 
 import { saveSettingsAction } from "@/app/actions";
 import { FlashMessage } from "@/components/flash-message";
+import { FormField } from "@/components/form-field";
 import { FormSubmitButton } from "@/components/form-submit-button";
 import { requireAdminSession } from "@/lib/auth/guards";
 import { getEffectiveBackupRoot } from "@/lib/config/paths";
@@ -39,46 +40,65 @@ export default async function SettingsPage({ searchParams }: SettingsPageProps) 
           <input type="hidden" name="configRevision" value={String(config.configRevision)} />
           <Stack gap="6">
             <SimpleGrid columns={{ base: 1, md: 2 }} gap="4">
-              <Input
-                name="domain"
-                defaultValue={config.server.domain}
-                placeholder="Domain"
-                required
-                bg="rgba(255,255,255,0.04)"
-              />
-              <Input
-                name="serverIp"
-                defaultValue={config.server.serverIp}
-                placeholder="Server IP"
-                bg="rgba(255,255,255,0.04)"
-              />
-              <Input
-                name="caddyContactEmail"
-                type="email"
-                defaultValue={config.server.caddyContactEmail}
-                placeholder="Caddy contact email"
-                required
-                bg="rgba(255,255,255,0.04)"
-              />
-              <Input
-                name="adminLogin"
-                defaultValue={config.admin.login}
-                placeholder="Admin login"
-                required
-                bg="rgba(255,255,255,0.04)"
-              />
+              <FormField label="Domain" htmlFor="settings-domain">
+                <Input
+                  id="settings-domain"
+                  name="domain"
+                  defaultValue={config.server.domain}
+                  placeholder="example.com"
+                  required
+                  bg="rgba(255,255,255,0.04)"
+                />
+              </FormField>
+              <FormField label="Server IP" htmlFor="settings-server-ip">
+                <Input
+                  id="settings-server-ip"
+                  name="serverIp"
+                  defaultValue={config.server.serverIp}
+                  placeholder="203.0.113.10"
+                  bg="rgba(255,255,255,0.04)"
+                />
+              </FormField>
+              <FormField label="Caddy contact email" htmlFor="settings-caddy-contact-email">
+                <Input
+                  id="settings-caddy-contact-email"
+                  name="caddyContactEmail"
+                  type="email"
+                  defaultValue={config.server.caddyContactEmail}
+                  placeholder="ops@example.com"
+                  required
+                  bg="rgba(255,255,255,0.04)"
+                />
+              </FormField>
+              <FormField label="Admin login" htmlFor="settings-admin-login">
+                <Input
+                  id="settings-admin-login"
+                  name="adminLogin"
+                  defaultValue={config.admin.login}
+                  placeholder="selflify-admin"
+                  required
+                  bg="rgba(255,255,255,0.04)"
+                />
+              </FormField>
             </SimpleGrid>
 
-            <Input
-              name="cloudflareApiToken"
-              type="password"
-              placeholder={
+            <FormField
+              label="Cloudflare API token"
+              htmlFor="settings-cloudflare-api-token"
+              hint={
                 config.server.cloudflareApiToken
-                  ? "Leave blank to keep the current Cloudflare API token"
-                  : "Cloudflare API token"
+                  ? "Leave this blank to keep the current token."
+                  : "Used to create and delete DNS records automatically."
               }
-              bg="rgba(255,255,255,0.04)"
-            />
+            >
+              <Input
+                id="settings-cloudflare-api-token"
+                name="cloudflareApiToken"
+                type="password"
+                placeholder="Paste a Cloudflare API token"
+                bg="rgba(255,255,255,0.04)"
+              />
+            </FormField>
             <Box rounded="xl" borderWidth="1px" borderColor="rgba(255,255,255,0.08)" px="4" py="4">
               <Text fontWeight="700">Cloudflare token</Text>
               <Text color="muted" mt="2" fontSize="sm">
@@ -103,12 +123,19 @@ export default async function SettingsPage({ searchParams }: SettingsPageProps) 
                 </Text>
               </label>
             </Box>
-            <Input
-              name="adminPassword"
-              type="password"
-              placeholder="Leave blank to keep the current admin password"
-              bg="rgba(255,255,255,0.04)"
-            />
+            <FormField
+              label="Admin password"
+              htmlFor="settings-admin-password"
+              hint="Leave this blank to keep the current password."
+            >
+              <Input
+                id="settings-admin-password"
+                name="adminPassword"
+                type="password"
+                placeholder="Set a new password"
+                bg="rgba(255,255,255,0.04)"
+              />
+            </FormField>
 
             <Box rounded="xl" borderWidth="1px" borderColor="rgba(255,255,255,0.08)" px="4" py="4">
               <Text fontWeight="700">Runtime paths</Text>

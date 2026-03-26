@@ -33,7 +33,7 @@ export async function redirectIfAuthenticated() {
   }
 
   if (session?.user) {
-    redirect("/dashboard");
+    redirect("/sites");
   }
 
   return config;

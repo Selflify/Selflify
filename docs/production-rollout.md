@@ -75,7 +75,7 @@ After the first launch, verify:
 
 - `https://sendsay.dev` opens the Next.js app
 - login works and protected routes redirect correctly
-- Dashboard loads site inventory and disk stats
+- Sites overview loads site inventory and disk stats
 - existing stable host opens, for example `https://app.sendsay.dev`
 - existing preview host opens, for example `https://pr-6825.app.sendsay.dev`
 - creating a site writes to `selflify.config.json`

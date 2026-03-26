@@ -13,5 +13,5 @@ export default async function HomePage() {
   }
 
   const session = await auth();
-  redirect(session?.user ? "/dashboard" : "/login");
+  redirect(session?.user ? "/sites" : "/login");
 }

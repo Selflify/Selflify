@@ -22,7 +22,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
   const session = await auth();
 
   if (session?.user) {
-    redirect("/dashboard");
+    redirect("/sites");
   }
 
   const params = await searchParams;
