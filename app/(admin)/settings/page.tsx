@@ -1,4 +1,4 @@
-import { Box, Heading, Input, SimpleGrid, Stack, Text } from "@chakra-ui/react";
+import { Box, Heading, Input, Stack, Text } from "@chakra-ui/react";
 
 import { saveSettingsAction } from "@/app/actions";
 import { FlashMessage } from "@/components/flash-message";
@@ -39,7 +39,7 @@ export default async function SettingsPage({ searchParams }: SettingsPageProps) 
         <form action={saveSettingsAction}>
           <input type="hidden" name="configRevision" value={String(config.configRevision)} />
           <Stack gap="6">
-            <SimpleGrid columns={{ base: 1, md: 2 }} gap="4">
+            <Stack gap="4">
               <FormField label="Domain" htmlFor="settings-domain">
                 <Input
                   id="settings-domain"
@@ -80,7 +80,7 @@ export default async function SettingsPage({ searchParams }: SettingsPageProps) 
                   bg="rgba(255,255,255,0.04)"
                 />
               </FormField>
-            </SimpleGrid>
+            </Stack>
 
             <FormField
               label="Cloudflare API token"

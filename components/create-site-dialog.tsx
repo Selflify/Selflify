@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, Dialog, Input, Portal, SimpleGrid, Stack, Text } from "@chakra-ui/react";
+import { Button, Dialog, Input, Portal, Stack, Text } from "@chakra-ui/react";
 
 import { createSiteAction } from "@/app/actions";
 import { FormField } from "@/components/form-field";
@@ -42,7 +42,7 @@ export function CreateSiteDialog({ configRevision }: CreateSiteDialogProps) {
               </Dialog.Header>
 
               <Dialog.Body pt="5">
-                <SimpleGrid columns={{ base: 1, md: 2 }} gap="4">
+                <Stack gap="4">
                   <FormField label="Site slug" htmlFor="create-site-slug">
                     <Input
                       id="create-site-slug"
@@ -82,7 +82,6 @@ export function CreateSiteDialog({ configRevision }: CreateSiteDialogProps) {
                     label="Preview password"
                     htmlFor="create-site-preview-password"
                     hint="If login is set, Selflify will hash this password through Caddy."
-                    gridColumn={{ base: "auto", md: "1 / -1" }}
                   >
                     <Input
                       id="create-site-preview-password"
@@ -92,7 +91,7 @@ export function CreateSiteDialog({ configRevision }: CreateSiteDialogProps) {
                       bg="rgba(255,255,255,0.04)"
                     />
                   </FormField>
-                </SimpleGrid>
+                </Stack>
               </Dialog.Body>
 
               <Dialog.Footer pt="0" gap="3">
