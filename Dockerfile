@@ -8,6 +8,7 @@ FROM node:20-alpine AS base
 WORKDIR /workspace
 ENV NEXT_TELEMETRY_DISABLED=1
 RUN corepack enable
+RUN apk add --no-cache bash jq
 
 FROM base AS deps
 
@@ -31,6 +32,7 @@ ENV PORT=3000
 ENV HOSTNAME=0.0.0.0
 
 COPY --from=caddy-builder /usr/bin/caddy /usr/bin/caddy
+COPY cleanup-previews.sh ./cleanup-previews.sh
 COPY --from=builder /workspace/.next/standalone ./
 COPY --from=builder /workspace/.next/static ./.next/static
 COPY --from=builder /workspace/public ./public

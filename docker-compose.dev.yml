@@ -21,6 +21,25 @@ services:
       - .:/workspace
       - selflify_node_modules:/workspace/node_modules
 
+  cleanup:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: dev
+    container_name: selflify-dev-cleanup
+    command:
+      - sh
+      - -lc
+      - while true; do bash /workspace/cleanup-previews.sh; sleep "${SELFLIFY_CLEANUP_INTERVAL_SECONDS:-3600}"; done
+    environment:
+      SELFLIFY_CONFIG_PATH: /workspace/selflify.config.json
+      SELFLIFY_PREVIEW_TTL_DAYS: ${SELFLIFY_PREVIEW_TTL_DAYS:-30}
+      SELFLIFY_ORPHAN_TTL_DAYS: ${SELFLIFY_ORPHAN_TTL_DAYS:-30}
+      SELFLIFY_CLEANUP_INTERVAL_SECONDS: ${SELFLIFY_CLEANUP_INTERVAL_SECONDS:-3600}
+    volumes:
+      - .:/workspace
+      - ./.dev/var-www:/var/www
+
   caddy:
     build:
       context: .
@@ -35,6 +54,7 @@ services:
       - ./.dev/Caddyfile:/etc/caddy/Caddyfile
       - ./.dev/caddy-data:/data
       - ./.dev/caddy-config:/config
+      - ./.dev/logs:/var/log/caddy
       - ./.dev/var-www:/var/www
     expose:
       - "2019"

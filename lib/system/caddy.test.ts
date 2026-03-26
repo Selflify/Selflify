@@ -49,6 +49,8 @@ describe("generateCaddyfile", () => {
     expect(rendered).toContain("root * /var/www/app/{labels.3}");
     expect(rendered).toContain("root * /var/www/app/stable");
     expect(rendered).toContain("preview-user hashed-secret");
+    expect(rendered).toContain("output file /var/log/caddy/access.log");
+    expect(rendered).toContain("roll_keep 10");
   });
 
   it("omits preview basic auth and tls_cf import when no token or auth is configured", () => {

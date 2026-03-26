@@ -18,6 +18,27 @@ services:
     expose:
       - "3000"
 
+  cleanup:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: selflify-cleanup
+    restart: unless-stopped
+    depends_on:
+      - selflify
+    command:
+      - sh
+      - -lc
+      - while true; do bash /workspace/cleanup-previews.sh; sleep "${SELFLIFY_CLEANUP_INTERVAL_SECONDS:-86400}"; done
+    environment:
+      SELFLIFY_CONFIG_PATH: /workspace/selflify.config.json
+      SELFLIFY_PREVIEW_TTL_DAYS: ${SELFLIFY_PREVIEW_TTL_DAYS:-30}
+      SELFLIFY_ORPHAN_TTL_DAYS: ${SELFLIFY_ORPHAN_TTL_DAYS:-30}
+      SELFLIFY_CLEANUP_INTERVAL_SECONDS: ${SELFLIFY_CLEANUP_INTERVAL_SECONDS:-86400}
+    volumes:
+      - ./selflify.config.json:/workspace/selflify.config.json
+      - /var/www:/var/www
+
   caddy:
     build:
       context: .

@@ -16,6 +16,7 @@ Implemented:
 - Caddyfile generation and zero-downtime reload hooks
 - Cloudflare DNS sync adapter
 - cleanup script for stale preview deploys and orphaned site directories
+- scheduled cleanup worker in `docker-compose`
 - production `docker-compose.yml`
 - development `docker-compose.dev.yml`
 
@@ -78,6 +79,7 @@ docker compose -f docker-compose.dev.yml up --build
 This runs:
 
 - `selflify` on `http://localhost:3000`
+- `cleanup` worker against `.dev/var-www`
 - `caddy` on `http://localhost:8080`
 
 ## Config migration
@@ -100,4 +102,5 @@ Optional overrides:
 SELFLIFY_CONFIG_PATH=./selflify.config.json
 SELFLIFY_PREVIEW_TTL_DAYS=30
 SELFLIFY_ORPHAN_TTL_DAYS=30
+SELFLIFY_CLEANUP_INTERVAL_SECONDS=86400
 ```

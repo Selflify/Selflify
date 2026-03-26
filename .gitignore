@@ -83,6 +83,7 @@ tmp_scaffold
 .dev/var-www
 .dev/caddy-data
 .dev/caddy-config
+.dev/logs
 
 # Nuxt.js build / generate output
 .nuxt

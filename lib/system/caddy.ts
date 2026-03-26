@@ -103,6 +103,16 @@ ${renderTlsBlock(config.server.cloudflareApiToken)}
 ${renderCommonSiteImports(hasToken)}
 
     encode gzip zstd
+
+    log {
+        output file /var/log/caddy/access.log {
+            roll_size 20MiB
+            roll_keep 10
+            roll_keep_for 720h
+        }
+        format json
+        level INFO
+    }
 }
 
 ${config.server.domain} {
