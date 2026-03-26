@@ -43,13 +43,13 @@ export function LoginForm({ initialError }: LoginFormProps) {
   return (
     <form onSubmit={handleSubmit}>
       <Stack gap="4">
-        <FormField label="Admin login" htmlFor="login-form-login">
+        <FormField label="Login" htmlFor="login-form-login">
           <Input
             id="login-form-login"
             value={login}
             onChange={(event) => setLogin(event.target.value)}
             name="login"
-            placeholder="selflify-admin"
+            placeholder="Enter login"
             autoComplete="username"
             required
             bg="rgba(255,255,255,0.04)"
