@@ -2,6 +2,7 @@ import crypto from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
 
+import { writeOperationBackups } from "@/lib/config/backups";
 import type { SelflifyConfig } from "@/lib/config/schema";
 import { readSelflifyConfig, writeSelflifyConfig } from "@/lib/config/service";
 import {
@@ -215,6 +216,11 @@ export async function runConfigOperation<T>({
       let configWritten = false;
 
       try {
+        await writeOperationBackups({
+          label,
+          previousConfig: current,
+          previousCaddyContents,
+        });
         await writeGeneratedCaddyfile(nextConfig);
         await validateCaddyfile(nextConfig);
         await writeSelflifyConfig(nextConfig);

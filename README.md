@@ -42,6 +42,8 @@ SELFLIFY_PREVIEW_ROOT=./.dev/var-www
 SELFLIFY_CADDY_CONFIG_PATH=./.dev/Caddyfile
 SELFLIFY_CADDY_BIN=caddy
 SELFLIFY_CADDY_ADMIN_ADDRESS=http://caddy:2019
+SELFLIFY_BACKUP_ROOT=./.selflify/backups
+SELFLIFY_BACKUP_KEEP=20
 SELFLIFY_MOCK_CLOUDFLARE=1
 SELFLIFY_SKIP_CADDY_RELOAD=1
 ```
@@ -50,6 +52,7 @@ In local development, the recommended behavior is:
 
 - mock Cloudflare DNS operations
 - validate generated `Caddyfile`, but do not call `caddy reload`
+- keep a small rolling backup set for config and Caddy snapshots
 
 ## Dev compose
 

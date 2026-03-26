@@ -78,6 +78,7 @@ web_modules/
 .next
 out
 tmp_scaffold
+.selflify
 .dev/var-www
 .dev/caddy-data
 .dev/caddy-config

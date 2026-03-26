@@ -25,6 +25,10 @@ export function getDefaultOrphanRoot(): string {
   return resolvePathValue(path.join(getDefaultPreviewRoot(), ".orphaned-sites"));
 }
 
+export function getDefaultBackupRoot(): string {
+  return resolveOrDefault(process.env.SELFLIFY_BACKUP_ROOT, "./.selflify/backups");
+}
+
 export function getDefaultCaddyConfigPath(): string {
   const fallback = process.env.NODE_ENV === "development" ? "./.dev/Caddyfile" : "./Caddyfile";
   return resolveOrDefault(process.env.SELFLIFY_CADDY_CONFIG_PATH, fallback);
@@ -44,6 +48,10 @@ export function getEffectivePreviewRoot(config: SelflifyConfig): string {
 
 export function getEffectiveOrphanRoot(config: SelflifyConfig): string {
   return resolveOrDefault(process.env.SELFLIFY_ORPHAN_ROOT, config.server.orphanedRootDir);
+}
+
+export function getEffectiveBackupRoot(): string {
+  return getDefaultBackupRoot();
 }
 
 export function getEffectiveCaddyConfigPath(config: SelflifyConfig): string {

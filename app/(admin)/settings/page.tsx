@@ -4,6 +4,7 @@ import { saveSettingsAction } from "@/app/actions";
 import { FlashMessage } from "@/components/flash-message";
 import { FormSubmitButton } from "@/components/form-submit-button";
 import { requireAdminSession } from "@/lib/auth/guards";
+import { getEffectiveBackupRoot } from "@/lib/config/paths";
 
 type SettingsPageProps = {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
@@ -103,6 +104,9 @@ export default async function SettingsPage({ searchParams }: SettingsPageProps) 
               </Text>
               <Text color="muted" mt="1" fontSize="sm">
                 Caddy admin: {config.server.caddyAdminAddress}
+              </Text>
+              <Text color="muted" mt="1" fontSize="sm">
+                Backups: {getEffectiveBackupRoot()}
               </Text>
             </Box>
 
