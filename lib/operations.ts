@@ -5,11 +5,7 @@ import path from "node:path";
 import { writeOperationBackups } from "@/lib/config/backups";
 import type { SelflifyConfig } from "@/lib/config/schema";
 import { readSelflifyConfig, writeSelflifyConfig } from "@/lib/config/service";
-import {
-  reloadCaddy,
-  validateCaddyfile,
-  writeGeneratedCaddyfile,
-} from "@/lib/system/caddy";
+import { reloadCaddy, validateCaddyfile, writeGeneratedCaddyfile } from "@/lib/system/caddy";
 
 const LOCK_PATH = path.join(process.cwd(), ".selflify.operation.lock");
 const RETRY_DELAY_MS = 120;
@@ -156,137 +152,136 @@ export async function runConfigOperation<T>({
   afterApply,
 }: OperationOptions<T>): Promise<T> {
   return runSerializedTask(async () => {
-      const current = await readSelflifyConfig();
+    const current = await readSelflifyConfig();
 
-      if (expectedRevision !== undefined && expectedRevision !== current.configRevision) {
-        throw new ConfigConflictError();
+    if (expectedRevision !== undefined && expectedRevision !== current.configRevision) {
+      throw new ConfigConflictError();
+    }
+
+    const { config: mutatedConfig, result } = await mutate(structuredClone(current));
+    const operationId = crypto.randomUUID();
+    const nextConfig = buildOperationSnapshot(
+      {
+        ...mutatedConfig,
+        configRevision: current.configRevision + 1,
+      },
+      {
+        operationId,
+        label,
+        status: "success",
+        message: null,
+      },
+    );
+    const previousCaddyPath = nextConfig.server.caddyConfigPath;
+    let previousCaddyContents: string | null = null;
+
+    try {
+      previousCaddyContents = await fs.readFile(previousCaddyPath, "utf8");
+    } catch {
+      previousCaddyContents = null;
+    }
+
+    try {
+      if (beforePersist) {
+        await beforePersist(nextConfig);
+      }
+    } catch (error) {
+      let operationError: unknown = error;
+
+      if (rollbackBeforePersist) {
+        try {
+          await rollbackBeforePersist(current, nextConfig);
+        } catch (rollbackError) {
+          operationError = withRollbackContext(error, rollbackError);
+        }
       }
 
-      const { config: mutatedConfig, result } = await mutate(structuredClone(current));
-      const operationId = crypto.randomUUID();
-      const nextConfig = buildOperationSnapshot(
-        {
-          ...mutatedConfig,
-          configRevision: current.configRevision + 1,
-        },
-        {
+      await persistOperationSnapshot(
+        buildOperationSnapshot(current, {
           operationId,
           label,
-          status: "success",
-          message: null,
-        },
+          status: "failed",
+          message: operationError instanceof Error ? operationError.message : "Operation failed.",
+        }),
       );
-      const previousCaddyPath = nextConfig.server.caddyConfigPath;
-      let previousCaddyContents: string | null = null;
 
-      try {
-        previousCaddyContents = await fs.readFile(previousCaddyPath, "utf8");
-      } catch {
-        previousCaddyContents = null;
+      throw operationError;
+    }
+
+    let configWritten = false;
+
+    try {
+      await writeOperationBackups({
+        label,
+        previousConfig: current,
+        previousCaddyContents,
+      });
+      await writeGeneratedCaddyfile(nextConfig);
+      await validateCaddyfile(nextConfig);
+      await writeSelflifyConfig(nextConfig);
+      configWritten = true;
+      await reloadCaddy(nextConfig);
+    } catch (error) {
+      if (configWritten) {
+        await writeSelflifyConfig(current);
       }
 
-      try {
-        if (beforePersist) {
-          await beforePersist(nextConfig);
-        }
-      } catch (error) {
-        let operationError: unknown = error;
-
-        if (rollbackBeforePersist) {
-          try {
-            await rollbackBeforePersist(current, nextConfig);
-          } catch (rollbackError) {
-            operationError = withRollbackContext(error, rollbackError);
-          }
-        }
-
-        await persistOperationSnapshot(
-          buildOperationSnapshot(current, {
-            operationId,
-            label,
-            status: "failed",
-            message:
-              operationError instanceof Error ? operationError.message : "Operation failed.",
-          }),
-        );
-
-        throw operationError;
+      if (previousCaddyContents !== null) {
+        await fs.writeFile(previousCaddyPath, previousCaddyContents, "utf8");
+      } else {
+        await fs.rm(previousCaddyPath, { force: true });
       }
 
-      let configWritten = false;
-
-      try {
-        await writeOperationBackups({
-          label,
-          previousConfig: current,
-          previousCaddyContents,
-        });
-        await writeGeneratedCaddyfile(nextConfig);
-        await validateCaddyfile(nextConfig);
-        await writeSelflifyConfig(nextConfig);
-        configWritten = true;
-        await reloadCaddy(nextConfig);
-      } catch (error) {
-        if (configWritten) {
-          await writeSelflifyConfig(current);
-        }
-
-        if (previousCaddyContents !== null) {
-          await fs.writeFile(previousCaddyPath, previousCaddyContents, "utf8");
-        } else {
-          await fs.rm(previousCaddyPath, { force: true });
-        }
-
-        if (configWritten) {
-          try {
-            await reloadCaddy(current);
-          } catch {
-            // Ignore secondary rollback errors here. The original error is more actionable.
-          }
-        }
-
-        if (rollbackBeforePersist) {
-          try {
-            await rollbackBeforePersist(current, nextConfig);
-          } catch (rollbackError) {
-            error = withRollbackContext(error, rollbackError);
-          }
-        }
-
-        await persistOperationSnapshot(
-          buildOperationSnapshot(current, {
-            operationId,
-            label,
-            status: "failed",
-            message: error instanceof Error ? error.message : "Operation failed.",
-          }),
-        );
-
-        throw error;
-      }
-
-      let partialMessage: string | null = null;
-
-      if (afterApply) {
+      if (configWritten) {
         try {
-          await afterApply(nextConfig);
-        } catch (error) {
-          partialMessage = error instanceof Error ? error.message : "Post-apply step failed.";
+          await reloadCaddy(current);
+        } catch {
+          // Ignore secondary rollback errors here. The original error is more actionable.
         }
       }
 
-      if (partialMessage) {
-        await writeSelflifyConfig(
-          buildOperationSnapshot(nextConfig, {
-            operationId,
-            label,
-            status: "partial",
-            message: partialMessage,
-          }),
-        );
+      if (rollbackBeforePersist) {
+        try {
+          await rollbackBeforePersist(current, nextConfig);
+        } catch (rollbackError) {
+          error = withRollbackContext(error, rollbackError);
+        }
       }
 
-      return result;
+      await persistOperationSnapshot(
+        buildOperationSnapshot(current, {
+          operationId,
+          label,
+          status: "failed",
+          message: error instanceof Error ? error.message : "Operation failed.",
+        }),
+      );
+
+      throw error;
+    }
+
+    let partialMessage: string | null = null;
+
+    if (afterApply) {
+      try {
+        await afterApply(nextConfig);
+      } catch (error) {
+        partialMessage = error instanceof Error ? error.message : "Post-apply step failed.";
+      }
+    }
+
+    if (partialMessage) {
+      await writeSelflifyConfig(
+        buildOperationSnapshot(nextConfig, {
+          operationId,
+          label,
+          status: "partial",
+          message: partialMessage,
+        }),
+      );
+    }
+
+    return result;
   });
 }
 

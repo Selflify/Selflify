@@ -1,0 +1,11 @@
+.next
+coverage
+node_modules
+.selflify
+.dev/var-www
+.dev/caddy-data
+.dev/caddy-config
+data
+config
+logs
+package-lock.json

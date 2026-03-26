@@ -16,14 +16,26 @@ export default async function DashboardPage() {
   return (
     <Stack gap="8">
       <SimpleGrid columns={{ base: 1, md: 2, xl: 4 }} gap="4">
-        <MetricCard label="Sites" value={String(siteSummaries.length)} hint="Configured preview groups" />
-        <MetricCard label="Deploys" value={String(totalDeploys)} hint="Stable + preview directories detected" />
+        <MetricCard
+          label="Sites"
+          value={String(siteSummaries.length)}
+          hint="Configured preview groups"
+        />
+        <MetricCard
+          label="Deploys"
+          value={String(totalDeploys)}
+          hint="Stable + preview directories detected"
+        />
         <MetricCard
           label="Used disk"
           value={formatBytes(diskUsage.usedBytes)}
           hint={`Available ${formatBytes(diskUsage.availableBytes)}`}
         />
-        <MetricCard label="Total disk" value={formatBytes(diskUsage.totalBytes)} hint={config.server.previewRootDir} />
+        <MetricCard
+          label="Total disk"
+          value={formatBytes(diskUsage.totalBytes)}
+          hint={config.server.previewRootDir}
+        />
       </SimpleGrid>
 
       <Box
@@ -34,7 +46,13 @@ export default async function DashboardPage() {
         p={{ base: "5", md: "6" }}
         boxShadow="panel"
       >
-        <Flex justify="space-between" align={{ base: "flex-start", md: "center" }} gap="4" mb="5" wrap="wrap">
+        <Flex
+          justify="space-between"
+          align={{ base: "flex-start", md: "center" }}
+          gap="4"
+          mb="5"
+          wrap="wrap"
+        >
           <Box>
             <Heading size="lg">Site inventory</Heading>
             <Text color="muted" mt="2">
@@ -48,7 +66,8 @@ export default async function DashboardPage() {
             <Box rounded="xl" borderWidth="1px" borderColor="rgba(255,255,255,0.08)" px="4" py="4">
               <Heading size="sm">No sites configured</Heading>
               <Text color="muted" mt="2" fontSize="sm">
-                Add the first site from the Sites page to start routing stable and preview environments through Caddy.
+                Add the first site from the Sites page to start routing stable and preview
+                environments through Caddy.
               </Text>
             </Box>
           ) : null}

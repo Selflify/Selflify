@@ -151,7 +151,10 @@ export async function reloadCaddy(config: SelflifyConfig): Promise<void> {
   ]);
 }
 
-export async function hashPasswordWithCaddy(config: SelflifyConfig, password: string): Promise<string> {
+export async function hashPasswordWithCaddy(
+  config: SelflifyConfig,
+  password: string,
+): Promise<string> {
   const caddyBin = getEffectiveCaddyBinaryPath(config);
 
   return runCommand(caddyBin, ["hash-password", "--plaintext", password]);

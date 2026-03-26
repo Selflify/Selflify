@@ -33,7 +33,8 @@ export default async function SitesPage({ searchParams }: SitesPageProps) {
       >
         <Heading size="lg">Create a site</Heading>
         <Text color="muted" mt="2">
-          New sites immediately get a stable directory, a placeholder page and wildcard routing in Caddy.
+          New sites immediately get a stable directory, a placeholder page and wildcard routing in
+          Caddy.
         </Text>
 
         <form action={createSiteAction}>
@@ -41,11 +42,32 @@ export default async function SitesPage({ searchParams }: SitesPageProps) {
           <SimpleGrid columns={{ base: 1, md: 2, xl: 5 }} gap="4">
             <Input name="slug" placeholder="site-slug" required bg="rgba(255,255,255,0.04)" />
             <Input name="name" placeholder="Display name" required bg="rgba(255,255,255,0.04)" />
-            <Input name="mainBranch" placeholder="stable" defaultValue="stable" required bg="rgba(255,255,255,0.04)" />
-            <Input name="previewLogin" placeholder="Preview login (optional)" bg="rgba(255,255,255,0.04)" />
-            <Input name="previewPassword" type="password" placeholder="Preview password (optional)" bg="rgba(255,255,255,0.04)" />
+            <Input
+              name="mainBranch"
+              placeholder="stable"
+              defaultValue="stable"
+              required
+              bg="rgba(255,255,255,0.04)"
+            />
+            <Input
+              name="previewLogin"
+              placeholder="Preview login (optional)"
+              bg="rgba(255,255,255,0.04)"
+            />
+            <Input
+              name="previewPassword"
+              type="password"
+              placeholder="Preview password (optional)"
+              bg="rgba(255,255,255,0.04)"
+            />
           </SimpleGrid>
-          <FormSubmitButton mt="4" bg="brand.600" color="white" _hover={{ bg: "brand.500" }} pendingText="Creating site">
+          <FormSubmitButton
+            mt="4"
+            bg="brand.600"
+            color="white"
+            _hover={{ bg: "brand.500" }}
+            pendingText="Creating site"
+          >
             Create site
           </FormSubmitButton>
         </form>
@@ -63,7 +85,8 @@ export default async function SitesPage({ searchParams }: SitesPageProps) {
           >
             <Heading size="md">No sites yet</Heading>
             <Text color="muted" mt="2">
-              Create the first site to generate its stable directory, preview wildcard routing and placeholder build.
+              Create the first site to generate its stable directory, preview wildcard routing and
+              placeholder build.
             </Text>
           </Box>
         ) : null}
@@ -77,7 +100,12 @@ export default async function SitesPage({ searchParams }: SitesPageProps) {
             p={{ base: "5", md: "6" }}
             boxShadow="panel"
           >
-            <Flex justify="space-between" gap="4" wrap="wrap" align={{ base: "flex-start", md: "center" }}>
+            <Flex
+              justify="space-between"
+              gap="4"
+              wrap="wrap"
+              align={{ base: "flex-start", md: "center" }}
+            >
               <Box>
                 <Heading size="md">{site.name}</Heading>
                 <Text color="muted" mt="1">

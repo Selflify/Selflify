@@ -77,9 +77,10 @@
 8. Применить `Caddy` через zero-downtime reload.
 9. Выполнить Cloudflare DNS-операции.
 10. Сохранить итоговый статус операции:
-   - `success`
-   - `partial`
-   - `failed`
+
+- `success`
+- `partial`
+- `failed`
 
 Компенсации:
 

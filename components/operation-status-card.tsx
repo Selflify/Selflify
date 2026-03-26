@@ -1,7 +1,11 @@
 import { Badge, Box, Flex, Heading, Stack, Text } from "@chakra-ui/react";
 
 import type { SelflifyConfig } from "@/lib/config/schema";
-import { getRuntimeModeLabel, shouldMockCloudflare, shouldSkipCaddyReload } from "@/lib/system/runtime";
+import {
+  getRuntimeModeLabel,
+  shouldMockCloudflare,
+  shouldSkipCaddyReload,
+} from "@/lib/system/runtime";
 import { formatDateTime } from "@/lib/utils/format";
 
 type OperationStatusCardProps = {
@@ -80,19 +84,32 @@ export function OperationStatusCard({ config }: OperationStatusCardProps) {
       p={{ base: "5", md: "6" }}
       boxShadow="panel"
     >
-      <Flex justify="space-between" align={{ base: "flex-start", md: "center" }} gap="4" wrap="wrap">
+      <Flex
+        justify="space-between"
+        align={{ base: "flex-start", md: "center" }}
+        gap="4"
+        wrap="wrap"
+      >
         <Stack gap="2">
           <Text textTransform="uppercase" letterSpacing="0.18em" fontSize="xs" color="brand.300">
             Operations
           </Text>
-          <Heading size="md">{humanizeOperationLabel(config.operations.lastOperationLabel)}</Heading>
+          <Heading size="md">
+            {humanizeOperationLabel(config.operations.lastOperationLabel)}
+          </Heading>
           <Text color="muted" fontSize="sm">
             Last attempt: {formatDateTime(config.operations.lastAppliedAt)}
           </Text>
         </Stack>
 
         <Stack gap="2" align={{ base: "flex-start", md: "flex-end" }}>
-          <Badge colorPalette={getStatusColor(status)} variant="subtle" textTransform="capitalize" px="2.5" py="1">
+          <Badge
+            colorPalette={getStatusColor(status)}
+            variant="subtle"
+            textTransform="capitalize"
+            px="2.5"
+            py="1"
+          >
             {status}
           </Badge>
           <Badge
@@ -112,7 +129,9 @@ export function OperationStatusCard({ config }: OperationStatusCardProps) {
           mt="4"
           rounded="xl"
           borderWidth="1px"
-          borderColor={status === "failed" ? "rgba(255, 90, 111, 0.28)" : "rgba(255, 173, 84, 0.24)"}
+          borderColor={
+            status === "failed" ? "rgba(255, 90, 111, 0.28)" : "rgba(255, 173, 84, 0.24)"
+          }
           bg={status === "failed" ? "rgba(98, 18, 31, 0.22)" : "rgba(120, 72, 0, 0.18)"}
           px="4"
           py="3"

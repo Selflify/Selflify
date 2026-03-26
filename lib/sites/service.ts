@@ -2,10 +2,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 
 import type { SelflifyConfig, SiteConfig } from "@/lib/config/schema";
-import {
-  getEffectiveOrphanRoot,
-  getEffectivePreviewRoot,
-} from "@/lib/config/paths";
+import { getEffectiveOrphanRoot, getEffectivePreviewRoot } from "@/lib/config/paths";
 import { runCommand } from "@/lib/system/commands";
 import { formatBytes } from "@/lib/utils/format";
 
@@ -88,7 +85,10 @@ export function getDeployUrl(config: SelflifyConfig, site: SiteConfig, deployNam
   return `https://${deployName}.${site.slug}.${config.server.domain}`;
 }
 
-export async function ensureSiteDirectories(config: SelflifyConfig, site: SiteConfig): Promise<void> {
+export async function ensureSiteDirectories(
+  config: SelflifyConfig,
+  site: SiteConfig,
+): Promise<void> {
   const siteDir = getSiteDirectory(config, site);
   const mainDir = path.join(siteDir, site.mainBranch);
   const placeholderPath = path.join(mainDir, "index.html");
@@ -252,7 +252,10 @@ export function invalidateSiteCache(config: SelflifyConfig, site: SiteConfig): v
   sizeCache.delete(cacheKey(siteDir));
 }
 
-export async function listDeploys(config: SelflifyConfig, site: SiteConfig): Promise<DeploySummary[]> {
+export async function listDeploys(
+  config: SelflifyConfig,
+  site: SiteConfig,
+): Promise<DeploySummary[]> {
   const siteDir = getSiteDirectory(config, site);
   let entries: Array<{ name: string; isDirectory: boolean }> = [];
 
@@ -337,7 +340,11 @@ export async function getDiskUsage(config: SelflifyConfig): Promise<DiskUsageSum
   }
 }
 
-export async function deleteDeploy(config: SelflifyConfig, site: SiteConfig, deployName: string): Promise<void> {
+export async function deleteDeploy(
+  config: SelflifyConfig,
+  site: SiteConfig,
+  deployName: string,
+): Promise<void> {
   if (deployName === site.mainBranch) {
     throw new Error("The main branch deploy cannot be deleted.");
   }

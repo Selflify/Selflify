@@ -31,14 +31,21 @@ export default async function SettingsPage({ searchParams }: SettingsPageProps) 
       >
         <Heading size="lg">Global settings</Heading>
         <Text color="muted" mt="2">
-          Saving here rewrites the runtime config, regenerates Caddy routing and applies the updated state immediately.
+          Saving here rewrites the runtime config, regenerates Caddy routing and applies the updated
+          state immediately.
         </Text>
 
         <form action={saveSettingsAction}>
           <input type="hidden" name="configRevision" value={String(config.configRevision)} />
           <Stack gap="6">
             <SimpleGrid columns={{ base: 1, md: 2 }} gap="4">
-              <Input name="domain" defaultValue={config.server.domain} placeholder="Domain" required bg="rgba(255,255,255,0.04)" />
+              <Input
+                name="domain"
+                defaultValue={config.server.domain}
+                placeholder="Domain"
+                required
+                bg="rgba(255,255,255,0.04)"
+              />
               <Input
                 name="serverIp"
                 defaultValue={config.server.serverIp}
@@ -75,12 +82,21 @@ export default async function SettingsPage({ searchParams }: SettingsPageProps) 
             <Box rounded="xl" borderWidth="1px" borderColor="rgba(255,255,255,0.08)" px="4" py="4">
               <Text fontWeight="700">Cloudflare token</Text>
               <Text color="muted" mt="2" fontSize="sm">
-                {config.server.cloudflareApiToken ? "A token is already configured." : "No token is configured yet."}
+                {config.server.cloudflareApiToken
+                  ? "A token is already configured."
+                  : "No token is configured yet."}
               </Text>
               <Text color="muted" mt="1" fontSize="sm">
                 The saved token is never echoed back into the form.
               </Text>
-              <label style={{ display: "inline-flex", alignItems: "center", gap: "0.625rem", marginTop: "0.875rem" }}>
+              <label
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "0.625rem",
+                  marginTop: "0.875rem",
+                }}
+              >
                 <input type="checkbox" name="clearCloudflareToken" value="on" />
                 <Text as="span" fontSize="sm" color="whiteAlpha.900">
                   Clear the saved Cloudflare token on next save

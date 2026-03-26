@@ -19,7 +19,8 @@ export default async function AdminLayout({ children }: AdminLayoutProps) {
         <Stack gap="2">
           <Heading size="3xl">Selflify</Heading>
           <Text color="muted" maxW="3xl">
-            Manage site previews, generated Caddy routing and deploy storage from a single filesystem-backed admin panel.
+            Manage site previews, generated Caddy routing and deploy storage from a single
+            filesystem-backed admin panel.
           </Text>
         </Stack>
         <OperationStatusCard config={config} />

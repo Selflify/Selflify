@@ -17,6 +17,19 @@ Implemented:
 - production `docker-compose.yml`
 - development `docker-compose.dev.yml`
 
+## Tooling
+
+Useful local commands:
+
+```bash
+npm run lint
+npm run lint:fix
+npm run format
+npm run format:check
+npm run test:run
+npm run test:coverage
+```
+
 ## Local development
 
 1. Install dependencies:

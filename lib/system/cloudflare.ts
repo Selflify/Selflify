@@ -9,11 +9,7 @@ type CloudflareResult = {
 
 const CLOUDFLARE_API = "https://api.cloudflare.com/client/v4";
 
-async function callCloudflare<T>(
-  token: string,
-  pathname: string,
-  init?: RequestInit,
-): Promise<T> {
+async function callCloudflare<T>(token: string, pathname: string, init?: RequestInit): Promise<T> {
   const response = await fetch(`${CLOUDFLARE_API}${pathname}`, {
     ...init,
     headers: {
@@ -31,7 +27,10 @@ async function callCloudflare<T>(
   const payload = (await response.json()) as CloudflareResult;
 
   if (!payload.ok) {
-    const details = payload.errors?.map((entry) => entry.message).filter(Boolean).join("; ");
+    const details = payload.errors
+      ?.map((entry) => entry.message)
+      .filter(Boolean)
+      .join("; ");
     throw new Error(details || "Cloudflare request failed.");
   }
 
@@ -100,9 +99,13 @@ async function deleteARecord(config: SelflifyConfig, zoneId: string, name: strin
 
   await Promise.all(
     records.map((record) =>
-      callCloudflare(config.server.cloudflareApiToken, `/zones/${zoneId}/dns_records/${record.id}`, {
-        method: "DELETE",
-      }),
+      callCloudflare(
+        config.server.cloudflareApiToken,
+        `/zones/${zoneId}/dns_records/${record.id}`,
+        {
+          method: "DELETE",
+        },
+      ),
     ),
   );
 }
@@ -124,7 +127,10 @@ export async function syncSiteDnsRecords(config: SelflifyConfig, site: SiteConfi
   await upsertARecord(config, zoneId, wildcardHost, config.server.serverIp);
 }
 
-export async function deleteSiteDnsRecords(config: SelflifyConfig, site: SiteConfig): Promise<void> {
+export async function deleteSiteDnsRecords(
+  config: SelflifyConfig,
+  site: SiteConfig,
+): Promise<void> {
   if (shouldMockCloudflare()) {
     return;
   }

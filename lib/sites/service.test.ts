@@ -6,11 +6,7 @@ import { afterEach, describe, expect, it } from "vitest";
 
 import { type SelflifyConfig, type SiteConfig } from "@/lib/config/schema";
 import { createDefaultConfig } from "@/lib/config/service";
-import {
-  deleteDeploy,
-  ensureSiteDirectories,
-  getSiteDirectory,
-} from "@/lib/sites/service";
+import { deleteDeploy, ensureSiteDirectories, getSiteDirectory } from "@/lib/sites/service";
 
 const tempDirs: string[] = [];
 
@@ -60,7 +56,11 @@ describe("site service", () => {
 
     await ensureSiteDirectories(config, site);
 
-    const placeholderPath = path.join(getSiteDirectory(config, site), site.mainBranch, "index.html");
+    const placeholderPath = path.join(
+      getSiteDirectory(config, site),
+      site.mainBranch,
+      "index.html",
+    );
     const placeholder = await fs.readFile(placeholderPath, "utf8");
 
     expect(placeholder).toContain("Selflify Placeholder");

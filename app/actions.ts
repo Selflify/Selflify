@@ -7,9 +7,17 @@ import { requireAdminSession } from "@/lib/auth/guards";
 import { ensureConfigOnDisk, isAdminConfigured } from "@/lib/config/service";
 import { siteSlugPattern, deployNamePattern, type SiteConfig } from "@/lib/config/schema";
 import { hashAdminPassword } from "@/lib/auth/passwords";
-import { deleteSiteDnsRecords, syncAllSiteDnsRecords, syncSiteDnsRecords } from "@/lib/system/cloudflare";
+import {
+  deleteSiteDnsRecords,
+  syncAllSiteDnsRecords,
+  syncSiteDnsRecords,
+} from "@/lib/system/cloudflare";
 import { hashPasswordWithCaddy } from "@/lib/system/caddy";
-import { ConfigConflictError, runConfigOperation, runTrackedSideEffectOperation } from "@/lib/operations";
+import {
+  ConfigConflictError,
+  runConfigOperation,
+  runTrackedSideEffectOperation,
+} from "@/lib/operations";
 import {
   deleteDeploy,
   deployDirectoryExists,
@@ -46,7 +54,12 @@ function redirectWith(pathname: string, kind: "notice" | "error", message: strin
   redirect(`${pathname}?${kind}=${encodeURIComponent(message)}`);
 }
 
-function createPreviewAuth(site: SiteConfig | null, login: string, password: string, hash: string | null) {
+function createPreviewAuth(
+  site: SiteConfig | null,
+  login: string,
+  password: string,
+  hash: string | null,
+) {
   if (!login) {
     return {
       enabled: false,
@@ -155,7 +168,12 @@ export async function createSiteAction(formData: FormData) {
           slug: payload.slug,
           name: payload.name,
           mainBranch: payload.mainBranch,
-          previewAuth: createPreviewAuth(null, payload.previewLogin, payload.previewPassword, previewHash),
+          previewAuth: createPreviewAuth(
+            null,
+            payload.previewLogin,
+            payload.previewPassword,
+            previewHash,
+          ),
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
         };
@@ -239,7 +257,12 @@ export async function updateSiteAction(siteSlug: string, formData: FormData) {
 
         site.name = payload.name;
         site.mainBranch = payload.mainBranch;
-        site.previewAuth = createPreviewAuth(site, payload.previewLogin, payload.previewPassword, previewHash);
+        site.previewAuth = createPreviewAuth(
+          site,
+          payload.previewLogin,
+          payload.previewPassword,
+          previewHash,
+        );
         site.updatedAt = new Date().toISOString();
         updatedSite = { ...site };
 

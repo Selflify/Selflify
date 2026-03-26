@@ -42,7 +42,8 @@ export default async function SiteDetailsPage({ params, searchParams }: SiteDeta
       >
         <Heading size="lg">Site settings</Heading>
         <Text color="muted" mt="2">
-          The site directory is derived from the slug and cannot drift away from the configured preview root.
+          The site directory is derived from the slug and cannot drift away from the configured
+          preview root.
         </Text>
 
         <form action={updateSiteAction.bind(null, site.slug)}>
@@ -50,7 +51,12 @@ export default async function SiteDetailsPage({ params, searchParams }: SiteDeta
           <Stack gap="4">
             <Input value={site.slug} readOnly bg="rgba(255,255,255,0.02)" />
             <Input name="name" defaultValue={site.name} required bg="rgba(255,255,255,0.04)" />
-            <Input name="mainBranch" defaultValue={site.mainBranch} required bg="rgba(255,255,255,0.04)" />
+            <Input
+              name="mainBranch"
+              defaultValue={site.mainBranch}
+              required
+              bg="rgba(255,255,255,0.04)"
+            />
             <Input
               name="previewLogin"
               defaultValue={site.previewAuth.login ?? ""}
@@ -84,11 +90,17 @@ export default async function SiteDetailsPage({ params, searchParams }: SiteDeta
         p={{ base: "5", md: "6" }}
         boxShadow="panel"
       >
-        <Flex justify="space-between" align={{ base: "flex-start", md: "center" }} gap="4" wrap="wrap">
+        <Flex
+          justify="space-between"
+          align={{ base: "flex-start", md: "center" }}
+          gap="4"
+          wrap="wrap"
+        >
           <Box>
             <Heading size="lg">Deploy inventory</Heading>
             <Text color="muted" mt="2">
-              Stable stays pinned on top. All preview deploys are sorted by latest modification time.
+              Stable stays pinned on top. All preview deploys are sorted by latest modification
+              time.
             </Text>
           </Box>
           <form action={deleteSiteAction.bind(null, site.slug)}>
@@ -109,7 +121,8 @@ export default async function SiteDetailsPage({ params, searchParams }: SiteDeta
             <Box rounded="xl" borderWidth="1px" borderColor="rgba(255,255,255,0.08)" px="4" py="4">
               <Heading size="sm">No deploy directories found</Heading>
               <Text color="muted" mt="2" fontSize="sm">
-                Selflify will show stable and preview deploys here as soon as files appear under the site directory.
+                Selflify will show stable and preview deploys here as soon as files appear under the
+                site directory.
               </Text>
             </Box>
           ) : null}
@@ -144,7 +157,11 @@ export default async function SiteDetailsPage({ params, searchParams }: SiteDeta
                 </a>
                 {!deploy.isMainBranch ? (
                   <form action={deleteDeployAction.bind(null, site.slug, deploy.name)}>
-                    <input type="hidden" name="configRevision" value={String(config.configRevision)} />
+                    <input
+                      type="hidden"
+                      name="configRevision"
+                      value={String(config.configRevision)}
+                    />
                     <FormSubmitButton
                       colorPalette="red"
                       variant="outline"

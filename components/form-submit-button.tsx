@@ -32,7 +32,7 @@ export function FormSubmitButton({
       }}
       {...props}
     >
-      {pending ? pendingText ?? children : children}
+      {pending ? (pendingText ?? children) : children}
     </Button>
   );
 }

@@ -31,27 +31,27 @@ const config = defineConfig({
           600: { value: "#a12141" },
           700: { value: "#7f1932" },
           800: { value: "#5b1023" },
-          900: { value: "#3a0815" }
+          900: { value: "#3a0815" },
         },
         canvas: {
           950: { value: "#070709" },
           900: { value: "#111116" },
           850: { value: "#17171d" },
           800: { value: "#1d1d26" },
-          700: { value: "#2a2a36" }
-        }
+          700: { value: "#2a2a36" },
+        },
       },
       fonts: {
         heading: { value: "var(--font-space-grotesk)" },
-        body: { value: "var(--font-manrope)" }
+        body: { value: "var(--font-manrope)" },
       },
       radii: {
         xl: { value: "1.25rem" },
-        "2xl": { value: "1.75rem" }
+        "2xl": { value: "1.75rem" },
       },
       shadows: {
-        panel: { value: "0 22px 60px rgba(0, 0, 0, 0.38)" }
-      }
+        panel: { value: "0 22px 60px rgba(0, 0, 0, 0.38)" },
+      },
     },
     semanticTokens: {
       colors: {
@@ -59,10 +59,10 @@ const config = defineConfig({
         muted: { value: "#8f90a0" },
         border: { value: "rgba(255,255,255,0.08)" },
         accent: { value: "#a12141" },
-        accentMuted: { value: "rgba(161,33,65,0.18)" }
-      }
-    }
-  }
+        accentMuted: { value: "rgba(161,33,65,0.18)" },
+      },
+    },
+  },
 });
 
 export const system = createSystem(defaultConfig, config);

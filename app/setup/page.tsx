@@ -49,7 +49,8 @@ export default async function SetupPage({ searchParams }: SetupPageProps) {
               Create the admin account
             </Heading>
             <Text color="muted" mt="2">
-              Selflify stores credentials in {config.server.domain} configuration files. This account is the only entry point to the panel.
+              Selflify stores credentials in {config.server.domain} configuration files. This
+              account is the only entry point to the panel.
             </Text>
           </Box>
 
