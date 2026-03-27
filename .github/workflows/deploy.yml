@@ -134,7 +134,6 @@ jobs:
             --exclude 'data/' \
             --exclude 'config/' \
             --exclude 'logs/' \
-            --exclude 'sites.json' \
             -e "ssh -p ${DEPLOY_PORT:-22}" \
             ./ "${DEPLOY_USER}@${DEPLOY_HOST}:${DEPLOY_PATH}/"
 

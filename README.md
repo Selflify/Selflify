@@ -232,16 +232,6 @@ What still happens in the UI after bootstrap:
 - create the first account
 - paste the Cloudflare API token during first-start setup
 
-## Config migration
-
-To migrate the old `sites.json` into the new config format:
-
-```bash
-yarn migrate:config
-```
-
-Use `--force` to overwrite an existing `selflify.config.json`.
-
 ## Cleanup job
 
 `cleanup-previews.sh` now reads `selflify.config.json`, removes stale preview directories for configured sites and purges orphaned site directories after TTL.

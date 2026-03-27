@@ -11,7 +11,6 @@ Use this file as the first-stop operational guide before making changes.
 - Use `yarn` only. Do not introduce `npm` or `pnpm` commands.
 - The app is built with `Next.js App Router`, `React 19`, `TypeScript`, `Chakra UI 3`, and `next-auth`.
 - The single source of truth is `selflify.config.json`.
-- `sites.json` is legacy migration input only. Do not build new runtime logic around it.
 - Prefer minimal, targeted changes. This project already has working runtime flows for config persistence, Caddy generation, backups, rollback, and cleanup.
 
 ## Key Runtime Facts
@@ -23,6 +22,7 @@ Use this file as the first-stop operational guide before making changes.
 - In dev compose, `selflify`, `caddy`, and `cleanup` run together; this is the only full-fidelity preview stack
 - In host-run dev mode, Caddy commands default to `docker exec selflify-dev-caddy caddy ...` unless `SELFLIFY_CADDY_BIN` is explicitly overridden
 - Caddy config is generated from app state, not hand-edited as the main control path
+- Legacy bash generators and `sites.json` are intentionally removed from the repo
 
 ## Important Files
 
@@ -35,6 +35,7 @@ Use this file as the first-stop operational guide before making changes.
 - `src/lib/sites/service.ts`: site/deploy filesystem operations and summaries
 - `src/lib/system/caddy.ts`: Caddyfile generation, validation, reload, password hashing
 - `src/lib/system/cloudflare.ts`: Cloudflare DNS sync adapter
+- `bootstrap/`: base templates and seeding logic for fresh servers
 - `cleanup-previews.sh`: stale preview/orphan cleanup script
 - `docker-compose.yml`: production stack
 - `docker-compose.dev.yml`: development stack

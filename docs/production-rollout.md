@@ -8,17 +8,7 @@
 - public DNS A record for `sendsay.dev` pointing to the server
 - `AUTH_SECRET` prepared for NextAuth sessions
 
-## 2. Migrate the existing config
-
-If the server still uses the legacy `sites.json`, convert it once:
-
-```bash
-yarn migrate:config
-```
-
-This creates `selflify.config.json`. After the migration, runtime should only use `selflify.config.json`.
-
-## 3. Prepare the runtime config
+## 2. Prepare the runtime config
 
 Check these fields in `selflify.config.json` before the first production launch:
 
@@ -33,7 +23,7 @@ Check these fields in `selflify.config.json` before the first production launch:
 
 If the config file contains an empty admin section, the first login will go through `/setup`.
 
-## 4. Prepare the environment
+## 3. Prepare the environment
 
 Create `.env` with at least:
 
@@ -50,7 +40,7 @@ SELFLIFY_CLEANUP_INTERVAL_SECONDS=86400
 SELFLIFY_BACKUP_KEEP=20
 ```
 
-## 5. Start the stack
+## 4. Start the stack
 
 ```bash
 docker compose up -d --build
@@ -62,14 +52,14 @@ The production stack includes:
 - `cleanup`
 - `caddy`
 
-## 6. First-launch flow
+## 5. First-launch flow
 
 1. Open `https://sendsay.dev/setup`
 2. Create the single admin account
 3. Sign in through `https://sendsay.dev/login`
 4. Open Settings and verify domain, server IP and Cloudflare token
 
-## 7. Smoke checklist
+## 6. Smoke checklist
 
 After the first launch, verify:
 
@@ -93,7 +83,7 @@ docker compose logs -f cleanup
 docker compose logs -f caddy
 ```
 
-## 8. Rollback plan
+## 7. Rollback plan
 
 If rollout fails after deployment:
 
@@ -105,7 +95,7 @@ docker compose down
 
 2. Restore the last known-good `selflify.config.json` backup from `.selflify/backups/config`
 3. Restore the last known-good `Caddyfile` backup from `.selflify/backups/caddy`
-4. Start the stack again or temporarily revert `sendsay.dev` to the previous root portal
+4. Start the stack again or temporarily switch traffic back to the previous setup
 
 If a single operation fails inside the running app, Selflify already keeps:
 
@@ -113,6 +103,6 @@ If a single operation fails inside the running app, Selflify already keeps:
 - caddy snapshots in `.selflify/backups/caddy`
 - failed operation status in `selflify.config.json`
 
-## 9. Known operational note
+## 8. Known operational note
 
 The current production build still emits one non-blocking Turbopack NFT warning around file-backed config path tracing. The build succeeds and the app runs, but this is still a small technical debt item worth cleaning up later.

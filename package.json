@@ -15,7 +15,6 @@
     "test:run": "vitest run",
     "test:coverage": "vitest run --coverage",
     "typecheck": "tsc --noEmit",
-    "migrate:config": "node ./scripts/migrate-to-selflify-config.mjs",
     "bootstrap:bundle": "node ./scripts/build-bootstrap-bundle.mjs",
     "landing:dev": "node ./scripts/serve-static.mjs ./landing 4173",
     "landing:build": "node ./scripts/build-landing.mjs"
