@@ -73,7 +73,7 @@ export function CreateSiteDialog({ configRevision }: CreateSiteDialogProps) {
                       bg="rgba(255,255,255,0.04)"
                     />
                   </FormField>
-                  <FormField label="Preview login" htmlFor="create-site-preview-login">
+                  <FormField label="Login" htmlFor="create-site-preview-login">
                     <Input
                       id="create-site-preview-login"
                       name="previewLogin"

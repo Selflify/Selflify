@@ -196,7 +196,7 @@ export default async function SiteDetailsPage({ params, searchParams }: SiteDeta
                   _hover={{ bg: "action.600" }}
                   pendingText="Saving site"
                 >
-                  Save site
+                  Save
                 </FormSubmitButton>
               </Stack>
             </form>
@@ -218,7 +218,7 @@ export default async function SiteDetailsPage({ params, searchParams }: SiteDeta
             <form id="site-preview-access-form" action={updateSitePreviewAccessAction.bind(null, site.slug)}>
               <input type="hidden" name="configRevision" value={String(config.configRevision)} />
               <Stack gap="4" mt="6">
-                <FormField label="Preview login" htmlFor="site-settings-preview-login">
+                <FormField label="Login" htmlFor="site-settings-preview-login">
                   <Input
                     id="site-settings-preview-login"
                     name="previewLogin"
@@ -268,7 +268,7 @@ export default async function SiteDetailsPage({ params, searchParams }: SiteDeta
                 _hover={{ bg: "action.600" }}
                 pendingText="Saving preview access"
               >
-                Save preview access
+                Save
               </FormSubmitButton>
               <FormSubmitButton
                 form="site-preview-access-reset-form"

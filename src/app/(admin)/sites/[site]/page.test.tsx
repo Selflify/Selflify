@@ -127,7 +127,7 @@ describe("site details page", () => {
 
     expect(html).toContain("Configuration");
     expect(html).toContain("Preview access");
-    expect(html).toContain("Preview login");
+    expect(html).toContain("Login");
     expect(html).toContain("Confirm password");
     expect(html).toContain("Danger zone");
     expect(html).toContain("Updated app.");
