@@ -11,6 +11,7 @@ import {
   getEffectiveSelflifyUpstream,
 } from "@/lib/config/paths";
 import { runCommand } from "@/lib/system/commands";
+import type { CaddyGateway, CommandRunner } from "@/lib/system/ports";
 import { isDevelopmentRuntime, shouldSkipCaddyReload } from "@/lib/system/runtime";
 
 function escapeCaddyLiteral(value: string): string {
@@ -99,11 +100,15 @@ export function resolveCaddyCommandAdminAddress(config: SelflifyConfig): string 
     : getEffectiveCaddyAdminAddress(config);
 }
 
-async function runCaddyCommand(config: SelflifyConfig, args: string[]): Promise<string> {
+async function runCaddyCommand(
+  config: SelflifyConfig,
+  args: string[],
+  commandRunner: CommandRunner,
+): Promise<string> {
   const spec = resolveCaddyCommand(config, args);
 
   try {
-    return await runCommand(spec.command, spec.args);
+    return await commandRunner(spec.command, spec.args);
   } catch (error) {
     if (spec.containerized) {
       throw new Error(
@@ -217,44 +222,56 @@ ${withDevScheme(config.server.domain)} {
 ${siteBlocks}`.trim();
 }
 
+export function createCaddyGateway(commandRunner: CommandRunner = runCommand): CaddyGateway {
+  return {
+    async writeGeneratedConfig(config) {
+      const target = getEffectiveCaddyConfigPath(config);
+      const rendered = generateCaddyfile(config);
+
+      await fs.mkdir(path.dirname(target), { recursive: true });
+      await fs.writeFile(target, `${rendered}\n`, "utf8");
+
+      return target;
+    },
+    async validateConfig(config) {
+      const configPath = resolveCaddyCommandConfigPath(config);
+
+      await runCaddyCommand(config, ["validate", "--config", configPath, "--adapter", "caddyfile"], commandRunner);
+    },
+    async reload(config) {
+      if (shouldSkipCaddyReload()) {
+        return;
+      }
+
+      const configPath = resolveCaddyCommandConfigPath(config);
+      const adminAddress = resolveCaddyCommandAdminAddress(config);
+
+      await runCaddyCommand(
+        config,
+        ["reload", "--address", adminAddress, "--config", configPath, "--adapter", "caddyfile"],
+        commandRunner,
+      );
+    },
+    async hashPassword(config, password) {
+      return runCaddyCommand(config, ["hash-password", "--plaintext", password], commandRunner);
+    },
+  };
+}
+
+export const caddyGateway = createCaddyGateway();
+
 export async function writeGeneratedCaddyfile(config: SelflifyConfig): Promise<string> {
-  const target = getEffectiveCaddyConfigPath(config);
-  const rendered = generateCaddyfile(config);
-
-  await fs.mkdir(path.dirname(target), { recursive: true });
-  await fs.writeFile(target, `${rendered}\n`, "utf8");
-
-  return target;
+  return caddyGateway.writeGeneratedConfig(config);
 }
 
 export async function validateCaddyfile(config: SelflifyConfig): Promise<void> {
-  const configPath = resolveCaddyCommandConfigPath(config);
-
-  await runCaddyCommand(config, ["validate", "--config", configPath, "--adapter", "caddyfile"]);
+  await caddyGateway.validateConfig(config);
 }
 
 export async function reloadCaddy(config: SelflifyConfig): Promise<void> {
-  if (shouldSkipCaddyReload()) {
-    return;
-  }
-
-  const configPath = resolveCaddyCommandConfigPath(config);
-  const adminAddress = resolveCaddyCommandAdminAddress(config);
-
-  await runCaddyCommand(config, [
-    "reload",
-    "--address",
-    adminAddress,
-    "--config",
-    configPath,
-    "--adapter",
-    "caddyfile",
-  ]);
+  await caddyGateway.reload(config);
 }
 
-export async function hashPasswordWithCaddy(
-  config: SelflifyConfig,
-  password: string,
-): Promise<string> {
-  return runCaddyCommand(config, ["hash-password", "--plaintext", password]);
+export async function hashPasswordWithCaddy(config: SelflifyConfig, password: string): Promise<string> {
+  return caddyGateway.hashPassword(config, password);
 }

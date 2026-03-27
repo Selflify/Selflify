@@ -13,8 +13,8 @@ import {
   removeSiteDirectory,
   restoreSiteFromOrphanStorage,
 } from "@/lib/sites/service";
-import { deleteSiteDnsRecords, syncSiteDnsRecords } from "@/lib/system/cloudflare";
-import { hashPasswordWithCaddy } from "@/lib/system/caddy";
+import { dnsGateway } from "@/lib/system/cloudflare";
+import { caddyGateway } from "@/lib/system/caddy";
 
 export { ConfigConflictError };
 
@@ -83,7 +83,7 @@ export async function createSite(
 
       const previewHash =
         payload.previewLogin && payload.previewPassword
-          ? await hashPasswordWithCaddy(draft, payload.previewPassword)
+          ? await caddyGateway.hashPassword(draft, payload.previewPassword)
           : null;
       const site: SiteConfig = {
         slug: payload.slug,
@@ -117,7 +117,7 @@ export async function createSite(
     },
     afterApply: async (config) => {
       if (!createdSite) return;
-      await syncSiteDnsRecords(config, createdSite);
+      await dnsGateway.syncSiteRecords(config, createdSite);
     },
   });
 }
@@ -145,7 +145,7 @@ export async function updateSite(
 
       const previewHash =
         payload.previewLogin && payload.previewPassword
-          ? await hashPasswordWithCaddy(draft, payload.previewPassword)
+          ? await caddyGateway.hashPassword(draft, payload.previewPassword)
           : null;
 
       site.name = payload.name;
@@ -183,7 +183,7 @@ export async function updateSite(
     },
     afterApply: async (config) => {
       if (!updatedSite) return;
-      await syncSiteDnsRecords(config, updatedSite);
+      await dnsGateway.syncSiteRecords(config, updatedSite);
     },
   });
 }
@@ -220,7 +220,7 @@ export async function deleteSite(siteSlug: string, expectedRevision?: number): P
     },
     afterApply: async (config) => {
       if (!removedSite) return;
-      await deleteSiteDnsRecords(config, removedSite);
+      await dnsGateway.deleteSiteRecords(config, removedSite);
     },
   });
 }

@@ -18,8 +18,19 @@ import { ensureSiteDirectories } from "@/lib/sites/service";
 import { syncAllSiteDnsRecords, syncSiteDnsRecords } from "@/lib/system/cloudflare";
 import { hashPasswordWithCaddy } from "@/lib/system/caddy";
 
-const { redirectMock } = vi.hoisted(() => ({
+const { redirectMock, dnsGatewayMock, caddyGatewayMock } = vi.hoisted(() => ({
   redirectMock: vi.fn(),
+  dnsGatewayMock: {
+    syncAllSiteRecords: vi.fn(),
+    syncSiteRecords: vi.fn(),
+    deleteSiteRecords: vi.fn(),
+  },
+  caddyGatewayMock: {
+    writeGeneratedConfig: vi.fn(),
+    validateConfig: vi.fn(),
+    reload: vi.fn(),
+    hashPassword: vi.fn(),
+  },
 }));
 
 vi.mock("next/navigation", () => ({
@@ -81,8 +92,10 @@ vi.mock("@/lib/system/cloudflare", async () => {
 
   return {
     ...actual,
-    syncAllSiteDnsRecords: vi.fn(),
-    syncSiteDnsRecords: vi.fn(),
+    dnsGateway: dnsGatewayMock,
+    syncAllSiteDnsRecords: dnsGatewayMock.syncAllSiteRecords,
+    syncSiteDnsRecords: dnsGatewayMock.syncSiteRecords,
+    deleteSiteDnsRecords: dnsGatewayMock.deleteSiteRecords,
   };
 });
 
@@ -93,7 +106,8 @@ vi.mock("@/lib/system/caddy", async () => {
 
   return {
     ...actual,
-    hashPasswordWithCaddy: vi.fn(),
+    caddyGateway: caddyGatewayMock,
+    hashPasswordWithCaddy: caddyGatewayMock.hashPassword,
   };
 });
 

@@ -1,6 +1,6 @@
 import { hashAdminPassword } from "@/lib/auth/passwords";
 import { runConfigOperation } from "@/lib/operations";
-import { syncAllSiteDnsRecords } from "@/lib/system/cloudflare";
+import { dnsGateway } from "@/lib/system/cloudflare";
 
 export type SaveServerSettingsInput = {
   domain: string;
@@ -26,7 +26,7 @@ export async function saveServerSettings(
       };
     },
     afterApply: async (config) => {
-      await syncAllSiteDnsRecords(config);
+      await dnsGateway.syncAllSiteRecords(config);
     },
   });
 }
@@ -74,7 +74,7 @@ export async function saveCloudflareToken(
       };
     },
     afterApply: async (config) => {
-      await syncAllSiteDnsRecords(config);
+      await dnsGateway.syncAllSiteRecords(config);
     },
   });
 }

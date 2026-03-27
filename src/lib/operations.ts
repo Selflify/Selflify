@@ -6,7 +6,7 @@ import path from "node:path";
 import { writeOperationBackups } from "@/lib/config/backups";
 import type { SelflifyConfig } from "@/lib/config/schema";
 import { readSelflifyConfig, writeSelflifyConfig } from "@/lib/config/service";
-import { reloadCaddy, validateCaddyfile, writeGeneratedCaddyfile } from "@/lib/system/caddy";
+import { caddyGateway } from "@/lib/system/caddy";
 
 const LOCK_PATH =
   process.env.SELFLIFY_LOCK_PATH ?? path.join(os.tmpdir(), "selflify.operation.lock");
@@ -218,11 +218,11 @@ export async function runConfigOperation<T>({
         previousConfig: current,
         previousCaddyContents,
       });
-      await writeGeneratedCaddyfile(nextConfig);
-      await validateCaddyfile(nextConfig);
+      await caddyGateway.writeGeneratedConfig(nextConfig);
+      await caddyGateway.validateConfig(nextConfig);
       await writeSelflifyConfig(nextConfig);
       configWritten = true;
-      await reloadCaddy(nextConfig);
+      await caddyGateway.reload(nextConfig);
     } catch (error) {
       if (configWritten) {
         await writeSelflifyConfig(current);
@@ -236,7 +236,7 @@ export async function runConfigOperation<T>({
 
       if (configWritten) {
         try {
-          await reloadCaddy(current);
+          await caddyGateway.reload(current);
         } catch {
           // Ignore secondary rollback errors here. The original error is more actionable.
         }
