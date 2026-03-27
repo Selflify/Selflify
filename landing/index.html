@@ -44,8 +44,8 @@
             <p class="eyebrow">Filesystem-backed preview control for static SPAs</p>
             <h1>Run Netlify-like preview flows on your own server.</h1>
             <p class="hero-lead">
-              Selflify sits on top of your existing `/var/www`, generates Caddy routing, syncs
-              Cloudflare DNS and gives you one admin panel for stable and preview deploys.
+              Selflify turns your existing preview directories into a manageable control surface:
+              one panel for sites, deploys, auth and runtime settings on your own server.
             </p>
 
             <div class="hero-actions">
@@ -55,8 +55,8 @@
 
             <ul class="hero-points">
               <li>No database, no control-plane lock-in, no hidden state.</li>
-              <li>Built around files, directories, generated config and safe reloads.</li>
-              <li>Ready for one-command server bootstrap and GitHub-driven rollout.</li>
+              <li>Per-site deploy visibility, preview protection and delete flows in one place.</li>
+              <li>Ready for server bootstrap, GitHub rollout and local self-hosted operation.</li>
             </ul>
           </section>
 
@@ -96,40 +96,40 @@
             <p class="eyebrow">Feature set</p>
             <h2>Everything stays close to the server reality.</h2>
             <p>
-              Selflify avoids “platform magic”. It works directly with the same files, domains and
-              runtime processes that already exist on your box.
+              Selflify stays intentionally literal: the panel reflects what is on disk, what Caddy
+              serves and which records point traffic at the box.
             </p>
           </div>
 
           <div class="feature-grid">
             <article class="feature-card">
               <h3>Single source of truth</h3>
-              <p>`selflify.config.json` drives UI, DNS sync, generated Caddy config and cleanup jobs.</p>
+              <p>`selflify.config.json` keeps panel state, site definitions and operational metadata together.</p>
             </article>
 
             <article class="feature-card">
               <h3>Zero-downtime config apply</h3>
-              <p>Changes validate and reload through Caddy admin API instead of brute-force container restarts.</p>
+              <p>Changes validate and reload through the Caddy admin API instead of brute-force restarts.</p>
             </article>
 
             <article class="feature-card">
               <h3>Preview auth built in</h3>
-              <p>Set preview login/password in the panel. Under the hood Selflify uses `caddy hash-password`.</p>
+              <p>Set preview login and password in the panel, with `caddy hash-password` handled under the hood.</p>
             </article>
 
             <article class="feature-card">
               <h3>Cloudflare-aware</h3>
-              <p>Create sites and keep wildcard DNS aligned with the server IP without manual dashboard work.</p>
+              <p>Create sites and keep wildcard DNS aligned with the configured server IP without manual clicks.</p>
             </article>
 
             <article class="feature-card">
-              <h3>Filesystem-first deploy model</h3>
-              <p>Stable and preview folders under `/var/www` are the deploy inventory. No extra storage layer.</p>
+              <h3>Deploy inventory from disk</h3>
+              <p>Stable and preview folders under `/var/www` become a readable deploy list with size and status.</p>
             </article>
 
             <article class="feature-card">
-              <h3>Operational safety</h3>
-              <p>Revision checks, snapshots, orphan storage and cleanup tasks keep mutations disciplined.</p>
+              <h3>Operational guardrails</h3>
+              <p>Revision checks, snapshots and orphan cleanup keep destructive actions disciplined.</p>
             </article>
           </div>
         </section>
@@ -180,8 +180,8 @@
             <p class="eyebrow">Bootstrap</p>
             <h2>Fresh server to running panel in one command.</h2>
             <p>
-              The installer downloads a prepared bundle, installs Docker, writes baseline runtime
-              files and starts the production compose stack.
+              The installer prepares the host OS and leaves you with a running stack plus editable
+              runtime files in the project directory.
             </p>
           </div>
 
@@ -198,18 +198,18 @@
 
           <div class="bootstrap-notes">
             <article class="note-card">
-              <h3>What gets installed</h3>
-              <p>Docker Engine, Docker Compose plugin, production compose files, baseline config and startup env.</p>
+              <h3>Host bootstrap</h3>
+              <p>Docker, the Compose plugin and the production project files are placed on the server.</p>
             </article>
 
             <article class="note-card">
-              <h3>What still happens in UI</h3>
-              <p>The first login, Cloudflare token, site CRUD and preview auth are still managed through Selflify itself.</p>
+              <h3>First-time setup</h3>
+              <p>After bootstrap you finish setup in the UI: account, domain settings, token and site management.</p>
             </article>
 
             <article class="note-card">
-              <h3>What stays editable</h3>
-              <p>The landing is just static files, so you can tweak copy, layout and publish `dist/landing` to GitHub Pages.</p>
+              <h3>Static landing</h3>
+              <p>The marketing site stays separate, so you can edit it locally and publish `dist/landing` to GitHub Pages.</p>
             </article>
           </div>
         </section>
