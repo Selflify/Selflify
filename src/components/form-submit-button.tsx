@@ -128,11 +128,9 @@ export function FormSubmitButton({
 
               <Dialog.Footer pt="0">
                 <Flex w="full" justify="flex-end" gap="3" wrap="nowrap">
-                  <Dialog.CloseTrigger asChild>
-                    <Button type="button" variant="outline" flexShrink={0}>
-                      Cancel
-                    </Button>
-                  </Dialog.CloseTrigger>
+                  <Button type="button" variant="outline" flexShrink={0} onClick={() => setOpen(false)}>
+                    Cancel
+                  </Button>
                   <Button
                     {...buttonProps}
                     type="button"

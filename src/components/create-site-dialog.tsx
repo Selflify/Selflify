@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { Button, Dialog, Input, Portal, Stack, Text } from "@chakra-ui/react";
 
 import { createSiteAction } from "@/app/actions";
@@ -11,8 +12,10 @@ type CreateSiteDialogProps = {
 };
 
 export function CreateSiteDialog({ configRevision }: CreateSiteDialogProps) {
+  const [open, setOpen] = useState(false);
+
   return (
-    <Dialog.Root size="xl">
+    <Dialog.Root size="xl" open={open} onOpenChange={(details) => setOpen(details.open)}>
       <Dialog.Trigger asChild>
         <Button bg="action.500" color="white" _hover={{ bg: "action.600" }}>
           Create site
@@ -95,11 +98,9 @@ export function CreateSiteDialog({ configRevision }: CreateSiteDialogProps) {
               </Dialog.Body>
 
               <Dialog.Footer pt="0" gap="3">
-                <Dialog.CloseTrigger asChild>
-                  <Button type="button" variant="outline">
-                    Cancel
-                  </Button>
-                </Dialog.CloseTrigger>
+                <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+                  Cancel
+                </Button>
                 <FormSubmitButton
                   bg="action.500"
                   color="white"
