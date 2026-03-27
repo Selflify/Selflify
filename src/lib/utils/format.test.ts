@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { formatBytes, formatDateTime, slugToLabel } from "@/lib/utils/format";
+import { formatBytes, formatDateTime, formatSiteName, slugToLabel } from "@/lib/utils/format";
 
 describe("format helpers", () => {
   it("formats byte counts across units", () => {
@@ -18,5 +18,11 @@ describe("format helpers", () => {
   it("turns slugs into labels", () => {
     expect(slugToLabel("my-app")).toBe("My App");
     expect(slugToLabel("preview-control")).toBe("Preview Control");
+  });
+
+  it("formats site names with a leading capital letter", () => {
+    expect(formatSiteName("forms")).toBe("Forms");
+    expect(formatSiteName("Forms")).toBe("Forms");
+    expect(formatSiteName("")).toBe("");
   });
 });

@@ -46,7 +46,7 @@ describe("sites page", () => {
     vi.mocked(getAllSiteSummaries).mockResolvedValue([
       {
         slug: "app",
-        name: "App",
+        name: "app",
         mainBranch: "stable",
         dir: "/var/www/app",
         totalSizeBytes: 2048,
@@ -72,6 +72,7 @@ describe("sites page", () => {
     expect(html).toContain("Sites");
     expect(html).toContain("Site inventory");
     expect(html).toContain("App");
+    expect(html).not.toContain(">app<");
     expect(html).toContain("app.example.dev");
     expect(html).toContain("/var/www/app");
     expect(html).toContain('href="/sites/app"');

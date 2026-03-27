@@ -15,6 +15,7 @@ import {
 } from "@/lib/sites/service";
 import { dnsGateway } from "@/lib/system/cloudflare";
 import { caddyGateway } from "@/lib/system/caddy";
+import { formatSiteName } from "@/lib/utils/format";
 
 export { ConfigConflictError };
 
@@ -89,7 +90,7 @@ export async function createSite(
           : null;
       const site: SiteConfig = {
         slug: payload.slug,
-        name: payload.name,
+        name: formatSiteName(payload.name),
         mainBranch: payload.mainBranch,
         previewAuth: createPreviewAuth(
           null,
@@ -145,7 +146,7 @@ export async function updateSite(
 
       previousMainBranch = site.mainBranch;
 
-      site.name = payload.name;
+      site.name = formatSiteName(payload.name);
       site.mainBranch = payload.mainBranch;
       site.updatedAt = new Date().toISOString();
       updatedSite = { ...site };

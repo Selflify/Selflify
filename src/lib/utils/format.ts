@@ -30,3 +30,11 @@ export function slugToLabel(slug: string): string {
     .map((part) => part.slice(0, 1).toUpperCase() + part.slice(1))
     .join(" ");
 }
+
+export function formatSiteName(name: string): string {
+  if (!name) {
+    return "";
+  }
+
+  return name.slice(0, 1).toUpperCase() + name.slice(1);
+}

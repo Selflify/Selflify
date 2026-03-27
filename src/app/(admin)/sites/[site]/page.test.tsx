@@ -45,7 +45,7 @@ describe("site details page", () => {
     config.sites = [
       {
         slug: "app",
-        name: "App",
+        name: "app",
         mainBranch: "stable",
         previewAuth: {
           enabled: false,
@@ -88,6 +88,7 @@ describe("site details page", () => {
     });
     const html = renderWithProviders(page);
 
+    expect(html).toContain("App");
     expect(html).toContain("Deploy inventory");
     expect(html).toContain("pr-42");
     expect(html).toContain("https://pr-42.app.example.dev");
@@ -100,7 +101,7 @@ describe("site details page", () => {
     config.sites = [
       {
         slug: "app",
-        name: "App",
+        name: "app",
         mainBranch: "stable",
         previewAuth: {
           enabled: true,
@@ -127,6 +128,8 @@ describe("site details page", () => {
     });
     const html = renderWithProviders(page);
 
+    expect(html).toContain("App");
+    expect(html).toContain('value="App"');
     expect(html).toContain("Configuration");
     expect(html).toContain("Preview access");
     expect(html).toContain("Login");

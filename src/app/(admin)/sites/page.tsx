@@ -6,7 +6,7 @@ import { CreateSiteDialog } from "@/components/create-site-dialog";
 import { MetricCard } from "@/components/metric-card";
 import { requireAdminSession } from "@/lib/auth/guards";
 import { getAllSiteSummaries, getDiskUsage } from "@/lib/sites/service";
-import { formatBytes } from "@/lib/utils/format";
+import { formatBytes, formatSiteName } from "@/lib/utils/format";
 
 type SitesPageProps = {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
@@ -115,7 +115,7 @@ export default async function SitesPage({ searchParams }: SitesPageProps) {
                       transition="color 0.2s ease"
                       _hover={{ color: "brand.300" }}
                     >
-                      {site.name}
+                      {formatSiteName(site.name)}
                     </Heading>
                   </Link>
                   <Text color="muted" mt="1">

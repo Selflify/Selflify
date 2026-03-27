@@ -320,6 +320,7 @@ describe("server actions", () => {
 
         const config = createDefaultConfig();
         const outcome = await mutate(config);
+        expect(outcome.config.sites.at(-1)?.name).toBe("App");
 
         await beforePersist?.(outcome.config);
         await afterApply?.(outcome.config);
@@ -330,7 +331,7 @@ describe("server actions", () => {
     const formData = new FormData();
     formData.set("configRevision", "2");
     formData.set("slug", "app");
-    formData.set("name", "App");
+    formData.set("name", "app");
     formData.set("mainBranch", "stable");
     formData.set("previewLogin", "preview-user");
     formData.set("previewPassword", "preview-secret");
@@ -375,11 +376,32 @@ describe("server actions", () => {
       config: { configRevision: 2 },
       session: { user: { name: "owner" } },
     } as never);
-    vi.mocked(runConfigOperation).mockResolvedValue(undefined as never);
+    vi.mocked(runConfigOperation).mockImplementation(async ({ mutate }) => {
+      const config = createDefaultConfig();
+      config.sites = [
+        {
+          slug: "app",
+          name: "app",
+          mainBranch: "stable",
+          previewAuth: {
+            enabled: false,
+            login: null,
+            passwordHash: null,
+          },
+          createdAt: "2026-03-27T09:00:00.000Z",
+          updatedAt: "2026-03-27T09:00:00.000Z",
+        },
+      ];
+
+      const outcome = await mutate(config);
+      expect(outcome.config.sites[0]?.name).toBe("App");
+
+      return undefined as never;
+    });
 
     const formData = new FormData();
     formData.set("configRevision", "2");
-    formData.set("name", "App");
+    formData.set("name", "app");
     formData.set("mainBranch", "stable");
 
     await updateSiteAction("app", formData);

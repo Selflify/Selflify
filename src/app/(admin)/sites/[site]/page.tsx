@@ -13,7 +13,7 @@ import { FormField } from "@/components/form-field";
 import { FormSubmitButton } from "@/components/form-submit-button";
 import { requireAdminSession } from "@/lib/auth/guards";
 import { listDeploys } from "@/lib/sites/service";
-import { formatDateTime } from "@/lib/utils/format";
+import { formatDateTime, formatSiteName } from "@/lib/utils/format";
 
 type SiteDetailsPageProps = {
   params: Promise<{ site: string }>;
@@ -34,6 +34,7 @@ export default async function SiteDetailsPage({ params, searchParams }: SiteDeta
   const notice = typeof queries.notice === "string" ? queries.notice : "";
   const error = typeof queries.error === "string" ? queries.error : "";
   const view = queries.view === "configuration" ? "configuration" : "deploys";
+  const siteDisplayName = formatSiteName(site.name);
 
   return (
     <Stack gap="8">
@@ -48,7 +49,7 @@ export default async function SiteDetailsPage({ params, searchParams }: SiteDeta
         boxShadow="panel"
       >
         <Box>
-          <Heading size="lg">{site.name}</Heading>
+          <Heading size="lg">{siteDisplayName}</Heading>
           <Text color="muted" mt="2">
             {site.slug}.{config.server.domain} · {site.mainBranch}
           </Text>
@@ -184,7 +185,7 @@ export default async function SiteDetailsPage({ params, searchParams }: SiteDeta
                   <Input
                     id="site-settings-name"
                     name="name"
-                    defaultValue={site.name}
+                    defaultValue={siteDisplayName}
                     required
                     bg="rgba(255,255,255,0.04)"
                   />
@@ -320,9 +321,9 @@ export default async function SiteDetailsPage({ params, searchParams }: SiteDeta
                 pendingText="Deleting site"
                 confirmMessage={`Delete ${site.slug} from config and move its files to orphan storage?`}
                 confirmTitle="Delete site"
-                confirmInputLabel={`Type "${site.name}" to confirm deletion`}
-                confirmInputPlaceholder={site.name}
-                confirmInputValue={site.name}
+                confirmInputLabel={`Type "${siteDisplayName}" to confirm deletion`}
+                confirmInputPlaceholder={siteDisplayName}
+                confirmInputValue={siteDisplayName}
               >
                 Delete site
               </FormSubmitButton>
