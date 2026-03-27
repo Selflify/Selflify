@@ -129,11 +129,7 @@ jobs:
             --exclude '.dev/' \
             --exclude '.selflify/' \
             --exclude '.env' \
-            --exclude 'selflify.config.json' \
-            --exclude 'Caddyfile' \
-            --exclude 'data/' \
-            --exclude 'config/' \
-            --exclude 'logs/' \
+            --exclude 'runtime/' \
             -e "ssh -p ${DEPLOY_PORT:-22}" \
             ./ "${DEPLOY_USER}@${DEPLOY_HOST}:${DEPLOY_PATH}/"
 
@@ -166,7 +162,7 @@ jobs:
           set -euo pipefail
           cd "${DEPLOY_PATH}"
 
-          mkdir -p data config logs
+          mkdir -p runtime/data runtime/config runtime/logs
 
           if [ ! -f bootstrap/seed-runtime-files.py ]; then
             echo "bootstrap/seed-runtime-files.py is missing in the deployed project." >&2
@@ -180,13 +176,13 @@ jobs:
             --caddy-email "${SELFLIFY_CADDY_EMAIL}" \
             --session-secret "${AUTH_SECRET}"
 
-          if [ ! -f selflify.config.json ]; then
-            echo "selflify.config.json is still missing after bootstrap seeding." >&2
+          if [ ! -f runtime/selflify.config.json ]; then
+            echo "runtime/selflify.config.json is still missing after bootstrap seeding." >&2
             exit 1
           fi
 
-          if [ ! -f Caddyfile ]; then
-            echo "Caddyfile is still missing after bootstrap seeding." >&2
+          if [ ! -f runtime/Caddyfile ]; then
+            echo "runtime/Caddyfile is still missing after bootstrap seeding." >&2
             exit 1
           fi
 

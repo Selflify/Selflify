@@ -7,13 +7,13 @@ services:
     restart: unless-stopped
     environment:
       AUTH_SECRET: ${AUTH_SECRET}
-      SELFLIFY_CONFIG_PATH: /workspace/selflify.config.json
-      SELFLIFY_CADDY_CONFIG_PATH: /workspace/Caddyfile
+      SELFLIFY_CONFIG_PATH: /workspace/runtime/selflify.config.json
+      SELFLIFY_CADDY_CONFIG_PATH: /workspace/runtime/Caddyfile
       SELFLIFY_CADDY_BIN: /usr/bin/caddy
       SELFLIFY_CADDY_ADMIN_ADDRESS: http://caddy:2019
     volumes:
-      - ./selflify.config.json:/workspace/selflify.config.json
-      - ./Caddyfile:/workspace/Caddyfile
+      - ./runtime/selflify.config.json:/workspace/runtime/selflify.config.json
+      - ./runtime/Caddyfile:/workspace/runtime/Caddyfile
       - /var/www:/var/www
     expose:
       - "3000"
@@ -32,12 +32,12 @@ services:
       - -lc
       - while true; do yarn cleanup:run; sleep "${SELFLIFY_CLEANUP_INTERVAL_SECONDS:-86400}"; done
     environment:
-      SELFLIFY_CONFIG_PATH: /workspace/selflify.config.json
+      SELFLIFY_CONFIG_PATH: /workspace/runtime/selflify.config.json
       SELFLIFY_PREVIEW_TTL_DAYS: ${SELFLIFY_PREVIEW_TTL_DAYS:-30}
       SELFLIFY_ORPHAN_TTL_DAYS: ${SELFLIFY_ORPHAN_TTL_DAYS:-30}
       SELFLIFY_CLEANUP_INTERVAL_SECONDS: ${SELFLIFY_CLEANUP_INTERVAL_SECONDS:-86400}
     volumes:
-      - ./selflify.config.json:/workspace/selflify.config.json
+      - ./runtime/selflify.config.json:/workspace/runtime/selflify.config.json
       - /var/www:/var/www
 
   caddy:
@@ -52,10 +52,10 @@ services:
       - "80:80"
       - "443:443"
     volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile
-      - ./data:/data
-      - ./config:/config
-      - ./logs:/var/log/caddy
+      - ./runtime/Caddyfile:/etc/caddy/Caddyfile
+      - ./runtime/data:/data
+      - ./runtime/config:/config
+      - ./runtime/logs:/var/log/caddy
       - /var/www:/var/www
     expose:
       - "2019"

@@ -10,7 +10,7 @@
 
 ## 2. Prepare the runtime config
 
-Check these fields in `selflify.config.json` before the first production launch:
+Check these fields in `runtime/selflify.config.json` before the first production launch:
 
 - `server.domain`
 - `server.serverIp`
@@ -68,9 +68,9 @@ After the first launch, verify:
 - Sites overview loads site inventory and disk stats
 - existing stable host opens, for example `https://app.sendsay.dev`
 - existing preview host opens, for example `https://pr-6825.app.sendsay.dev`
-- creating a site writes to `selflify.config.json`
+- creating a site writes to `runtime/selflify.config.json`
 - creating a site creates `/var/www/<site>/<main-branch>/index.html`
-- `Caddyfile` changes are applied without restarting the whole stack
+- `runtime/Caddyfile` changes are applied without restarting the whole stack
 - Cloudflare DNS records are created or updated as expected
 - cleanup worker is running
 
@@ -93,15 +93,15 @@ If rollout fails after deployment:
 docker compose down
 ```
 
-2. Restore the last known-good `selflify.config.json` backup from `.selflify/backups/config`
-3. Restore the last known-good `Caddyfile` backup from `.selflify/backups/caddy`
+2. Restore the last known-good `runtime/selflify.config.json` backup from `.selflify/backups/config`
+3. Restore the last known-good `runtime/Caddyfile` backup from `.selflify/backups/caddy`
 4. Start the stack again or temporarily switch traffic back to the previous setup
 
 If a single operation fails inside the running app, Selflify already keeps:
 
 - config snapshots in `.selflify/backups/config`
 - caddy snapshots in `.selflify/backups/caddy`
-- failed operation status in `selflify.config.json`
+- failed operation status in `runtime/selflify.config.json`
 
 ## 8. Known operational note
 

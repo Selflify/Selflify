@@ -84,7 +84,9 @@ describe("login page", () => {
     const html = renderWithProviders(page);
 
     expect(html).toContain("Sign in");
-    expect(html).toContain("Access the deployment control panel for sendsay.dev.");
+    expect(html).toContain(
+      `Access the deployment control panel for ${config.server.domain}.`,
+    );
     expect(html).toContain("Signed out.");
     expect(html).toContain("Invalid credentials.");
     expect(html).toContain("LOGIN_FORM");

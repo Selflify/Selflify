@@ -217,7 +217,10 @@ $SUDO chown "$(id -u):$(id -g)" "${INSTALL_DIR}"
 log "Extracting bundle to ${INSTALL_DIR}"
 tar -xzf "${ARCHIVE_PATH}" --strip-components=1 -C "${INSTALL_DIR}"
 
-mkdir -p "${INSTALL_DIR}/data" "${INSTALL_DIR}/config" "${INSTALL_DIR}/logs"
+mkdir -p \
+  "${INSTALL_DIR}/runtime/data" \
+  "${INSTALL_DIR}/runtime/config" \
+  "${INSTALL_DIR}/runtime/logs"
 
 write_runtime_templates "${INSTALL_DIR}" "${DOMAIN}" "${SERVER_IP}" "${CADDY_EMAIL}" "${AUTH_SECRET_VALUE}"
 write_env_file "${INSTALL_DIR}" "${AUTH_SECRET_VALUE}"

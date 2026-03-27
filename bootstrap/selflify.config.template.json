@@ -14,7 +14,7 @@
     "cloudflareApiToken": "",
     "previewRootDir": "/var/www",
     "orphanedRootDir": "/var/www/.orphaned-sites",
-    "caddyConfigPath": "./Caddyfile",
+    "caddyConfigPath": "./runtime/Caddyfile",
     "caddyBinaryPath": "caddy",
     "caddyAdminAddress": "http://caddy:2019",
     "selflifyUpstream": "selflify:3000",

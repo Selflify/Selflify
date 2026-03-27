@@ -11,10 +11,10 @@ Implemented:
 - Next.js App Router + TypeScript application
 - Chakra UI dark admin shell
 - `next-auth` credentials auth
-- single source of truth in `selflify.config.json`
+- single source of truth in `runtime/selflify.config.json` in production and `.dev/selflify.config.json` in the fixture stack
 - setup/login flow plus a combined `Sites` overview instead of separate dashboard + sites lists
 - site details and global settings screens
-- Caddyfile generation and zero-downtime reload hooks
+- generated `runtime/Caddyfile` with zero-downtime reload hooks
 - Cloudflare DNS sync adapter
 - config operations with revision checks, backups and rollback hooks
 - cleanup script for stale preview deploys and orphaned site directories
@@ -56,10 +56,9 @@ yarn install
 yarn dev --hostname 127.0.0.1 --port 3100
 ```
 
-The application will read `selflify.config.json` by default.
-The tracked root `selflify.config.json` and `Caddyfile` are intentionally minimal bootstrap configs.
+The application will read `runtime/selflify.config.json` by default.
 For the full local fixture stack, `docker-compose.dev.yml` points the app to `.dev/selflify.config.json` instead.
-The base preview root also comes from `selflify.config.json` and defaults to `/var/www`.
+The base preview root comes from the active config file and defaults to `/var/www`.
 If no admin account is configured yet, the app will redirect to `/setup`.
 
 Useful optional overrides:
@@ -77,6 +76,7 @@ SELFLIFY_SKIP_CADDY_RELOAD=0
 If you run `yarn dev` directly on your host and want fixture files instead of `/var/www`, add:
 
 ```bash
+SELFLIFY_CONFIG_PATH=./.dev/selflify.config.json
 SELFLIFY_PREVIEW_ROOT=./.dev/var-www
 SELFLIFY_UPSTREAM=host.docker.internal:3000
 ```
@@ -95,7 +95,7 @@ In local development, the recommended behavior is:
 
 ## Main flows
 
-- `/setup`: create the first account when `selflify.config.json` does not have credentials yet
+- `/setup`: create the first account when the active config file does not have credentials yet
 - `/login`: sign in with the configured credentials
 - `/sites`: metrics + site inventory + site creation modal
 - `/sites/[site]`: update the site, inspect deploys, remove preview deploys or delete the site
@@ -216,7 +216,7 @@ What the installer does:
 - installs Docker and the Docker Compose plugin
 - downloads and extracts the bootstrap bundle into `/opt/selflify` by default
 - creates `.env` with a generated `AUTH_SECRET` if it does not exist yet
-- creates initial `selflify.config.json` and `Caddyfile` from templates if they do not exist yet
+- creates initial `runtime/selflify.config.json` and `runtime/Caddyfile` from templates if they do not exist yet
 - starts the production stack with `docker compose up -d --build`
 
 The GitHub deploy workflow can also seed those files automatically on the first deploy from the same
@@ -234,12 +234,12 @@ What still happens in the UI after bootstrap:
 
 ## Cleanup job
 
-`cleanup-previews.sh` now reads `selflify.config.json`, removes stale preview directories for configured sites and purges orphaned site directories after TTL.
+`cleanup-previews.sh` now reads the active config path, removes stale preview directories for configured sites and purges orphaned site directories after TTL.
 
 Optional overrides:
 
 ```bash
-SELFLIFY_CONFIG_PATH=./selflify.config.json
+SELFLIFY_CONFIG_PATH=./runtime/selflify.config.json
 SELFLIFY_PREVIEW_TTL_DAYS=30
 SELFLIFY_ORPHAN_TTL_DAYS=30
 SELFLIFY_CLEANUP_INTERVAL_SECONDS=86400

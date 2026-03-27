@@ -13,7 +13,7 @@ function resolveOrDefault(value: string | undefined, fallback: string): string {
 }
 
 export function getConfigPath(): string {
-  return resolveOrDefault(process.env.SELFLIFY_CONFIG_PATH, "./selflify.config.json");
+  return resolveOrDefault(process.env.SELFLIFY_CONFIG_PATH, "./runtime/selflify.config.json");
 }
 
 export function getDefaultPreviewRoot(): string {
@@ -29,7 +29,8 @@ export function getDefaultBackupRoot(): string {
 }
 
 export function getDefaultCaddyConfigPath(): string {
-  const fallback = process.env.NODE_ENV === "development" ? "./.dev/Caddyfile" : "./Caddyfile";
+  const fallback =
+    process.env.NODE_ENV === "development" ? "./.dev/Caddyfile" : "./runtime/Caddyfile";
   return resolveOrDefault(process.env.SELFLIFY_CADDY_CONFIG_PATH, fallback);
 }
 

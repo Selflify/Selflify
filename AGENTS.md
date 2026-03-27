@@ -10,7 +10,9 @@ Use this file as the first-stop operational guide before making changes.
 
 - Use `yarn` only. Do not introduce `npm` or `pnpm` commands.
 - The app is built with `Next.js App Router`, `React 19`, `TypeScript`, `Chakra UI 3`, and `next-auth`.
-- The single source of truth is `selflify.config.json`.
+- The single source of truth is the active config file:
+  - `runtime/selflify.config.json` in production
+  - `.dev/selflify.config.json` in the dev fixture stack
 - Prefer minimal, targeted changes. This project already has working runtime flows for config persistence, Caddy generation, backups, rollback, and cleanup.
 
 ## Key Runtime Facts
@@ -33,10 +35,10 @@ Use this file as the first-stop operational guide before making changes.
 - `src/lib/config/`: config schema, defaults, path resolution, persistence
 - `src/lib/operations.ts`: config operation pipeline, revision checks, rollback-oriented flow
 - `src/lib/sites/service.ts`: site/deploy filesystem operations and summaries
-- `src/lib/system/caddy.ts`: Caddyfile generation, validation, reload, password hashing
+- `src/lib/system/caddy.ts`: generated Caddyfile rendering, validation, reload, password hashing
 - `src/lib/system/cloudflare.ts`: Cloudflare DNS sync adapter
 - `bootstrap/`: base templates and seeding logic for fresh servers
-- `cleanup-previews.sh`: stale preview/orphan cleanup script
+- `cleanup-previews.sh`: thin launcher for the typed stale preview/orphan cleanup runtime
 - `docker-compose.yml`: production stack
 - `docker-compose.dev.yml`: development stack
 - `docker/selflify/Dockerfile`: main app image for prod/dev/cleanup
@@ -44,9 +46,8 @@ Use this file as the first-stop operational guide before making changes.
 
 ## High-Risk Files And Behaviors
 
-- `selflify.config.json` is file-backed runtime state. Running the app can mutate it.
-- `.dev/Caddyfile` is also runtime-generated in development.
-- Do not commit incidental runtime mutations to `selflify.config.json` or `.dev/Caddyfile` unless the task explicitly requires changing the seeded examples.
+- `runtime/` is gitignored mutable production state. Do not add or commit files from it.
+- `.dev/selflify.config.json` and `.dev/Caddyfile` are seeded dev runtime fixtures. Change them only when the task explicitly needs updated examples.
 - `.dev/caddy-data`, `.dev/caddy-config`, `.dev/logs` are runtime artifacts and should stay out of commits.
 - `.dev/var-www/**/index.html` files are tracked fixture content. Other runtime files under `.dev/var-www` should remain ignored.
 
@@ -144,7 +145,8 @@ For Docker or dev environment changes:
 - Keep commits focused by change type.
 - Before committing, check `git status` for accidental runtime diffs.
 - Pay special attention to:
-  - `selflify.config.json`
+  - `runtime/`
+  - `.dev/selflify.config.json`
   - `.dev/Caddyfile`
   - generated `.dev` runtime state
 

@@ -33,7 +33,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--server-ip",
         default="",
-        help="Server public IP. Required only when selflify.config.json is missing.",
+        help="Server public IP. Required only when runtime/selflify.config.json is missing.",
     )
     parser.add_argument(
         "--caddy-email",
@@ -43,7 +43,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--session-secret",
         default="",
-        help="Session secret. Required only when selflify.config.json is missing.",
+        help="Session secret. Required only when runtime/selflify.config.json is missing.",
     )
     return parser
 
@@ -54,8 +54,9 @@ def main() -> int:
     bootstrap_dir = root / "bootstrap"
     config_template = bootstrap_dir / "selflify.config.template.json"
     caddy_template = bootstrap_dir / "Caddyfile.template"
-    config_output = root / "selflify.config.json"
-    caddy_output = root / "Caddyfile"
+    runtime_dir = root / "runtime"
+    config_output = runtime_dir / "selflify.config.json"
+    caddy_output = runtime_dir / "Caddyfile"
     caddy_email = args.caddy_email or f"admin@{args.domain}"
 
     if not config_template.is_file():
@@ -64,12 +65,16 @@ def main() -> int:
     if not caddy_template.is_file():
         raise SystemExit(f"Missing bootstrap template: {caddy_template}")
 
+    runtime_dir.mkdir(parents=True, exist_ok=True)
+
     if not config_output.exists():
         if not args.server_ip:
-            raise SystemExit("--server-ip is required when selflify.config.json is missing.")
+            raise SystemExit("--server-ip is required when runtime/selflify.config.json is missing.")
 
         if not args.session_secret:
-            raise SystemExit("--session-secret is required when selflify.config.json is missing.")
+            raise SystemExit(
+                "--session-secret is required when runtime/selflify.config.json is missing."
+            )
 
         config_payload = render_template(
             config_template,

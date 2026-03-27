@@ -80,6 +80,9 @@ web_modules/
 out
 tmp_scaffold
 .selflify
+runtime/**
+!runtime/
+!runtime/.gitkeep
 .dev/var-www/**
 !.dev/var-www/
 !.dev/var-www/**/
