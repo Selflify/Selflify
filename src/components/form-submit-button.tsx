@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { Button, Dialog, Portal, Text, type ButtonProps } from "@chakra-ui/react";
+import { Button, Dialog, Input, Portal, Stack, Text, type ButtonProps } from "@chakra-ui/react";
 import { useFormStatus } from "react-dom";
 
 type FormSubmitButtonProps = ButtonProps & {
@@ -9,6 +9,9 @@ type FormSubmitButtonProps = ButtonProps & {
   pendingText?: string;
   confirmMessage?: string;
   confirmTitle?: string;
+  confirmInputLabel?: string;
+  confirmInputPlaceholder?: string;
+  confirmInputValue?: string;
 };
 
 export function FormSubmitButton({
@@ -16,6 +19,9 @@ export function FormSubmitButton({
   pendingText,
   confirmMessage,
   confirmTitle,
+  confirmInputLabel,
+  confirmInputPlaceholder,
+  confirmInputValue,
   onClick,
   form,
   name,
@@ -29,8 +35,11 @@ export function FormSubmitButton({
 }: FormSubmitButtonProps) {
   const { pending } = useFormStatus();
   const [open, setOpen] = useState(false);
+  const [confirmValue, setConfirmValue] = useState("");
   const hiddenSubmitRef = useRef<HTMLButtonElement>(null);
   const buttonProps = { ...props };
+  const requiresTypedConfirmation = Boolean(confirmInputValue);
+  const typedConfirmationMatches = !requiresTypedConfirmation || confirmValue.trim() === confirmInputValue;
 
   delete buttonProps.type;
 
@@ -70,7 +79,13 @@ export function FormSubmitButton({
 
       <Dialog.Root
         open={open}
-        onOpenChange={(details) => setOpen(details.open)}
+        onOpenChange={(details) => {
+          setOpen(details.open);
+
+          if (!details.open) {
+            setConfirmValue("");
+          }
+        }}
         role="alertdialog"
       >
         <Dialog.Trigger asChild>
@@ -93,7 +108,22 @@ export function FormSubmitButton({
               </Dialog.Header>
 
               <Dialog.Body pt="5">
-                <Text color="muted">{confirmMessage}</Text>
+                <Stack gap="4">
+                  <Text color="muted">{confirmMessage}</Text>
+                  {requiresTypedConfirmation ? (
+                    <Stack gap="2">
+                      <Text fontSize="sm" fontWeight="700" color="whiteAlpha.900">
+                        {confirmInputLabel ?? "Type the confirmation value to continue"}
+                      </Text>
+                      <Input
+                        value={confirmValue}
+                        onChange={(event) => setConfirmValue(event.target.value)}
+                        placeholder={confirmInputPlaceholder}
+                        bg="rgba(255,255,255,0.04)"
+                      />
+                    </Stack>
+                  ) : null}
+                </Stack>
               </Dialog.Body>
 
               <Dialog.Footer pt="0" gap="3">
@@ -106,6 +136,7 @@ export function FormSubmitButton({
                   {...buttonProps}
                   type="button"
                   loading={pending}
+                  disabled={Boolean(buttonProps.disabled) || !typedConfirmationMatches}
                   form={form}
                   name={name}
                   value={value}
@@ -117,6 +148,7 @@ export function FormSubmitButton({
                     }
 
                     setOpen(false);
+                    setConfirmValue("");
                     hiddenSubmitRef.current?.click();
                   }}
                 >

@@ -300,6 +300,10 @@ export default async function SiteDetailsPage({ params, searchParams }: SiteDeta
                 variant="outline"
                 pendingText="Deleting site"
                 confirmMessage={`Delete ${site.slug} from config and move its files to orphan storage?`}
+                confirmTitle="Delete site"
+                confirmInputLabel={`Type "${site.name}" to confirm deletion`}
+                confirmInputPlaceholder={site.name}
+                confirmInputValue={site.name}
               >
                 Delete site
               </FormSubmitButton>
