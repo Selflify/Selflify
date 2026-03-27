@@ -157,45 +157,12 @@ write_runtime_templates() {
   local caddy_email="$4"
   local auth_secret="$5"
 
-  if [ ! -f "${install_dir}/selflify.config.json" ]; then
-    python3 - <<'PY' "${install_dir}/bootstrap/selflify.config.template.json" "${install_dir}/selflify.config.json" "${domain}" "${server_ip}" "${caddy_email}" "${auth_secret}"
-from pathlib import Path
-import sys
-
-template_path = Path(sys.argv[1])
-output_path = Path(sys.argv[2])
-domain = sys.argv[3]
-server_ip = sys.argv[4]
-caddy_email = sys.argv[5]
-auth_secret = sys.argv[6]
-
-payload = template_path.read_text("utf-8")
-payload = payload.replace("__SELFLIFY_DOMAIN__", domain)
-payload = payload.replace("__SELFLIFY_SERVER_IP__", server_ip)
-payload = payload.replace("__SELFLIFY_CADDY_EMAIL__", caddy_email)
-payload = payload.replace("__SELFLIFY_SESSION_SECRET__", auth_secret)
-output_path.write_text(payload, encoding="utf-8")
-PY
-    log "Created ${install_dir}/selflify.config.json"
-  fi
-
-  if [ ! -f "${install_dir}/Caddyfile" ]; then
-    python3 - <<'PY' "${install_dir}/bootstrap/Caddyfile.template" "${install_dir}/Caddyfile" "${domain}" "${caddy_email}"
-from pathlib import Path
-import sys
-
-template_path = Path(sys.argv[1])
-output_path = Path(sys.argv[2])
-domain = sys.argv[3]
-caddy_email = sys.argv[4]
-
-payload = template_path.read_text("utf-8")
-payload = payload.replace("__SELFLIFY_DOMAIN__", domain)
-payload = payload.replace("__SELFLIFY_CADDY_EMAIL__", caddy_email)
-output_path.write_text(payload, encoding="utf-8")
-PY
-    log "Created ${install_dir}/Caddyfile"
-  fi
+  python3 "${install_dir}/bootstrap/seed-runtime-files.py" \
+    --root "${install_dir}" \
+    --domain "${domain}" \
+    --server-ip "${server_ip}" \
+    --caddy-email "${caddy_email}" \
+    --session-secret "${auth_secret}"
 }
 
 write_env_file() {
