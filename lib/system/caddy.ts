@@ -43,6 +43,9 @@ type CaddyCommandSpec = {
   containerized: boolean;
 };
 
+const DEV_CONTAINER_CADDY_CONFIG_PATH = "/etc/caddy/Caddyfile";
+const DEV_CONTAINER_CADDY_ADMIN_ADDRESS = "http://127.0.0.1:2019";
+
 function isSpawnNotFound(error: unknown): boolean {
   return (
     typeof error === "object" &&
@@ -64,10 +67,12 @@ function getCommandFailureDetails(error: unknown): string {
   return error instanceof Error ? error.message : "Unknown command failure.";
 }
 
-export function resolveCaddyCommand(config: SelflifyConfig, args: string[]): CaddyCommandSpec {
-  const caddyBin = getEffectiveCaddyBinaryPath(config);
+function shouldUseContainerizedCaddy(config: SelflifyConfig): boolean {
+  return isDevelopmentRuntime() && getEffectiveCaddyBinaryPath(config) === "caddy";
+}
 
-  if (isDevelopmentRuntime() && caddyBin === "caddy") {
+export function resolveCaddyCommand(config: SelflifyConfig, args: string[]): CaddyCommandSpec {
+  if (shouldUseContainerizedCaddy(config)) {
     return {
       command: "docker",
       args: ["exec", getEffectiveCaddyContainerName(), "caddy", ...args],
@@ -76,10 +81,22 @@ export function resolveCaddyCommand(config: SelflifyConfig, args: string[]): Cad
   }
 
   return {
-    command: caddyBin,
+    command: getEffectiveCaddyBinaryPath(config),
     args,
     containerized: false,
   };
+}
+
+export function resolveCaddyCommandConfigPath(config: SelflifyConfig): string {
+  return shouldUseContainerizedCaddy(config)
+    ? DEV_CONTAINER_CADDY_CONFIG_PATH
+    : getEffectiveCaddyConfigPath(config);
+}
+
+export function resolveCaddyCommandAdminAddress(config: SelflifyConfig): string {
+  return shouldUseContainerizedCaddy(config)
+    ? DEV_CONTAINER_CADDY_ADMIN_ADDRESS
+    : getEffectiveCaddyAdminAddress(config);
 }
 
 async function runCaddyCommand(config: SelflifyConfig, args: string[]): Promise<string> {
@@ -211,7 +228,7 @@ export async function writeGeneratedCaddyfile(config: SelflifyConfig): Promise<s
 }
 
 export async function validateCaddyfile(config: SelflifyConfig): Promise<void> {
-  const configPath = getEffectiveCaddyConfigPath(config);
+  const configPath = resolveCaddyCommandConfigPath(config);
 
   await runCaddyCommand(config, ["validate", "--config", configPath, "--adapter", "caddyfile"]);
 }
@@ -221,8 +238,8 @@ export async function reloadCaddy(config: SelflifyConfig): Promise<void> {
     return;
   }
 
-  const configPath = getEffectiveCaddyConfigPath(config);
-  const adminAddress = getEffectiveCaddyAdminAddress(config);
+  const configPath = resolveCaddyCommandConfigPath(config);
+  const adminAddress = resolveCaddyCommandAdminAddress(config);
 
   await runCaddyCommand(config, [
     "reload",

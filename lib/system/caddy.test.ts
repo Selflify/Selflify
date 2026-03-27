@@ -2,7 +2,12 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { type SelflifyConfig, type SiteConfig } from "@/lib/config/schema";
 import { createDefaultConfig } from "@/lib/config/service";
-import { generateCaddyfile, resolveCaddyCommand } from "@/lib/system/caddy";
+import {
+  generateCaddyfile,
+  resolveCaddyCommand,
+  resolveCaddyCommandAdminAddress,
+  resolveCaddyCommandConfigPath,
+} from "@/lib/system/caddy";
 
 function createSite(partial?: Partial<SiteConfig>): SiteConfig {
   return {
@@ -112,6 +117,8 @@ describe("generateCaddyfile", () => {
       "--plaintext",
       "secret",
     ]);
+    expect(resolveCaddyCommandConfigPath(config)).toBe("/etc/caddy/Caddyfile");
+    expect(resolveCaddyCommandAdminAddress(config)).toBe("http://127.0.0.1:2019");
   });
 
   it("uses the configured local caddy binary when it is explicitly overridden", () => {
@@ -123,5 +130,7 @@ describe("generateCaddyfile", () => {
 
     expect(command.command).toBe("/usr/local/bin/caddy");
     expect(command.args).toEqual(["validate"]);
+    expect(resolveCaddyCommandConfigPath(config)).toBe(config.server.caddyConfigPath);
+    expect(resolveCaddyCommandAdminAddress(config)).toBe(config.server.caddyAdminAddress);
   });
 });
