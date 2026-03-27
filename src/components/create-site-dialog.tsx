@@ -9,13 +9,25 @@ import { FormSubmitButton } from "@/components/form-submit-button";
 
 type CreateSiteDialogProps = {
   configRevision: number;
+  domain: string;
 };
 
-export function CreateSiteDialog({ configRevision }: CreateSiteDialogProps) {
+export function CreateSiteDialog({ configRevision, domain }: CreateSiteDialogProps) {
   const [open, setOpen] = useState(false);
+  const [slug, setSlug] = useState("");
 
   return (
-    <Dialog.Root size="xl" open={open} onOpenChange={(details) => setOpen(details.open)}>
+    <Dialog.Root
+      size="xl"
+      open={open}
+      onOpenChange={(details) => {
+        setOpen(details.open);
+
+        if (!details.open) {
+          setSlug("");
+        }
+      }}
+    >
       <Dialog.Trigger asChild>
         <Button bg="action.500" color="white" _hover={{ bg: "action.600" }}>
           Create site
@@ -46,11 +58,17 @@ export function CreateSiteDialog({ configRevision }: CreateSiteDialogProps) {
 
               <Dialog.Body pt="5">
                 <Stack gap="4">
-                  <FormField label="Site slug" htmlFor="create-site-slug">
+                  <FormField
+                    label="Subdomain"
+                    htmlFor="create-site-slug"
+                    hint={`Full address: https://${slug || "<subdomain>"}.${domain}`}
+                  >
                     <Input
                       id="create-site-slug"
                       name="slug"
-                      placeholder="site-slug"
+                      value={slug}
+                      onChange={(event) => setSlug(event.target.value)}
+                      placeholder="marketing"
                       required
                       bg="rgba(255,255,255,0.04)"
                     />

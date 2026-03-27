@@ -37,7 +37,7 @@ export default async function SitesPage({ searchParams }: SitesPageProps) {
             All site routing, preview auth and deploy inventory live here now.
           </Text>
         </Box>
-        <CreateSiteDialog configRevision={config.configRevision} />
+        <CreateSiteDialog configRevision={config.configRevision} domain={config.server.domain} />
       </Flex>
 
       <SimpleGrid columns={{ base: 1, md: 2, xl: 4 }} gap="4">

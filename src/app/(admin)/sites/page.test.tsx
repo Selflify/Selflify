@@ -7,8 +7,8 @@ import { getAllSiteSummaries, getDiskUsage } from "@/lib/sites/service";
 import { renderWithProviders } from "@/test/render-with-providers";
 
 vi.mock("@/components/create-site-dialog", () => ({
-  CreateSiteDialog: ({ configRevision }: { configRevision: number }) => (
-    <div>{`CREATE_SITE:${configRevision}`}</div>
+  CreateSiteDialog: ({ configRevision, domain }: { configRevision: number; domain: string }) => (
+    <div>{`CREATE_SITE:${configRevision}:${domain}`}</div>
   ),
 }));
 
@@ -74,6 +74,6 @@ describe("sites page", () => {
     expect(html).toContain("app.example.dev");
     expect(html).toContain("/var/www/app");
     expect(html).toContain('href="/sites/app"');
-    expect(html).toContain("CREATE_SITE:3");
+    expect(html).toContain(`CREATE_SITE:3:${config.server.domain}`);
   });
 });

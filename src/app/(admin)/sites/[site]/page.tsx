@@ -163,7 +163,11 @@ export default async function SiteDetailsPage({ params, searchParams }: SiteDeta
             <form action={updateSiteAction.bind(null, site.slug)}>
               <input type="hidden" name="configRevision" value={String(config.configRevision)} />
               <Stack gap="4" mt="6">
-                <FormField label="Site slug" htmlFor="site-settings-slug">
+                <FormField
+                  label="Subdomain"
+                  htmlFor="site-settings-slug"
+                  hint={`Full address: https://${site.slug}.${config.server.domain}`}
+                >
                   <Input
                     id="site-settings-slug"
                     value={site.slug}

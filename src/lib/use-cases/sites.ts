@@ -72,11 +72,11 @@ export async function createSite(
     expectedRevision,
     mutate: async (draft) => {
       if (payload.slug === "root") {
-        throw new Error("The slug root is reserved.");
+        throw new Error("The subdomain root is reserved.");
       }
 
       if (draft.sites.some((site) => site.slug === payload.slug)) {
-        throw new Error("A site with this slug already exists.");
+        throw new Error("A site with this subdomain already exists.");
       }
 
       if (!payload.previewLogin && payload.previewPassword) {

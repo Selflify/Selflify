@@ -22,7 +22,7 @@ export const siteConfigSchema = z.object({
   slug: z
     .string()
     .trim()
-    .regex(siteSlugPattern, "Site slug must be lowercase letters, numbers or dashes."),
+    .regex(siteSlugPattern, "Subdomain must be lowercase letters, numbers or dashes."),
   name: z.string().trim().min(1).max(120),
   mainBranch: z
     .string()
