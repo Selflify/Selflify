@@ -47,7 +47,7 @@ services:
       SELFLIFY_CLEANUP_INTERVAL_SECONDS: ${SELFLIFY_CLEANUP_INTERVAL_SECONDS:-3600}
     volumes:
       - .:/workspace
-      - selflify_dev_node_modules:/workspace/node_modules
+      - selflify_cleanup_node_modules:/workspace/node_modules
       - ./.dev/var-www:/var/www
 
   caddy:
@@ -71,3 +71,4 @@ services:
 volumes:
   selflify_dev_node_modules:
   selflify_dev_next:
+  selflify_cleanup_node_modules:
