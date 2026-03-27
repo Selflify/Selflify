@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Box, Button, Flex, Heading, Input, Stack, Text } from "@chakra-ui/react";
 
@@ -14,38 +13,6 @@ type SiteDetailsPageProps = {
   params: Promise<{ site: string }>;
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 };
-
-function SectionLink({
-  href,
-  label,
-  active,
-}: {
-  href: string;
-  label: string;
-  active: boolean;
-}) {
-  return (
-    <Link href={href}>
-      <Box
-        px="4"
-        py="2.5"
-        rounded="lg"
-        borderWidth="1px"
-        borderColor={active ? "brand.500" : "transparent"}
-        bg={active ? "accentMuted" : "transparent"}
-        transition="all 0.2s ease"
-        _hover={{
-          borderColor: active ? "brand.500" : "rgba(255,255,255,0.08)",
-          bg: active ? "accentMuted" : "rgba(255,255,255,0.03)",
-        }}
-      >
-        <Text fontWeight="700" whiteSpace="nowrap">
-          {label}
-        </Text>
-      </Box>
-    </Link>
-  );
-}
 
 export default async function SiteDetailsPage({ params, searchParams }: SiteDetailsPageProps) {
   const { config } = await requireAdminSession();
@@ -75,39 +42,15 @@ export default async function SiteDetailsPage({ params, searchParams }: SiteDeta
         p={{ base: "5", md: "6" }}
         boxShadow="panel"
       >
-        <Flex
-          justify="space-between"
-          align={{ base: "flex-start", md: "center" }}
-          gap="4"
-          wrap="wrap"
-        >
-          <Box>
-            <Heading size="lg">{site.name}</Heading>
-            <Text color="muted" mt="2">
-              {site.slug}.{config.server.domain} · {site.mainBranch}
-            </Text>
-            <Text color="whiteAlpha.700" mt="2" fontSize="sm">
-              {config.server.previewRootDir}/{site.slug}
-            </Text>
-          </Box>
-
-          <Flex
-            gap="1"
-            p="1"
-            rounded="xl"
-            borderWidth="1px"
-            borderColor="rgba(255,255,255,0.08)"
-            bg="rgba(255,255,255,0.02)"
-            wrap="wrap"
-          >
-            <SectionLink href={`/sites/${site.slug}`} label="Deploys" active={view === "deploys"} />
-            <SectionLink
-              href={`/sites/${site.slug}?view=configuration`}
-              label="Configuration"
-              active={view === "configuration"}
-            />
-          </Flex>
-        </Flex>
+        <Box>
+          <Heading size="lg">{site.name}</Heading>
+          <Text color="muted" mt="2">
+            {site.slug}.{config.server.domain} · {site.mainBranch}
+          </Text>
+          <Text color="whiteAlpha.700" mt="2" fontSize="sm">
+            {config.server.previewRootDir}/{site.slug}
+          </Text>
+        </Box>
       </Box>
 
       {view === "deploys" ? (

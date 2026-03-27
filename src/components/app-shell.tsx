@@ -2,6 +2,7 @@ import { Box, Flex, Heading, Stack, Text } from "@chakra-ui/react";
 
 import { LogoutButton } from "@/components/logout-button";
 import { NavItem } from "@/components/nav-item";
+import { SiteSidebarNav } from "@/components/site-sidebar-nav";
 
 type AppShellProps = {
   domain: string;
@@ -41,6 +42,7 @@ export function AppShell({ domain, children }: AppShellProps) {
 
         <Stack gap="2">
           <NavItem href="/sites" label="Sites" />
+          <SiteSidebarNav />
           <NavItem href="/settings" label="Settings" />
         </Stack>
 

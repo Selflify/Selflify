@@ -83,7 +83,6 @@ describe("site details page", () => {
     const html = renderWithProviders(page);
 
     expect(html).toContain("Deploy inventory");
-    expect(html).toContain("Configuration");
     expect(html).toContain("pr-42");
     expect(html).toContain("https://pr-42.app.sendsay.dev");
     expect(html).not.toContain("Danger zone");
