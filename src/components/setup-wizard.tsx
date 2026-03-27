@@ -4,7 +4,6 @@ import { useRef, useState } from "react";
 import { Button, Flex, Input, Stack, Text } from "@chakra-ui/react";
 
 import { setupAction } from "@/app/actions";
-import { FlashMessage } from "@/components/flash-message";
 import { FormField } from "@/components/form-field";
 
 type SetupWizardProps = {
@@ -12,7 +11,6 @@ type SetupWizardProps = {
   defaultServerIp: string;
   defaultCaddyContactEmail: string;
   defaultCloudflareToken: string;
-  error?: string;
 };
 
 type SetupStep = 1 | 2;
@@ -22,7 +20,6 @@ export function SetupWizard({
   defaultServerIp,
   defaultCaddyContactEmail,
   defaultCloudflareToken,
-  error = "",
 }: SetupWizardProps) {
   const [step, setStep] = useState<SetupStep>(1);
   const [login, setLogin] = useState("");
@@ -78,9 +75,6 @@ export function SetupWizard({
             : "Finish the required infrastructure settings: main domain, public server IP, Cloudflare API token and the email used by Caddy certificates."}
         </Text>
       </Stack>
-
-      {error ? <FlashMessage kind="error" message={error} /> : null}
-
       <form action={setupAction}>
         <Stack gap="4">
           {step === 1 ? (
@@ -221,7 +215,13 @@ export function SetupWizard({
             ) : null}
 
             {step === 1 ? (
-              <Button type="button" bg="action.500" color="white" _hover={{ bg: "action.600" }} onClick={continueToInfrastructureStep}>
+              <Button
+                type="button"
+                bg="action.500"
+                color="white"
+                _hover={{ bg: "action.600" }}
+                onClick={continueToInfrastructureStep}
+              >
                 Continue
               </Button>
             ) : (

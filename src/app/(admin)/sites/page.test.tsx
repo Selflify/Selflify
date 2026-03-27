@@ -12,14 +12,16 @@ vi.mock("@/components/create-site-dialog", () => ({
   ),
 }));
 
+vi.mock("@/components/action-feedback-toast", () => ({
+  ActionFeedbackToast: () => null,
+}));
+
 vi.mock("@/lib/auth/guards", () => ({
   requireAdminSession: vi.fn(),
 }));
 
 vi.mock("@/lib/sites/service", async () => {
-  const actual = await vi.importActual<typeof import("@/lib/sites/service")>(
-    "@/lib/sites/service",
-  );
+  const actual = await vi.importActual<typeof import("@/lib/sites/service")>("@/lib/sites/service");
 
   return {
     ...actual,
@@ -69,7 +71,6 @@ describe("sites page", () => {
 
     expect(html).toContain("Sites");
     expect(html).toContain("Site inventory");
-    expect(html).toContain("Site created.");
     expect(html).toContain("App");
     expect(html).toContain("app.example.dev");
     expect(html).toContain("/var/www/app");

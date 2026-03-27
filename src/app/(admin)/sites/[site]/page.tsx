@@ -8,7 +8,7 @@ import {
   updateSiteAction,
   updateSitePreviewAccessAction,
 } from "@/app/actions";
-import { FlashMessage } from "@/components/flash-message";
+import { ActionFeedbackToast } from "@/components/action-feedback-toast";
 import { FormField } from "@/components/form-field";
 import { FormSubmitButton } from "@/components/form-submit-button";
 import { requireAdminSession } from "@/lib/auth/guards";
@@ -37,8 +37,7 @@ export default async function SiteDetailsPage({ params, searchParams }: SiteDeta
 
   return (
     <Stack gap="8">
-      {notice ? <FlashMessage kind="notice" message={notice} /> : null}
-      {error ? <FlashMessage kind="error" message={error} /> : null}
+      <ActionFeedbackToast notice={notice} error={error} />
 
       <Box
         rounded="2xl"
@@ -78,11 +77,17 @@ export default async function SiteDetailsPage({ params, searchParams }: SiteDeta
 
           <Stack gap="4" mt="6">
             {deploys.length === 0 ? (
-              <Box rounded="xl" borderWidth="1px" borderColor="rgba(255,255,255,0.08)" px="4" py="4">
+              <Box
+                rounded="xl"
+                borderWidth="1px"
+                borderColor="rgba(255,255,255,0.08)"
+                px="4"
+                py="4"
+              >
                 <Heading size="sm">No deploy directories found</Heading>
                 <Text color="muted" mt="2" fontSize="sm">
-                  Selflify will show stable and preview deploys here as soon as files appear under the
-                  site directory.
+                  Selflify will show stable and preview deploys here as soon as files appear under
+                  the site directory.
                 </Text>
               </Box>
             ) : null}
@@ -219,7 +224,10 @@ export default async function SiteDetailsPage({ params, searchParams }: SiteDeta
               Protect preview deploys with a shared login and password. Stable remains public.
             </Text>
 
-            <form id="site-preview-access-form" action={updateSitePreviewAccessAction.bind(null, site.slug)}>
+            <form
+              id="site-preview-access-form"
+              action={updateSitePreviewAccessAction.bind(null, site.slug)}
+            >
               <input type="hidden" name="configRevision" value={String(config.configRevision)} />
               <Stack gap="4" mt="6">
                 <FormField label="Login" htmlFor="site-settings-preview-login">
@@ -260,7 +268,10 @@ export default async function SiteDetailsPage({ params, searchParams }: SiteDeta
               </Stack>
             </form>
 
-            <form id="site-preview-access-reset-form" action={resetSitePreviewAccessAction.bind(null, site.slug)}>
+            <form
+              id="site-preview-access-reset-form"
+              action={resetSitePreviewAccessAction.bind(null, site.slug)}
+            >
               <input type="hidden" name="configRevision" value={String(config.configRevision)} />
             </form>
 

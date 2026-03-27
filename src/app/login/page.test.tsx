@@ -15,6 +15,10 @@ vi.mock("next/navigation", () => ({
   redirect: redirectMock,
 }));
 
+vi.mock("@/components/action-feedback-toast", () => ({
+  ActionFeedbackToast: () => null,
+}));
+
 vi.mock("@/components/login-form", () => ({
   LoginForm: () => <div data-testid="login-form">LOGIN_FORM</div>,
 }));
@@ -24,9 +28,8 @@ vi.mock("@/lib/auth/session", () => ({
 }));
 
 vi.mock("@/lib/config/service", async () => {
-  const actual = await vi.importActual<typeof import("@/lib/config/service")>(
-    "@/lib/config/service",
-  );
+  const actual =
+    await vi.importActual<typeof import("@/lib/config/service")>("@/lib/config/service");
 
   return {
     ...actual,
@@ -84,11 +87,7 @@ describe("login page", () => {
     const html = renderWithProviders(page);
 
     expect(html).toContain("Sign in");
-    expect(html).toContain(
-      `Access the deployment control panel for ${config.server.domain}.`,
-    );
-    expect(html).toContain("Signed out.");
-    expect(html).toContain("Invalid credentials.");
+    expect(html).toContain(`Access the deployment control panel for ${config.server.domain}.`);
     expect(html).toContain("LOGIN_FORM");
   });
 });

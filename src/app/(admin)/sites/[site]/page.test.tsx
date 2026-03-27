@@ -14,6 +14,10 @@ vi.mock("@/app/actions", () => ({
   updateSitePreviewAccessAction: vi.fn(),
 }));
 
+vi.mock("@/components/action-feedback-toast", () => ({
+  ActionFeedbackToast: () => null,
+}));
+
 vi.mock("@/components/form-submit-button", () => ({
   FormSubmitButton: ({ children }: { children: React.ReactNode }) => <button>{children}</button>,
 }));
@@ -23,9 +27,7 @@ vi.mock("@/lib/auth/guards", () => ({
 }));
 
 vi.mock("@/lib/sites/service", async () => {
-  const actual = await vi.importActual<typeof import("@/lib/sites/service")>(
-    "@/lib/sites/service",
-  );
+  const actual = await vi.importActual<typeof import("@/lib/sites/service")>("@/lib/sites/service");
 
   return {
     ...actual,
@@ -130,7 +132,6 @@ describe("site details page", () => {
     expect(html).toContain("Login");
     expect(html).toContain("Confirm password");
     expect(html).toContain("Danger zone");
-    expect(html).toContain("Updated app.");
     expect(html).not.toContain("Deploy inventory");
   });
 });

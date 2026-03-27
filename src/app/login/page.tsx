@@ -1,7 +1,7 @@
 import { Box, Heading, Stack, Text } from "@chakra-ui/react";
 import { redirect } from "next/navigation";
 
-import { FlashMessage } from "@/components/flash-message";
+import { ActionFeedbackToast } from "@/components/action-feedback-toast";
 import { LoginForm } from "@/components/login-form";
 import { readOptionalSession } from "@/lib/auth/session";
 import { isAdminConfigured, readSelflifyConfig } from "@/lib/config/service";
@@ -49,6 +49,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
         boxShadow="panel"
       >
         <Stack gap="5">
+          <ActionFeedbackToast notice={notice} error={error} />
           <Box>
             <Text textTransform="uppercase" letterSpacing="0.18em" fontSize="xs" color="brand.300">
               Selflify
@@ -60,9 +61,6 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
               Access the deployment control panel for {config.server.domain}.
             </Text>
           </Box>
-
-          {notice ? <FlashMessage kind="notice" message={notice} /> : null}
-          {error ? <FlashMessage kind="error" message={error} /> : null}
 
           <LoginForm />
         </Stack>

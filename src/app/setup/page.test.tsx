@@ -14,14 +14,17 @@ vi.mock("next/navigation", () => ({
   redirect: redirectMock,
 }));
 
+vi.mock("@/components/action-feedback-toast", () => ({
+  ActionFeedbackToast: () => null,
+}));
+
 vi.mock("@/app/actions", () => ({
   setupAction: vi.fn(),
 }));
 
 vi.mock("@/lib/config/service", async () => {
-  const actual = await vi.importActual<typeof import("@/lib/config/service")>(
-    "@/lib/config/service",
-  );
+  const actual =
+    await vi.importActual<typeof import("@/lib/config/service")>("@/lib/config/service");
 
   return {
     ...actual,
@@ -48,7 +51,7 @@ describe("setup page", () => {
     );
   });
 
-  it("renders the setup form and flash message when setup is pending", async () => {
+  it("renders the setup form when setup is pending", async () => {
     const config = createDefaultConfig();
 
     vi.mocked(readSelflifyConfig).mockResolvedValue(config);
@@ -63,7 +66,6 @@ describe("setup page", () => {
 
     expect(html).toContain("Step 1 of 2");
     expect(html).toContain("Create account");
-    expect(html).toContain("Setup failed.");
     expect(html).toContain("Confirm password");
     expect(html).toContain("Continue");
   });

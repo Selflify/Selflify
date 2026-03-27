@@ -2,26 +2,21 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Button, Input, Stack, Text } from "@chakra-ui/react";
+import { Button, Input, Stack } from "@chakra-ui/react";
 import { signIn } from "next-auth/react";
 
+import { toaster } from "@/components/app-toaster";
 import { FormField } from "@/components/form-field";
 
-type LoginFormProps = {
-  initialError?: string;
-};
-
-export function LoginForm({ initialError }: LoginFormProps) {
+export function LoginForm() {
   const router = useRouter();
   const [login, setLogin] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState(initialError ?? "");
   const [pending, setPending] = useState(false);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setPending(true);
-    setError("");
 
     const result = await signIn("credentials", {
       login,
@@ -31,7 +26,12 @@ export function LoginForm({ initialError }: LoginFormProps) {
     });
 
     if (!result || result.error) {
-      setError("Invalid credentials.");
+      toaster.create({
+        type: "error",
+        title: "Action failed",
+        description: "Invalid credentials.",
+        closable: true,
+      });
       setPending(false);
       return;
     }
@@ -74,11 +74,6 @@ export function LoginForm({ initialError }: LoginFormProps) {
             _placeholder={{ color: "rgba(255,255,255,0.35)" }}
           />
         </FormField>
-        {error ? (
-          <Text color="red.200" fontSize="sm">
-            {error}
-          </Text>
-        ) : null}
         <Button
           type="submit"
           bg="action.500"

@@ -1,8 +1,8 @@
 import { Box, Heading, Input, Stack, Text } from "@chakra-ui/react";
 
 import { saveAdminAccessAction, saveServerSettingsAction } from "@/app/actions";
+import { ActionFeedbackToast } from "@/components/action-feedback-toast";
 import { CloudflareTokenSection } from "@/components/cloudflare-token-section";
-import { FlashMessage } from "@/components/flash-message";
 import { FormField } from "@/components/form-field";
 import { FormSubmitButton } from "@/components/form-submit-button";
 import { requireAdminSession } from "@/lib/auth/guards";
@@ -25,8 +25,7 @@ export default async function SettingsPage({ searchParams }: SettingsPageProps) 
 
   return (
     <Stack gap="8">
-      {notice ? <FlashMessage kind="notice" message={notice} /> : null}
-      {error ? <FlashMessage kind="error" message={error} /> : null}
+      <ActionFeedbackToast notice={notice} error={error} />
 
       <Box
         rounded="2xl"
@@ -171,7 +170,9 @@ export default async function SettingsPage({ searchParams }: SettingsPageProps) 
       <CloudflareTokenSection
         configRevision={config.configRevision}
         maskedToken={
-          config.server.cloudflareApiToken ? maskCloudflareToken(config.server.cloudflareApiToken) : null
+          config.server.cloudflareApiToken
+            ? maskCloudflareToken(config.server.cloudflareApiToken)
+            : null
         }
       />
 

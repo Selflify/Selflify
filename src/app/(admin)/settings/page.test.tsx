@@ -10,6 +10,10 @@ vi.mock("@/app/actions", () => ({
   saveServerSettingsAction: vi.fn(),
 }));
 
+vi.mock("@/components/action-feedback-toast", () => ({
+  ActionFeedbackToast: () => null,
+}));
+
 vi.mock("@/components/cloudflare-token-section", () => ({
   CloudflareTokenSection: ({
     maskedToken,
@@ -51,7 +55,6 @@ describe("settings page", () => {
     expect(html).toContain("Global settings");
     expect(html).toContain("Confirm password");
     expect(html).toContain("Repeat the new password to avoid saving a typo.");
-    expect(html).toContain("Saved settings.");
     expect(html).toContain("CF_TOKEN:********1234:7");
   });
 });

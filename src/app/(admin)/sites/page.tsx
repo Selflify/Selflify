@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { Box, Button, Flex, Heading, SimpleGrid, Stack, Text } from "@chakra-ui/react";
 
+import { ActionFeedbackToast } from "@/components/action-feedback-toast";
 import { CreateSiteDialog } from "@/components/create-site-dialog";
-import { FlashMessage } from "@/components/flash-message";
 import { MetricCard } from "@/components/metric-card";
 import { requireAdminSession } from "@/lib/auth/guards";
 import { getAllSiteSummaries, getDiskUsage } from "@/lib/sites/service";
@@ -22,8 +22,7 @@ export default async function SitesPage({ searchParams }: SitesPageProps) {
 
   return (
     <Stack gap="8">
-      {notice ? <FlashMessage kind="notice" message={notice} /> : null}
-      {error ? <FlashMessage kind="error" message={error} /> : null}
+      <ActionFeedbackToast notice={notice} error={error} />
 
       <Flex
         justify="space-between"

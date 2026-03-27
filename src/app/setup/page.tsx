@@ -1,6 +1,7 @@
 import { Box } from "@chakra-ui/react";
 import { redirect } from "next/navigation";
 
+import { ActionFeedbackToast } from "@/components/action-feedback-toast";
 import { SetupWizard } from "@/components/setup-wizard";
 import { isAdminConfigured, readSelflifyConfig } from "@/lib/config/service";
 
@@ -39,12 +40,12 @@ export default async function SetupPage({ searchParams }: SetupPageProps) {
         p={{ base: "6", md: "8" }}
         boxShadow="panel"
       >
+        <ActionFeedbackToast error={error} />
         <SetupWizard
           defaultDomain={config.server.domain}
           defaultServerIp={config.server.serverIp}
           defaultCaddyContactEmail={config.server.caddyContactEmail}
           defaultCloudflareToken={config.server.cloudflareApiToken}
-          error={error}
         />
       </Box>
     </Box>
