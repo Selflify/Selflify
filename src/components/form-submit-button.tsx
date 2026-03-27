@@ -1,7 +1,16 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { Button, Dialog, Flex, Input, Portal, Stack, Text, type ButtonProps } from "@chakra-ui/react";
+import {
+  Button,
+  Dialog,
+  Flex,
+  Input,
+  Portal,
+  Stack,
+  Text,
+  type ButtonProps,
+} from "@chakra-ui/react";
 import { useFormStatus } from "react-dom";
 
 type FormSubmitButtonProps = ButtonProps & {
@@ -39,7 +48,8 @@ export function FormSubmitButton({
   const hiddenSubmitRef = useRef<HTMLButtonElement>(null);
   const buttonProps = { ...props };
   const requiresTypedConfirmation = Boolean(confirmInputValue);
-  const typedConfirmationMatches = !requiresTypedConfirmation || confirmValue.trim() === confirmInputValue;
+  const typedConfirmationMatches =
+    !requiresTypedConfirmation || confirmValue.trim() === confirmInputValue;
 
   delete buttonProps.type;
 
@@ -126,36 +136,46 @@ export function FormSubmitButton({
                 </Stack>
               </Dialog.Body>
 
-              <Dialog.Footer pt="0">
-                <Flex w="full" justify="flex-end" gap="3" wrap="nowrap">
-                  <Button type="button" variant="outline" flexShrink={0} onClick={() => setOpen(false)}>
-                    Cancel
-                  </Button>
-                  <Button
-                    {...buttonProps}
-                    type="button"
-                    loading={pending}
-                    disabled={Boolean(buttonProps.disabled) || !typedConfirmationMatches}
-                    form={form}
-                    name={name}
-                    value={value}
-                    flexShrink={0}
-                    onClick={(event) => {
-                      onClick?.(event);
+              <Flex
+                px={{ base: "6", md: "6" }}
+                pb={{ base: "6", md: "6" }}
+                pt="4"
+                justify="flex-end"
+                gap="3"
+                wrap="nowrap"
+              >
+                <Button
+                  type="button"
+                  variant="outline"
+                  flexShrink={0}
+                  onClick={() => setOpen(false)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  {...buttonProps}
+                  type="button"
+                  loading={pending}
+                  disabled={Boolean(buttonProps.disabled) || !typedConfirmationMatches}
+                  form={form}
+                  name={name}
+                  value={value}
+                  flexShrink={0}
+                  onClick={(event) => {
+                    onClick?.(event);
 
-                      if (event.defaultPrevented) {
-                        return;
-                      }
+                    if (event.defaultPrevented) {
+                      return;
+                    }
 
-                      setOpen(false);
-                      setConfirmValue("");
-                      hiddenSubmitRef.current?.click();
-                    }}
-                  >
-                    {pending ? (pendingText ?? children) : children}
-                  </Button>
-                </Flex>
-              </Dialog.Footer>
+                    setOpen(false);
+                    setConfirmValue("");
+                    hiddenSubmitRef.current?.click();
+                  }}
+                >
+                  {pending ? (pendingText ?? children) : children}
+                </Button>
+              </Flex>
             </Dialog.Content>
           </Dialog.Positioner>
         </Portal>

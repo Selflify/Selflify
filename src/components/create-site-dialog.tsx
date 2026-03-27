@@ -115,7 +115,14 @@ export function CreateSiteDialog({ configRevision, domain }: CreateSiteDialogPro
                 </Stack>
               </Dialog.Body>
 
-              <Dialog.Footer pt="0" gap="3">
+              <Stack
+                direction="row"
+                justify="flex-end"
+                gap="3"
+                px={{ base: "6", md: "6" }}
+                pb={{ base: "6", md: "6" }}
+                pt="4"
+              >
                 <Button type="button" variant="outline" onClick={() => setOpen(false)}>
                   Cancel
                 </Button>
@@ -127,7 +134,7 @@ export function CreateSiteDialog({ configRevision, domain }: CreateSiteDialogPro
                 >
                   Create site
                 </FormSubmitButton>
-              </Dialog.Footer>
+              </Stack>
             </form>
           </Dialog.Content>
         </Dialog.Positioner>
