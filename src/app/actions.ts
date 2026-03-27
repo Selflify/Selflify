@@ -47,7 +47,11 @@ function toRevision(formData: FormData): number | undefined {
 }
 
 function redirectWith(pathname: string, kind: "notice" | "error", message: string): never {
-  redirect(`${pathname}?${kind}=${encodeURIComponent(message)}`);
+  const [basePath, search = ""] = pathname.split("?");
+  const params = new URLSearchParams(search);
+  params.set(kind, message);
+
+  redirect(`${basePath}?${params.toString()}`);
 }
 
 function createPreviewAuth(
@@ -290,7 +294,7 @@ export async function updateSiteAction(siteSlug: string, formData: FormData) {
       },
     });
 
-    redirectWith(`/sites/${siteSlug}`, "notice", `Updated ${siteSlug}.`);
+    redirectWith(`/sites/${siteSlug}?view=configuration`, "notice", `Updated ${siteSlug}.`);
   } catch (error) {
     const message =
       error instanceof ConfigConflictError
@@ -299,7 +303,7 @@ export async function updateSiteAction(siteSlug: string, formData: FormData) {
           ? error.message
           : "Could not update site.";
 
-    redirectWith(`/sites/${siteSlug}`, "error", message);
+    redirectWith(`/sites/${siteSlug}?view=configuration`, "error", message);
   }
 }
 
@@ -352,7 +356,7 @@ export async function deleteSiteAction(siteSlug: string, formData: FormData) {
           ? error.message
           : "Could not delete site.";
 
-    redirectWith(`/sites/${siteSlug}`, "error", message);
+    redirectWith(`/sites/${siteSlug}?view=configuration`, "error", message);
   }
 }
 
@@ -362,10 +366,21 @@ const serverSettingsSchema = z.object({
   caddyContactEmail: z.email(),
 });
 
-const adminSettingsSchema = z.object({
-  adminLogin: z.string().trim().min(3).max(128),
-  adminPassword: z.string().max(128).default(""),
-});
+const adminSettingsSchema = z
+  .object({
+    adminLogin: z.string().trim().min(3).max(128),
+    adminPassword: z.string().max(128).default(""),
+    adminPasswordConfirm: z.string().max(128).default(""),
+  })
+  .superRefine((value, context) => {
+    if (value.adminPassword && value.adminPassword !== value.adminPasswordConfirm) {
+      context.addIssue({
+        code: "custom",
+        message: "Password confirmation does not match the new password.",
+        path: ["adminPasswordConfirm"],
+      });
+    }
+  });
 
 async function handleSettingsFailure(error: unknown, fallbackMessage: string): Promise<never> {
   const message =
@@ -421,6 +436,7 @@ export async function saveAdminAccessAction(formData: FormData) {
     const payload = adminSettingsSchema.parse({
       adminLogin: getQueryValue(formData, "adminLogin"),
       adminPassword: getQueryValue(formData, "adminPassword"),
+      adminPasswordConfirm: getQueryValue(formData, "adminPasswordConfirm"),
     });
 
     await runConfigOperation({

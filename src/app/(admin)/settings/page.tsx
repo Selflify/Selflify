@@ -141,6 +141,19 @@ export default async function SettingsPage({ searchParams }: SettingsPageProps) 
                 bg="rgba(255,255,255,0.04)"
               />
             </FormField>
+            <FormField
+              label="Confirm password"
+              htmlFor="settings-admin-password-confirm"
+              hint="Repeat the new password to avoid saving a typo."
+            >
+              <Input
+                id="settings-admin-password-confirm"
+                name="adminPasswordConfirm"
+                type="password"
+                placeholder="Repeat the new password"
+                bg="rgba(255,255,255,0.04)"
+              />
+            </FormField>
             <FormSubmitButton
               alignSelf="flex-start"
               bg="brand.600"
