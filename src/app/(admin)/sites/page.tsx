@@ -137,7 +137,7 @@ export default async function SitesPage({ searchParams }: SitesPageProps) {
                       </Button>
                     </Link>
                     <Link href={`/sites/${site.slug}`}>
-                      <Button as="span" bg="brand.600" color="white" _hover={{ bg: "brand.500" }}>
+                      <Button as="span" bg="action.500" color="white" _hover={{ bg: "action.600" }}>
                         Manage site
                       </Button>
                     </Link>

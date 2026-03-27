@@ -33,6 +33,18 @@ const config = defineConfig({
           800: { value: "#5b1023" },
           900: { value: "#3a0815" },
         },
+        action: {
+          50: { value: "#eef6fb" },
+          100: { value: "#d5e7f4" },
+          200: { value: "#accfe9" },
+          300: { value: "#81b3db" },
+          400: { value: "#5f95bf" },
+          500: { value: "#3a6f96" },
+          600: { value: "#2d5b7c" },
+          700: { value: "#244a65" },
+          800: { value: "#1c3548" },
+          900: { value: "#12212d" },
+        },
         canvas: {
           950: { value: "#070709" },
           900: { value: "#111116" },

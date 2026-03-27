@@ -81,9 +81,9 @@ export function LoginForm({ initialError }: LoginFormProps) {
         ) : null}
         <Button
           type="submit"
-          bg="brand.600"
+          bg="action.500"
           color="white"
-          _hover={{ bg: "brand.500" }}
+          _hover={{ bg: "action.600" }}
           loading={pending}
           loadingText="Signing in"
         >

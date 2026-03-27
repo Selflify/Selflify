@@ -92,9 +92,9 @@ export default async function SettingsPage({ searchParams }: SettingsPageProps) 
             </FormField>
             <FormSubmitButton
               alignSelf="flex-start"
-              bg="brand.600"
+              bg="action.500"
               color="white"
-              _hover={{ bg: "brand.500" }}
+              _hover={{ bg: "action.600" }}
               pendingText="Applying infrastructure"
             >
               Save infrastructure
@@ -157,9 +157,9 @@ export default async function SettingsPage({ searchParams }: SettingsPageProps) 
             </FormField>
             <FormSubmitButton
               alignSelf="flex-start"
-              bg="brand.600"
+              bg="action.500"
               color="white"
-              _hover={{ bg: "brand.500" }}
+              _hover={{ bg: "action.600" }}
               pendingText="Saving access"
             >
               Save access

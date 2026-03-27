@@ -191,9 +191,9 @@ export default async function SiteDetailsPage({ params, searchParams }: SiteDeta
                 </FormField>
                 <FormSubmitButton
                   alignSelf="flex-start"
-                  bg="brand.600"
+                  bg="action.500"
                   color="white"
-                  _hover={{ bg: "brand.500" }}
+                  _hover={{ bg: "action.600" }}
                   pendingText="Saving site"
                 >
                   Save site
@@ -263,15 +263,16 @@ export default async function SiteDetailsPage({ params, searchParams }: SiteDeta
             <Flex gap="3" wrap="wrap" mt="4">
               <FormSubmitButton
                 form="site-preview-access-form"
-                bg="brand.600"
+                bg="action.500"
                 color="white"
-                _hover={{ bg: "brand.500" }}
+                _hover={{ bg: "action.600" }}
                 pendingText="Saving preview access"
               >
                 Save preview access
               </FormSubmitButton>
               <FormSubmitButton
                 form="site-preview-access-reset-form"
+                colorPalette="red"
                 variant="outline"
                 pendingText="Resetting preview access"
                 confirmMessage={`Reset preview login and password for ${site.slug}?`}

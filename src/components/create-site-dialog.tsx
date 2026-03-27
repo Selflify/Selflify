@@ -14,7 +14,7 @@ export function CreateSiteDialog({ configRevision }: CreateSiteDialogProps) {
   return (
     <Dialog.Root size="xl">
       <Dialog.Trigger asChild>
-        <Button bg="brand.600" color="white" _hover={{ bg: "brand.500" }}>
+        <Button bg="action.500" color="white" _hover={{ bg: "action.600" }}>
           Create site
         </Button>
       </Dialog.Trigger>
@@ -101,9 +101,9 @@ export function CreateSiteDialog({ configRevision }: CreateSiteDialogProps) {
                   </Button>
                 </Dialog.CloseTrigger>
                 <FormSubmitButton
-                  bg="brand.600"
+                  bg="action.500"
                   color="white"
-                  _hover={{ bg: "brand.500" }}
+                  _hover={{ bg: "action.600" }}
                   pendingText="Creating site"
                 >
                   Create site

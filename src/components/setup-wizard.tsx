@@ -221,11 +221,11 @@ export function SetupWizard({
             ) : null}
 
             {step === 1 ? (
-              <Button type="button" bg="brand.600" color="white" _hover={{ bg: "brand.500" }} onClick={continueToInfrastructureStep}>
+              <Button type="button" bg="action.500" color="white" _hover={{ bg: "action.600" }} onClick={continueToInfrastructureStep}>
                 Continue
               </Button>
             ) : (
-              <Button type="submit" bg="brand.600" color="white" _hover={{ bg: "brand.500" }}>
+              <Button type="submit" bg="action.500" color="white" _hover={{ bg: "action.600" }}>
                 Finish setup
               </Button>
             )}

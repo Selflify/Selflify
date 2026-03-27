@@ -53,9 +53,9 @@ export function CloudflareTokenSection({
             <Flex gap="3" wrap="wrap">
               <FormSubmitButton
                 alignSelf="flex-start"
-                bg="brand.600"
+                bg="action.500"
                 color="white"
-                _hover={{ bg: "brand.500" }}
+                _hover={{ bg: "action.600" }}
                 pendingText="Saving token"
               >
                 Save token
