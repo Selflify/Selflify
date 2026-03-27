@@ -38,10 +38,10 @@ function createConfig(site: SiteConfig, partial?: Partial<SelflifyConfig>): Self
     ...partial,
     server: {
       ...base.server,
-      domain: "sendsay.dev",
+      domain: "example.dev",
       previewRootDir: "/var/www",
       selflifyUpstream: "selflify:3000",
-      caddyContactEmail: "dev@sendsay.dev",
+      caddyContactEmail: "dev@example.dev",
       cloudflareApiToken: "cf-token",
       ...(partial?.server ?? {}),
     },
@@ -80,10 +80,10 @@ describe("generateCaddyfile", () => {
       {
         server: {
           ...createDefaultConfig().server,
-          domain: "sendsay.dev",
+          domain: "example.dev",
           previewRootDir: "/var/www",
           selflifyUpstream: "selflify:3000",
-          caddyContactEmail: "dev@sendsay.dev",
+          caddyContactEmail: "dev@example.dev",
           cloudflareApiToken: "",
         },
       },
@@ -103,8 +103,8 @@ describe("generateCaddyfile", () => {
     const rendered = generateCaddyfile(config);
 
     expect(rendered).toContain("auto_https off");
-    expect(rendered).toContain("http://sendsay.dev");
-    expect(rendered).toContain("http://app.sendsay.dev, http://*.app.sendsay.dev");
+    expect(rendered).toContain("http://example.dev");
+    expect(rendered).toContain("http://app.example.dev, http://*.app.example.dev");
     expect(rendered).toContain("reverse_proxy host.docker.internal:3000");
   });
 
@@ -153,10 +153,10 @@ describe("generateCaddyfile", () => {
     const config = createConfig(createSite(), {
       server: {
         ...createDefaultConfig().server,
-        domain: "sendsay.dev",
+        domain: "example.dev",
         previewRootDir: "/var/www",
         selflifyUpstream: "selflify:3000",
-        caddyContactEmail: "dev@sendsay.dev",
+        caddyContactEmail: "dev@example.dev",
         cloudflareApiToken: "cf-token",
         caddyConfigPath: path.join(tempDir, "Caddyfile"),
       },

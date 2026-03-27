@@ -23,9 +23,9 @@ test("completes first launch and signs in with the created account", async ({ pa
   await expect(page.getByLabel("Primary domain")).toHaveValue("preview.example.com");
   await expect(page.getByLabel("Caddy contact email")).toHaveValue("admin@preview.example.com");
 
-  await page.locator("#setup-domain").fill("sendsay.dev");
+  await page.locator("#setup-domain").fill("example.dev");
   await page.locator("#setup-server-ip").fill("203.0.113.10");
-  await page.locator("#setup-caddy-contact-email").fill("ops@sendsay.dev");
+  await page.locator("#setup-caddy-contact-email").fill("ops@example.dev");
   await page.locator("#setup-cloudflare-api-token").fill("cf-token-for-e2e");
   await page.getByRole("button", { name: "Finish setup" }).click();
 
@@ -59,9 +59,9 @@ test("completes first launch and signs in with the created account", async ({ pa
       login: "owner",
       hasPasswordHash: true,
       configuredAt: true,
-      domain: "sendsay.dev",
+      domain: "example.dev",
       serverIp: "203.0.113.10",
-      caddyContactEmail: "ops@sendsay.dev",
+      caddyContactEmail: "ops@example.dev",
       cloudflareApiToken: "cf-token-for-e2e",
     });
 
@@ -70,9 +70,9 @@ test("completes first launch and signs in with the created account", async ({ pa
       const caddyfile = await fs.readFile(caddyfilePath, "utf8");
 
       return (
-        caddyfile.includes("sendsay.dev") &&
+        caddyfile.includes("example.dev") &&
         caddyfile.includes('dns cloudflare "cf-token-for-e2e"') &&
-        caddyfile.includes("email ops@sendsay.dev")
+        caddyfile.includes("email ops@example.dev")
       );
     })
     .toBe(true);
@@ -83,5 +83,5 @@ test("completes first launch and signs in with the created account", async ({ pa
 
   await expect(page).toHaveURL(/\/sites/);
   await expect(page.getByRole("heading", { name: /^Sites$/ })).toBeVisible();
-  await expect(page.getByText("sendsay.dev")).toBeVisible();
+  await expect(page.getByText("example.dev")).toBeVisible();
 });

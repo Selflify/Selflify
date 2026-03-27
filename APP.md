@@ -9,16 +9,16 @@ This setup is a self-hosted preview platform for static SPA deployments with:
 - wildcard subdomains per site
 - automatic HTTPS via Caddy + Cloudflare DNS challenge
 - deploys uploaded by CI via `rsync` to the server
-- root portal page on `sendsay.dev`
+- root portal page on `example.dev`
 - preview cleanup script
 - config-driven generation via `sites.json`
 
 Current naming examples:
 
-- stable: `app.sendsay.dev`
-- PR preview: `pr-6825.app.sendsay.dev`
-- branch preview: `feature-login.app.sendsay.dev`
-- tag preview: `v3-189-2.app.sendsay.dev`
+- stable: `app.example.dev`
+- PR preview: `pr-6825.app.example.dev`
+- branch preview: `feature-login.app.example.dev`
+- tag preview: `v3-189-2.app.example.dev`
 
 ## Current architecture
 
@@ -42,15 +42,15 @@ Caddy serves files directly from `/var/www/...`.
 
 Root portal page:
 
-- `https://sendsay.dev`
+- `https://example.dev`
 
 Per-site stable:
 
-- `https://<site>.sendsay.dev`
+- `https://<site>.example.dev`
 
 Per-site preview:
 
-- `https://<deploy>.<site>.sendsay.dev`
+- `https://<deploy>.<site>.example.dev`
 
 ### DNS
 
@@ -58,8 +58,8 @@ Cloudflare is used as DNS provider.
 
 For each site, two A records are needed:
 
-- `<site>.sendsay.dev` → server IP
-- `*.<site>.sendsay.dev` → server IP
+- `<site>.example.dev` → server IP
+- `*.<site>.example.dev` → server IP
 
 Both should be `DNS only`, not proxied.
 
@@ -73,8 +73,8 @@ CLOUDFLARE_API_TOKEN
 
 Wildcard certificates are used for each site group, for example:
 
-- `*.app.sendsay.dev`
-- `*.storybook.sendsay.dev`
+- `*.app.example.dev`
+- `*.storybook.example.dev`
 
 ## Current config model
 
@@ -88,7 +88,7 @@ Example:
 
 ```json
 {
-  "domain": "sendsay.dev",
+  "domain": "example.dev",
   "sites": {
     "root": {
       "login": "login",
@@ -112,7 +112,7 @@ Example:
 ### Meaning of fields
 
 - `domain` — base domain
-- `sites.root` — settings for root portal page `sendsay.dev`
+- `sites.root` — settings for root portal page `example.dev`
 - `login` / `password_hash` — optional basic auth credentials
 - `main_branch` — stable deploy folder name
 - `dir` — filesystem path where site deploys live
@@ -243,7 +243,7 @@ CLOUDFLARE_API_TOKEN=your_cloudflare_token
 For a host like:
 
 ```text
-release-3-189-30.app.sendsay.dev
+release-3-189-30.app.example.dev
 ```
 
 Caddy routes preview hostnames using the preview part of the host and maps them to directories like:
@@ -259,7 +259,7 @@ Caddy routes preview hostnames using the preview part of the host and maps them 
 Responsibilities:
 
 - read `~/sites.json`
-- build `index.html` for `sendsay.dev`
+- build `index.html` for `example.dev`
 - show all stable and preview environments
 - show deployment size for each entry
 - open deploy links in new tab with:
@@ -326,8 +326,8 @@ Workflow posts a comment with preview URLs for each site.
 ### Add a new site manually today
 
 1. Add DNS records in Cloudflare:
-   - `<site>.sendsay.dev`
-   - `*.<site>.sendsay.dev`
+   - `<site>.example.dev`
+   - `*.<site>.example.dev`
 2. Create site directory:
    - `/var/www/<site>/stable`
 3. Add site to `~/sites.json`
@@ -341,7 +341,7 @@ Workflow posts a comment with preview URLs for each site.
 
 ## Suggested Selflify product direction
 
-Replace the static `sendsay.dev` portal with a real admin panel called **Selflify**.
+Replace the static `example.dev` portal with a real admin panel called **Selflify**.
 
 ### Product goals
 
@@ -368,7 +368,7 @@ Selflify should be a self-hosted service that:
 - self-hosted in Docker
 - no database
 - update current config files directly
-- deploy to `sendsay.dev` instead of the current generated HTML portal
+- deploy to `example.dev` instead of the current generated HTML portal
 - only one account
 - on first open, show setup screen to create login and password
 
@@ -409,7 +409,7 @@ You are building a production-ready self-hosted admin panel called **Selflify**.
 
 ## Goal
 
-Create a dark-themed Next.js application that replaces the current static root preview page at `sendsay.dev`.
+Create a dark-themed Next.js application that replaces the current static root preview page at `example.dev`.
 
 This app manages a self-hosted preview platform for static SPA deployments.
 
@@ -452,7 +452,7 @@ There is a JSON config file at `~/sites.json`:
 
 ```json
 {
-  "domain": "sendsay.dev",
+  "domain": "example.dev",
   "sites": {
     "root": {
       "login": "login",
@@ -626,4 +626,4 @@ Make it production-minded, clean, and easy to extend.
 
 1. Save this file as project documentation
 2. Feed the Codex prompt into Codex
-3. Let the generated admin panel replace the static root portal on `sendsay.dev`
+3. Let the generated admin panel replace the static root portal on `example.dev`

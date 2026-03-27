@@ -67,7 +67,7 @@ describe("site details page", () => {
         sizeBytes: 1024,
         sizeLabel: "1.0 KB",
         modifiedAt: "2026-03-27T09:20:00.000Z",
-        url: "https://app.sendsay.dev",
+        url: "https://app.example.dev",
       },
       {
         name: "pr-42",
@@ -76,7 +76,7 @@ describe("site details page", () => {
         sizeBytes: 512,
         sizeLabel: "512 B",
         modifiedAt: "2026-03-27T09:25:00.000Z",
-        url: "https://pr-42.app.sendsay.dev",
+        url: "https://pr-42.app.example.dev",
       },
     ]);
 
@@ -88,7 +88,7 @@ describe("site details page", () => {
 
     expect(html).toContain("Deploy inventory");
     expect(html).toContain("pr-42");
-    expect(html).toContain("https://pr-42.app.sendsay.dev");
+    expect(html).toContain("https://pr-42.app.example.dev");
     expect(html).toContain("/var/www/app/pr-42");
     expect(html).not.toContain("Danger zone");
   });

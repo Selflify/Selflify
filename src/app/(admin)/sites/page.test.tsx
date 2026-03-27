@@ -50,7 +50,7 @@ describe("sites page", () => {
         totalSizeBytes: 2048,
         totalSizeLabel: "2.0 KB",
         deployCount: 2,
-        stableUrl: "https://app.sendsay.dev",
+        stableUrl: "https://app.example.dev",
         previewAuthEnabled: true,
       },
     ]);
@@ -71,7 +71,7 @@ describe("sites page", () => {
     expect(html).toContain("Site inventory");
     expect(html).toContain("Site created.");
     expect(html).toContain("App");
-    expect(html).toContain("app.sendsay.dev");
+    expect(html).toContain("app.example.dev");
     expect(html).toContain("/var/www/app");
     expect(html).toContain('href="/sites/app"');
     expect(html).toContain("CREATE_SITE:3");

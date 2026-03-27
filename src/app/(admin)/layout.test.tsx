@@ -26,7 +26,7 @@ describe("admin layout", () => {
 
   it("renders shell content for authenticated admins", async () => {
     const config = createDefaultConfig();
-    config.server.domain = "sendsay.dev";
+    config.server.domain = "example.dev";
 
     vi.mocked(requireAdminSession).mockResolvedValue({
       config,
@@ -41,6 +41,6 @@ describe("admin layout", () => {
     expect(html).toContain("Selflify");
     expect(html).toContain("CHILD_CONTENT");
     expect(html).toContain("OPERATION_STATUS");
-    expect(html).toContain('data-domain="sendsay.dev"');
+    expect(html).toContain('data-domain="example.dev"');
   });
 });

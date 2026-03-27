@@ -137,7 +137,7 @@ describe.sequential("runConfigOperation", () => {
       label: "save-settings",
       expectedRevision: 0,
       mutate: async (draft) => {
-        draft.server.domain = "preview.sendsay.dev";
+        draft.server.domain = "preview.example.dev";
         return { config: draft, result: null };
       },
     });
@@ -146,7 +146,7 @@ describe.sequential("runConfigOperation", () => {
     const caddyLog = await fs.readFile(fakeCaddy.logPath, "utf8");
 
     expect(persisted.configRevision).toBe(1);
-    expect(persisted.server.domain).toBe("preview.sendsay.dev");
+    expect(persisted.server.domain).toBe("preview.example.dev");
     expect(persisted.operations.lastStatus).toBe("success");
     expect(caddyLog).toContain("validate");
     expect(caddyLog).not.toContain("reload");

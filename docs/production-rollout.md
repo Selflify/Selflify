@@ -5,7 +5,7 @@
 - Linux host with Docker Engine and `docker compose`
 - mounted `/var/www` with existing deploy directories
 - Cloudflare API token with DNS edit permissions for the target zone
-- public DNS A record for `sendsay.dev` pointing to the server
+- public DNS A record for `example.dev` pointing to the server
 - `AUTH_SECRET` prepared for NextAuth sessions
 
 ## 2. Prepare the runtime config
@@ -54,20 +54,20 @@ The production stack includes:
 
 ## 5. First-launch flow
 
-1. Open `https://sendsay.dev/setup`
+1. Open `https://example.dev/setup`
 2. Create the single admin account
-3. Sign in through `https://sendsay.dev/login`
+3. Sign in through `https://example.dev/login`
 4. Open Settings and verify domain, server IP and Cloudflare token
 
 ## 6. Smoke checklist
 
 After the first launch, verify:
 
-- `https://sendsay.dev` opens the Next.js app
+- `https://example.dev` opens the Next.js app
 - login works and protected routes redirect correctly
 - Sites overview loads site inventory and disk stats
-- existing stable host opens, for example `https://app.sendsay.dev`
-- existing preview host opens, for example `https://pr-6825.app.sendsay.dev`
+- existing stable host opens, for example `https://app.example.dev`
+- existing preview host opens, for example `https://pr-6825.app.example.dev`
 - creating a site writes to `runtime/selflify.config.json`
 - creating a site creates `/var/www/<site>/<main-branch>/index.html`
 - `runtime/Caddyfile` changes are applied without restarting the whole stack
