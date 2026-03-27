@@ -57,6 +57,15 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     environment: production
+    env:
+      DEPLOY_HOST: ${{ vars.DEPLOY_HOST }}
+      DEPLOY_PORT: ${{ vars.DEPLOY_PORT }}
+      DEPLOY_USER: ${{ vars.DEPLOY_USER }}
+      DEPLOY_PATH: ${{ vars.DEPLOY_PATH }}
+      AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
+      SELFLIFY_DOMAIN: ${{ vars.SELFLIFY_DOMAIN }}
+      SELFLIFY_SERVER_IP: ${{ vars.SELFLIFY_SERVER_IP }}
+      SELFLIFY_CADDY_EMAIL: ${{ vars.SELFLIFY_CADDY_EMAIL }}
 
     steps:
       - name: Checkout
@@ -65,11 +74,7 @@ jobs:
       - name: Validate deployment configuration
         shell: bash
         env:
-          DEPLOY_HOST: ${{ vars.DEPLOY_HOST }}
-          DEPLOY_USER: ${{ vars.DEPLOY_USER }}
-          DEPLOY_PATH: ${{ vars.DEPLOY_PATH }}
           DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
-          AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
         run: |
           set -euo pipefail
 
@@ -88,8 +93,6 @@ jobs:
       - name: Add SSH known hosts
         shell: bash
         env:
-          DEPLOY_HOST: ${{ vars.DEPLOY_HOST }}
-          DEPLOY_PORT: ${{ vars.DEPLOY_PORT }}
           DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
         run: |
           set -euo pipefail
@@ -107,11 +110,6 @@ jobs:
 
       - name: Prepare remote directory
         shell: bash
-        env:
-          DEPLOY_HOST: ${{ vars.DEPLOY_HOST }}
-          DEPLOY_PORT: ${{ vars.DEPLOY_PORT }}
-          DEPLOY_USER: ${{ vars.DEPLOY_USER }}
-          DEPLOY_PATH: ${{ vars.DEPLOY_PATH }}
         run: |
           set -euo pipefail
 
@@ -119,11 +117,6 @@ jobs:
 
       - name: Sync repository to server
         shell: bash
-        env:
-          DEPLOY_HOST: ${{ vars.DEPLOY_HOST }}
-          DEPLOY_PORT: ${{ vars.DEPLOY_PORT }}
-          DEPLOY_USER: ${{ vars.DEPLOY_USER }}
-          DEPLOY_PATH: ${{ vars.DEPLOY_PATH }}
         run: |
           set -euo pipefail
 
@@ -148,11 +141,6 @@ jobs:
       - name: Upload production env
         shell: bash
         env:
-          DEPLOY_HOST: ${{ vars.DEPLOY_HOST }}
-          DEPLOY_PORT: ${{ vars.DEPLOY_PORT }}
-          DEPLOY_USER: ${{ vars.DEPLOY_USER }}
-          DEPLOY_PATH: ${{ vars.DEPLOY_PATH }}
-          AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
           SELFLIFY_PREVIEW_TTL_DAYS: ${{ vars.SELFLIFY_PREVIEW_TTL_DAYS }}
           SELFLIFY_ORPHAN_TTL_DAYS: ${{ vars.SELFLIFY_ORPHAN_TTL_DAYS }}
           SELFLIFY_CLEANUP_INTERVAL_SECONDS: ${{ vars.SELFLIFY_CLEANUP_INTERVAL_SECONDS }}
@@ -172,15 +160,6 @@ jobs:
 
       - name: Deploy on server
         shell: bash
-        env:
-          DEPLOY_HOST: ${{ vars.DEPLOY_HOST }}
-          DEPLOY_PORT: ${{ vars.DEPLOY_PORT }}
-          DEPLOY_USER: ${{ vars.DEPLOY_USER }}
-          DEPLOY_PATH: ${{ vars.DEPLOY_PATH }}
-          AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
-          SELFLIFY_DOMAIN: ${{ vars.SELFLIFY_DOMAIN }}
-          SELFLIFY_SERVER_IP: ${{ vars.SELFLIFY_SERVER_IP }}
-          SELFLIFY_CADDY_EMAIL: ${{ vars.SELFLIFY_CADDY_EMAIL }}
         run: |
           set -euo pipefail
 
