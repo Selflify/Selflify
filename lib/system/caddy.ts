@@ -7,9 +7,10 @@ import {
   getEffectiveCaddyBinaryPath,
   getEffectiveCaddyConfigPath,
   getEffectivePreviewRoot,
+  getEffectiveSelflifyUpstream,
 } from "@/lib/config/paths";
 import { runCommand } from "@/lib/system/commands";
-import { shouldSkipCaddyReload } from "@/lib/system/runtime";
+import { isDevelopmentRuntime, shouldSkipCaddyReload } from "@/lib/system/runtime";
 
 function escapeCaddyLiteral(value: string): string {
   return value.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
@@ -35,6 +36,10 @@ function renderCommonSiteImports(hasToken: boolean): string {
     : "    import common_headers\n    import static_cache";
 }
 
+function withDevScheme(host: string): string {
+  return isDevelopmentRuntime() ? `http://${host}` : host;
+}
+
 function renderPreviewBlock(config: SelflifyConfig, site: SiteConfig): string {
   const previewRoot = path.join(getEffectivePreviewRoot(config), site.slug).replace(/\\/g, "/");
   const authBlock =
@@ -45,8 +50,10 @@ function renderPreviewBlock(config: SelflifyConfig, site: SiteConfig): string {
         }
 `
       : "";
+  const stableHost = `${site.slug}.${config.server.domain}`;
+  const previewHost = `*.${site.slug}.${config.server.domain}`;
 
-  return `${site.slug}.${config.server.domain}, *.${site.slug}.${config.server.domain} {
+  return `${withDevScheme(stableHost)}, ${withDevScheme(previewHost)} {
     import common_site
 
     @preview expression \`{host} != "${site.slug}.${config.server.domain}"\`
@@ -68,6 +75,7 @@ function renderPreviewBlock(config: SelflifyConfig, site: SiteConfig): string {
 
 export function generateCaddyfile(config: SelflifyConfig): string {
   const hasToken = Boolean(config.server.cloudflareApiToken);
+  const autoHttps = isDevelopmentRuntime() ? "    auto_https off\n" : "";
   const siteBlocks = config.sites
     .slice()
     .sort((left, right) => left.slug.localeCompare(right.slug))
@@ -77,7 +85,7 @@ export function generateCaddyfile(config: SelflifyConfig): string {
   return `{
     admin 0.0.0.0:2019
     email ${config.server.caddyContactEmail}
-}
+${autoHttps}}
 ${renderTlsBlock(config.server.cloudflareApiToken)}
 (common_headers) {
     header {
@@ -115,10 +123,10 @@ ${renderCommonSiteImports(hasToken)}
     }
 }
 
-${config.server.domain} {
+${withDevScheme(config.server.domain)} {
     import common_site
 
-    reverse_proxy ${config.server.selflifyUpstream}
+    reverse_proxy ${getEffectiveSelflifyUpstream(config)}
 }
 
 ${siteBlocks}`.trim();

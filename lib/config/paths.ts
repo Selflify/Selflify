@@ -65,6 +65,21 @@ export function getEffectiveCaddyAdminAddress(config: SelflifyConfig): string {
   return process.env.SELFLIFY_CADDY_ADMIN_ADDRESS ?? config.server.caddyAdminAddress;
 }
 
+export function getEffectiveSelflifyUpstream(config: SelflifyConfig): string {
+  if (process.env.SELFLIFY_UPSTREAM) {
+    return process.env.SELFLIFY_UPSTREAM;
+  }
+
+  if (
+    process.env.NODE_ENV === "development" &&
+    config.server.selflifyUpstream === "selflify:3000"
+  ) {
+    return "host.docker.internal:3000";
+  }
+
+  return config.server.selflifyUpstream;
+}
+
 export function resolveConfiguredPath(value: string): string {
   return resolvePathValue(value);
 }

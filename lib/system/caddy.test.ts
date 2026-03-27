@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { type SelflifyConfig, type SiteConfig } from "@/lib/config/schema";
 import { createDefaultConfig } from "@/lib/config/service";
@@ -40,6 +40,10 @@ function createConfig(site: SiteConfig, partial?: Partial<SelflifyConfig>): Self
 }
 
 describe("generateCaddyfile", () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
   it("renders apex proxy, preview auth and stable root mapping", () => {
     const config = createConfig(createSite());
     const rendered = generateCaddyfile(config);
@@ -79,5 +83,17 @@ describe("generateCaddyfile", () => {
     expect(rendered).not.toContain("basicauth {");
     expect(rendered).toContain("import common_headers");
     expect(rendered).toContain("import static_cache");
+  });
+
+  it("uses host.docker.internal for the default dev upstream when Next.js runs on the host", () => {
+    vi.stubEnv("NODE_ENV", "development");
+
+    const config = createConfig(createSite());
+    const rendered = generateCaddyfile(config);
+
+    expect(rendered).toContain("auto_https off");
+    expect(rendered).toContain("http://sendsay.dev");
+    expect(rendered).toContain("http://app.sendsay.dev, http://*.app.sendsay.dev");
+    expect(rendered).toContain("reverse_proxy host.docker.internal:3000");
   });
 });

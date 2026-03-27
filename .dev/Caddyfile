@@ -1,3 +1,204 @@
-:80 {
-    reverse_proxy selflify:3000
+{
+    admin 0.0.0.0:2019
+    email dev@sendsay.dev
+    auto_https off
+}
+
+(common_headers) {
+    header {
+        X-Robots-Tag "noindex, nofollow, noarchive, nosnippet, noimageindex"
+        Referrer-Policy "strict-origin-when-cross-origin"
+        X-Content-Type-Options "nosniff"
+    }
+}
+
+(static_cache) {
+    @static {
+        path *.js *.mjs *.css *.map *.png *.jpg *.jpeg *.gif *.svg *.webp *.ico *.woff *.woff2 *.ttf *.eot
+    }
+    header @static Cache-Control "public, max-age=31536000, immutable"
+
+    @html {
+        path *.html /
+    }
+    header @html Cache-Control "no-store, no-cache, must-revalidate"
+}
+
+(common_site) {
+    import common_headers
+    import static_cache
+
+    encode gzip zstd
+}
+
+http://sendsay.dev {
+    import common_site
+
+    reverse_proxy host.docker.internal:3000
+}
+
+http://app.sendsay.dev, http://*.app.sendsay.dev {
+    import common_site
+
+    @preview expression `{host} != "app.sendsay.dev"`
+
+    handle @preview {
+        root * /var/www/app/{labels.3}
+        try_files {path} {path}/ /index.html
+        file_server
+    }
+
+    handle {
+        root * /var/www/app/stable
+        try_files {path} {path}/ /index.html
+        file_server
+    }
+}
+
+http://chatbots.sendsay.dev, http://*.chatbots.sendsay.dev {
+    import common_site
+
+    @preview expression `{host} != "chatbots.sendsay.dev"`
+
+    handle @preview {
+        basicauth {
+            nobotshere $2a$14$yljaNFg1HsgUtwps9bDhm.1T0y0Vcdu8nlg7C.iXyMil.yjmapX3a
+        }
+
+        root * /var/www/chatbots/{labels.3}
+        try_files {path} {path}/ /index.html
+        file_server
+    }
+
+    handle {
+        root * /var/www/chatbots/stable
+        try_files {path} {path}/ /index.html
+        file_server
+    }
+}
+
+http://docs.sendsay.dev, http://*.docs.sendsay.dev {
+    import common_site
+
+    @preview expression `{host} != "docs.sendsay.dev"`
+
+    handle @preview {
+        root * /var/www/docs/{labels.3}
+        try_files {path} {path}/ /index.html
+        file_server
+    }
+
+    handle {
+        root * /var/www/docs/stable
+        try_files {path} {path}/ /index.html
+        file_server
+    }
+}
+
+http://draft-app.sendsay.dev, http://*.draft-app.sendsay.dev {
+    import common_site
+
+    @preview expression `{host} != "draft-app.sendsay.dev"`
+
+    handle @preview {
+        root * /var/www/draft-app/{labels.3}
+        try_files {path} {path}/ /index.html
+        file_server
+    }
+
+    handle {
+        root * /var/www/draft-app/master
+        try_files {path} {path}/ /index.html
+        file_server
+    }
+}
+
+http://draft-editor.sendsay.dev, http://*.draft-editor.sendsay.dev {
+    import common_site
+
+    @preview expression `{host} != "draft-editor.sendsay.dev"`
+
+    handle @preview {
+        root * /var/www/draft-editor/{labels.3}
+        try_files {path} {path}/ /index.html
+        file_server
+    }
+
+    handle {
+        root * /var/www/draft-editor/master
+        try_files {path} {path}/ /index.html
+        file_server
+    }
+}
+
+http://draft-web.sendsay.dev, http://*.draft-web.sendsay.dev {
+    import common_site
+
+    @preview expression `{host} != "draft-web.sendsay.dev"`
+
+    handle @preview {
+        root * /var/www/draft-web/{labels.3}
+        try_files {path} {path}/ /index.html
+        file_server
+    }
+
+    handle {
+        root * /var/www/draft-web/master
+        try_files {path} {path}/ /index.html
+        file_server
+    }
+}
+
+http://storybook.sendsay.dev, http://*.storybook.sendsay.dev {
+    import common_site
+
+    @preview expression `{host} != "storybook.sendsay.dev"`
+
+    handle @preview {
+        root * /var/www/storybook/{labels.3}
+        try_files {path} {path}/ /index.html
+        file_server
+    }
+
+    handle {
+        root * /var/www/storybook/stable
+        try_files {path} {path}/ /index.html
+        file_server
+    }
+}
+
+http://transport.sendsay.dev, http://*.transport.sendsay.dev {
+    import common_site
+
+    @preview expression `{host} != "transport.sendsay.dev"`
+
+    handle @preview {
+        root * /var/www/transport/{labels.3}
+        try_files {path} {path}/ /index.html
+        file_server
+    }
+
+    handle {
+        root * /var/www/transport/stable
+        try_files {path} {path}/ /index.html
+        file_server
+    }
+}
+
+http://x-editor.sendsay.dev, http://*.x-editor.sendsay.dev {
+    import common_site
+
+    @preview expression `{host} != "x-editor.sendsay.dev"`
+
+    handle @preview {
+        root * /var/www/x-editor/{labels.3}
+        try_files {path} {path}/ /index.html
+        file_server
+    }
+
+    handle {
+        root * /var/www/x-editor/stable
+        try_files {path} {path}/ /index.html
+        file_server
+    }
 }

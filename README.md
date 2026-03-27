@@ -62,6 +62,7 @@ Useful optional overrides:
 SELFLIFY_CADDY_CONFIG_PATH=./.dev/Caddyfile
 SELFLIFY_CADDY_BIN=caddy
 SELFLIFY_CADDY_ADMIN_ADDRESS=http://caddy:2019
+SELFLIFY_UPSTREAM=host.docker.internal:3000
 SELFLIFY_BACKUP_ROOT=./.selflify/backups
 SELFLIFY_BACKUP_KEEP=20
 SELFLIFY_MOCK_CLOUDFLARE=1
@@ -96,12 +97,18 @@ docker compose -f docker-compose.dev.yml up --build
 
 This runs:
 
-- `selflify` on `http://localhost:3000`
 - `cleanup` worker against `/var/www` mounted from `.dev/var-www`
 - `caddy` on `http://localhost:8080`
 
+Run the Next.js app separately on the host:
+
+```bash
+yarn dev --hostname 0.0.0.0 --port 3000
+```
+
 Inside the containers, the base preview root is always `/var/www`.
 In development, `docker-compose.dev.yml` mounts local fixture files from `.dev/var-www` into that path.
+`Caddy` proxies the admin panel to `host.docker.internal:3000`, so the host-side `yarn dev` process stays the source for the Next.js app.
 
 ## Dev fixtures
 
