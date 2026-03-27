@@ -13,13 +13,19 @@ export default defineConfig({
   },
   test: {
     environment: "node",
-    include: ["src/lib/**/*.test.ts"],
+    include: ["src/**/*.test.ts", "src/**/*.test.tsx"],
     coverage: {
       provider: "v8",
       reporter: ["text", "html"],
       reportsDirectory: "./coverage/vitest",
-      include: ["src/lib/**/*.ts"],
-      exclude: ["src/lib/**/*.test.ts"],
+      include: ["src/app/**/*.ts", "src/app/**/*.tsx", "src/lib/**/*.ts", "src/lib/**/*.tsx"],
+      exclude: [
+        "src/**/*.test.ts",
+        "src/**/*.test.tsx",
+        "src/app/globals.css",
+        "src/app/icon.svg",
+        "src/app/api/**/*.ts",
+      ],
     },
     restoreMocks: true,
   },
