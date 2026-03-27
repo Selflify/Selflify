@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 
-import { auth } from "@/auth";
+import { readOptionalSession } from "@/lib/auth/session";
 import { isAdminConfigured, readSelflifyConfig } from "@/lib/config/service";
 
 export const dynamic = "force-dynamic";
@@ -12,6 +12,6 @@ export default async function HomePage() {
     redirect("/setup");
   }
 
-  const session = await auth();
+  const session = await readOptionalSession();
   redirect(session?.user ? "/sites" : "/login");
 }

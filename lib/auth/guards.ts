@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 
-import { auth } from "@/auth";
+import { readOptionalSession } from "@/lib/auth/session";
 import { isAdminConfigured, readSelflifyConfig } from "@/lib/config/service";
 
 export async function requireConfiguredAdmin() {
@@ -15,7 +15,7 @@ export async function requireConfiguredAdmin() {
 
 export async function requireAdminSession() {
   const config = await requireConfiguredAdmin();
-  const session = await auth();
+  const session = await readOptionalSession();
 
   if (!session?.user) {
     redirect("/login");
@@ -26,7 +26,7 @@ export async function requireAdminSession() {
 
 export async function redirectIfAuthenticated() {
   const config = await readSelflifyConfig();
-  const session = await auth();
+  const session = await readOptionalSession();
 
   if (!isAdminConfigured(config)) {
     redirect("/setup");

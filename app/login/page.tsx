@@ -1,9 +1,9 @@
 import { Box, Heading, Stack, Text } from "@chakra-ui/react";
 import { redirect } from "next/navigation";
 
-import { auth } from "@/auth";
 import { FlashMessage } from "@/components/flash-message";
 import { LoginForm } from "@/components/login-form";
+import { readOptionalSession } from "@/lib/auth/session";
 import { isAdminConfigured, readSelflifyConfig } from "@/lib/config/service";
 
 type LoginPageProps = {
@@ -19,7 +19,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
     redirect("/setup");
   }
 
-  const session = await auth();
+  const session = await readOptionalSession();
 
   if (session?.user) {
     redirect("/sites");
