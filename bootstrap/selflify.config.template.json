@@ -1,0 +1,31 @@
+{
+  "version": 1,
+  "configRevision": 0,
+  "updatedAt": "2026-03-26T18:00:00.000Z",
+  "sessionSecret": "__SELFLIFY_SESSION_SECRET__",
+  "admin": {
+    "login": "",
+    "passwordHash": "",
+    "configuredAt": null
+  },
+  "server": {
+    "domain": "__SELFLIFY_DOMAIN__",
+    "serverIp": "__SELFLIFY_SERVER_IP__",
+    "cloudflareApiToken": "",
+    "previewRootDir": "/var/www",
+    "orphanedRootDir": "/var/www/.orphaned-sites",
+    "caddyConfigPath": "./Caddyfile",
+    "caddyBinaryPath": "caddy",
+    "caddyAdminAddress": "http://caddy:2019",
+    "selflifyUpstream": "selflify:3000",
+    "caddyContactEmail": "__SELFLIFY_CADDY_EMAIL__"
+  },
+  "operations": {
+    "lastOperationId": null,
+    "lastOperationLabel": null,
+    "lastStatus": "idle",
+    "lastMessage": null,
+    "lastAppliedAt": null
+  },
+  "sites": []
+}

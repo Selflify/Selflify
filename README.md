@@ -57,6 +57,8 @@ yarn dev --hostname 127.0.0.1 --port 3100
 ```
 
 The application will read `selflify.config.json` by default.
+The tracked root `selflify.config.json` and `Caddyfile` are intentionally minimal bootstrap configs.
+For the full local fixture stack, `docker-compose.dev.yml` points the app to `.dev/selflify.config.json` instead.
 The base preview root also comes from `selflify.config.json` and defaults to `/var/www`.
 If no admin account is configured yet, the app will redirect to `/setup`.
 
@@ -113,6 +115,12 @@ This runs:
 
 This is the full-fidelity development stack. It is the mode that correctly reflects preview
 directories, free-space reporting, masked token display and generated Caddy updates.
+
+The dev stack uses:
+
+- `.dev/selflify.config.json` for fixture sites
+- `.dev/Caddyfile` for local HTTP routing
+- `.dev/var-www` for stable and preview deploy directories
 
 You can still run `yarn dev --hostname 0.0.0.0 --port 3000` directly on the host for isolated UI
 work, but that host-side mode is not the full preview stack unless you also override the filesystem
@@ -185,6 +193,11 @@ This creates:
 - `dist/bootstrap/install-selflify.sh`
 - `dist/bootstrap/selflify-bootstrap.tar.gz`
 
+Bootstrap templates live in `bootstrap/`:
+
+- `bootstrap/selflify.config.template.json`
+- `bootstrap/Caddyfile.template`
+
 Recommended distribution flow:
 
 1. Upload both files somewhere reachable over HTTPS, for example GitHub Release assets.
@@ -205,6 +218,13 @@ What the installer does:
 - creates `.env` with a generated `AUTH_SECRET` if it does not exist yet
 - creates initial `selflify.config.json` and `Caddyfile` from templates if they do not exist yet
 - starts the production stack with `docker compose up -d --build`
+
+The GitHub deploy workflow can also seed those files automatically on the first deploy from the same
+templates. For that path, define these GitHub variables:
+
+- `SELFLIFY_DOMAIN`
+- `SELFLIFY_SERVER_IP`
+- `SELFLIFY_CADDY_EMAIL` (optional, defaults to `admin@<domain>`)
 
 What still happens in the UI after bootstrap:
 

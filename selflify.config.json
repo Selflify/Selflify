@@ -1,8 +1,8 @@
 {
   "version": 1,
   "configRevision": 0,
-  "updatedAt": "2026-03-26T18:00:00.000Z",
-  "sessionSecret": "change-me-before-production-selflify-session-secret",
+  "updatedAt": "2026-03-27T10:14:23.526Z",
+  "sessionSecret": "14e18091ce034f65151fbbf704757023682ada63ad273369c35074a004818908",
   "admin": {
     "login": "",
     "passwordHash": "",
@@ -12,129 +12,20 @@
     "domain": "sendsay.dev",
     "serverIp": "",
     "cloudflareApiToken": "",
-    "previewRootDir": "/var/www",
-    "orphanedRootDir": "/var/www/.orphaned-sites",
-    "caddyConfigPath": "./Caddyfile",
-    "caddyBinaryPath": "caddy",
-    "caddyAdminAddress": "http://caddy:2019",
+    "previewRootDir": "/var/folders/1b/clkhk5_50dqgfk0ff9svh0sh0000gn/T/selflify-operations-test-cUmUQQ/var-www",
+    "orphanedRootDir": "/var/folders/1b/clkhk5_50dqgfk0ff9svh0sh0000gn/T/selflify-operations-test-cUmUQQ/var-www/.orphaned-sites",
+    "caddyConfigPath": "/var/folders/1b/clkhk5_50dqgfk0ff9svh0sh0000gn/T/selflify-operations-test-cUmUQQ/Caddyfile",
+    "caddyBinaryPath": "/var/folders/1b/clkhk5_50dqgfk0ff9svh0sh0000gn/T/selflify-operations-test-cUmUQQ/fake-caddy.sh",
+    "caddyAdminAddress": "http://caddy-test:2019",
     "selflifyUpstream": "selflify:3000",
     "caddyContactEmail": "dev@sendsay.dev"
   },
   "operations": {
-    "lastOperationId": null,
-    "lastOperationLabel": null,
-    "lastStatus": "idle",
-    "lastMessage": null,
-    "lastAppliedAt": null
+    "lastOperationId": "2ee61c91-e761-4fe8-90ea-6f5dd5691114",
+    "lastOperationLabel": "save-settings",
+    "lastStatus": "failed",
+    "lastMessage": "Caddy binary not found: /var/folders/1b/clkhk5_50dqgfk0ff9svh0sh0000gn/T/selflify-operations-test-cUmUQQ/fake-caddy.sh. Install Caddy or set `SELFLIFY_CADDY_BIN` to a valid binary path.",
+    "lastAppliedAt": "2026-03-27T10:14:23.526Z"
   },
-  "sites": [
-    {
-      "slug": "app",
-      "name": "App",
-      "mainBranch": "stable",
-      "previewAuth": {
-        "enabled": false,
-        "login": null,
-        "passwordHash": null
-      },
-      "createdAt": "2026-03-26T18:00:00.000Z",
-      "updatedAt": "2026-03-26T18:00:00.000Z"
-    },
-    {
-      "slug": "transport",
-      "name": "Transport",
-      "mainBranch": "stable",
-      "previewAuth": {
-        "enabled": false,
-        "login": null,
-        "passwordHash": null
-      },
-      "createdAt": "2026-03-26T18:00:00.000Z",
-      "updatedAt": "2026-03-26T18:00:00.000Z"
-    },
-    {
-      "slug": "x-editor",
-      "name": "X Editor",
-      "mainBranch": "stable",
-      "previewAuth": {
-        "enabled": false,
-        "login": null,
-        "passwordHash": null
-      },
-      "createdAt": "2026-03-26T18:00:00.000Z",
-      "updatedAt": "2026-03-26T18:00:00.000Z"
-    },
-    {
-      "slug": "storybook",
-      "name": "Storybook",
-      "mainBranch": "stable",
-      "previewAuth": {
-        "enabled": false,
-        "login": null,
-        "passwordHash": null
-      },
-      "createdAt": "2026-03-26T18:00:00.000Z",
-      "updatedAt": "2026-03-26T18:00:00.000Z"
-    },
-    {
-      "slug": "chatbots",
-      "name": "Chatbots",
-      "mainBranch": "stable",
-      "previewAuth": {
-        "enabled": true,
-        "login": "nobotshere",
-        "passwordHash": "$2a$14$yljaNFg1HsgUtwps9bDhm.1T0y0Vcdu8nlg7C.iXyMil.yjmapX3a"
-      },
-      "createdAt": "2026-03-26T18:00:00.000Z",
-      "updatedAt": "2026-03-26T18:00:00.000Z"
-    },
-    {
-      "slug": "draft-app",
-      "name": "Draft App",
-      "mainBranch": "master",
-      "previewAuth": {
-        "enabled": false,
-        "login": null,
-        "passwordHash": null
-      },
-      "createdAt": "2026-03-26T18:00:00.000Z",
-      "updatedAt": "2026-03-26T18:00:00.000Z"
-    },
-    {
-      "slug": "draft-web",
-      "name": "Draft Web",
-      "mainBranch": "master",
-      "previewAuth": {
-        "enabled": false,
-        "login": null,
-        "passwordHash": null
-      },
-      "createdAt": "2026-03-26T18:00:00.000Z",
-      "updatedAt": "2026-03-26T18:00:00.000Z"
-    },
-    {
-      "slug": "draft-editor",
-      "name": "Draft Editor",
-      "mainBranch": "master",
-      "previewAuth": {
-        "enabled": false,
-        "login": null,
-        "passwordHash": null
-      },
-      "createdAt": "2026-03-26T18:00:00.000Z",
-      "updatedAt": "2026-03-26T18:00:00.000Z"
-    },
-    {
-      "slug": "docs",
-      "name": "Docs",
-      "mainBranch": "stable",
-      "previewAuth": {
-        "enabled": false,
-        "login": null,
-        "passwordHash": null
-      },
-      "createdAt": "2026-03-26T18:00:00.000Z",
-      "updatedAt": "2026-03-26T18:00:00.000Z"
-    }
-  ]
+  "sites": []
 }

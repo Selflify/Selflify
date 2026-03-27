@@ -177,6 +177,10 @@ jobs:
           DEPLOY_PORT: ${{ vars.DEPLOY_PORT }}
           DEPLOY_USER: ${{ vars.DEPLOY_USER }}
           DEPLOY_PATH: ${{ vars.DEPLOY_PATH }}
+          AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
+          SELFLIFY_DOMAIN: ${{ vars.SELFLIFY_DOMAIN }}
+          SELFLIFY_SERVER_IP: ${{ vars.SELFLIFY_SERVER_IP }}
+          SELFLIFY_CADDY_EMAIL: ${{ vars.SELFLIFY_CADDY_EMAIL }}
         run: |
           set -euo pipefail
 
@@ -187,13 +191,69 @@ jobs:
           mkdir -p data config logs
 
           if [ ! -f selflify.config.json ]; then
-            echo "selflify.config.json is missing on the server. Seed it once before the first deploy." >&2
-            exit 1
+            if [ -z "${SELFLIFY_DOMAIN:-}" ] || [ -z "${SELFLIFY_SERVER_IP:-}" ]; then
+              echo "selflify.config.json is missing and SELFLIFY_DOMAIN / SELFLIFY_SERVER_IP are not configured in GitHub vars." >&2
+              exit 1
+            fi
+
+            if [ ! -f bootstrap/selflify.config.template.json ]; then
+              echo "bootstrap/selflify.config.template.json is missing in the deployed project." >&2
+              exit 1
+            fi
+
+            CADDY_EMAIL="${SELFLIFY_CADDY_EMAIL:-admin@${SELFLIFY_DOMAIN}}"
+
+            python3 - <<'PY' bootstrap/selflify.config.template.json selflify.config.json "${SELFLIFY_DOMAIN}" "${SELFLIFY_SERVER_IP}" "${CADDY_EMAIL}" "${AUTH_SECRET}"
+from pathlib import Path
+import sys
+
+template_path = Path(sys.argv[1])
+output_path = Path(sys.argv[2])
+domain = sys.argv[3]
+server_ip = sys.argv[4]
+caddy_email = sys.argv[5]
+auth_secret = sys.argv[6]
+
+payload = template_path.read_text("utf-8")
+payload = payload.replace("__SELFLIFY_DOMAIN__", domain)
+payload = payload.replace("__SELFLIFY_SERVER_IP__", server_ip)
+payload = payload.replace("__SELFLIFY_CADDY_EMAIL__", caddy_email)
+payload = payload.replace("__SELFLIFY_SESSION_SECRET__", auth_secret)
+output_path.write_text(payload, encoding="utf-8")
+PY
+
+            echo "Seeded selflify.config.json from bootstrap template."
           fi
 
           if [ ! -f Caddyfile ]; then
-            echo "Caddyfile is missing on the server. Seed it once before the first deploy." >&2
-            exit 1
+            if [ -z "${SELFLIFY_DOMAIN:-}" ]; then
+              echo "Caddyfile is missing and SELFLIFY_DOMAIN is not configured in GitHub vars." >&2
+              exit 1
+            fi
+
+            if [ ! -f bootstrap/Caddyfile.template ]; then
+              echo "bootstrap/Caddyfile.template is missing in the deployed project." >&2
+              exit 1
+            fi
+
+            CADDY_EMAIL="${SELFLIFY_CADDY_EMAIL:-admin@${SELFLIFY_DOMAIN}}"
+
+            python3 - <<'PY' bootstrap/Caddyfile.template Caddyfile "${SELFLIFY_DOMAIN}" "${CADDY_EMAIL}"
+from pathlib import Path
+import sys
+
+template_path = Path(sys.argv[1])
+output_path = Path(sys.argv[2])
+domain = sys.argv[3]
+caddy_email = sys.argv[4]
+
+payload = template_path.read_text("utf-8")
+payload = payload.replace("__SELFLIFY_DOMAIN__", domain)
+payload = payload.replace("__SELFLIFY_CADDY_EMAIL__", caddy_email)
+output_path.write_text(payload, encoding="utf-8")
+PY
+
+            echo "Seeded Caddyfile from bootstrap template."
           fi
 
           docker compose up -d --build --remove-orphans

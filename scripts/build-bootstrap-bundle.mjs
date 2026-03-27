@@ -1,4 +1,4 @@
-import { cp, mkdir, rm, writeFile, chmod, copyFile } from "node:fs/promises";
+import { cp, mkdir, rm, chmod, copyFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { spawnSync } from "node:child_process";
@@ -15,6 +15,7 @@ const bundleEntries = [
   ".env.example",
   ".nvmrc",
   ".yarnrc.yml",
+  "bootstrap",
   "cleanup-previews.sh",
   "docker",
   "docker-compose.yml",
@@ -26,77 +27,6 @@ const bundleEntries = [
   "tsconfig.json",
   "yarn.lock",
 ];
-
-const configTemplate = {
-  version: 1,
-  configRevision: 0,
-  updatedAt: "2026-03-26T18:00:00.000Z",
-  sessionSecret: "__SELFLIFY_SESSION_SECRET__",
-  admin: {
-    login: "",
-    passwordHash: "",
-    configuredAt: null,
-  },
-  server: {
-    domain: "__SELFLIFY_DOMAIN__",
-    serverIp: "__SELFLIFY_SERVER_IP__",
-    cloudflareApiToken: "",
-    previewRootDir: "/var/www",
-    orphanedRootDir: "/var/www/.orphaned-sites",
-    caddyConfigPath: "./Caddyfile",
-    caddyBinaryPath: "caddy",
-    caddyAdminAddress: "http://caddy:2019",
-    selflifyUpstream: "selflify:3000",
-    caddyContactEmail: "__SELFLIFY_CADDY_EMAIL__",
-  },
-  operations: {
-    lastOperationId: null,
-    lastOperationLabel: null,
-    lastStatus: "idle",
-    lastMessage: null,
-    lastAppliedAt: null,
-  },
-  sites: [],
-};
-
-const caddyTemplate = `{
-    admin 0.0.0.0:2019
-    email __SELFLIFY_CADDY_EMAIL__
-}
-
-(common_headers) {
-    header {
-        X-Robots-Tag "noindex, nofollow, noarchive, nosnippet, noimageindex"
-        Referrer-Policy "strict-origin-when-cross-origin"
-        X-Content-Type-Options "nosniff"
-    }
-}
-
-(static_cache) {
-    @static {
-        path *.js *.mjs *.css *.map *.png *.jpg *.jpeg *.gif *.svg *.webp *.ico *.woff *.woff2 *.ttf *.eot
-    }
-    header @static Cache-Control "public, max-age=31536000, immutable"
-
-    @html {
-        path *.html /
-    }
-    header @html Cache-Control "no-store, no-cache, must-revalidate"
-}
-
-(common_site) {
-    import common_headers
-    import static_cache
-
-    encode gzip zstd
-}
-
-__SELFLIFY_DOMAIN__ {
-    import common_site
-
-    reverse_proxy selflify:3000
-}
-`;
 
 async function copyEntry(relativePath) {
   const source = path.join(rootDir, relativePath);
@@ -141,25 +71,13 @@ async function pruneBundleTests(dirPath) {
 
 async function main() {
   await rm(distDir, { recursive: true, force: true });
-  await mkdir(path.join(bundleDir, "bootstrap"), { recursive: true });
+  await mkdir(bundleDir, { recursive: true });
 
   for (const entry of bundleEntries) {
     await copyEntry(entry);
   }
 
   await pruneBundleTests(path.join(bundleDir, "src"));
-
-  await writeFile(
-    path.join(bundleDir, "bootstrap", "selflify.config.template.json"),
-    `${JSON.stringify(configTemplate, null, 2)}\n`,
-    "utf8",
-  );
-  await writeFile(
-    path.join(bundleDir, "bootstrap", "Caddyfile.template"),
-    caddyTemplate,
-    "utf8",
-  );
-
   await copyFile(
     path.join(rootDir, "scripts", "install-selflify.sh"),
     path.join(distDir, "install-selflify.sh"),

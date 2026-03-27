@@ -11,7 +11,7 @@ services:
       - rm -rf /workspace/.next/* && yarn install --immutable && yarn dev --hostname 0.0.0.0 --port 3000
     environment:
       AUTH_SECRET: ${AUTH_SECRET}
-      SELFLIFY_CONFIG_PATH: /workspace/selflify.config.json
+      SELFLIFY_CONFIG_PATH: /workspace/.dev/selflify.config.json
       SELFLIFY_CADDY_CONFIG_PATH: /workspace/.dev/Caddyfile
       SELFLIFY_CADDY_BIN: /usr/bin/caddy
       SELFLIFY_CADDY_ADMIN_ADDRESS: http://caddy:2019
@@ -41,7 +41,7 @@ services:
       - -lc
       - while true; do bash /workspace/cleanup-previews.sh; sleep "${SELFLIFY_CLEANUP_INTERVAL_SECONDS:-3600}"; done
     environment:
-      SELFLIFY_CONFIG_PATH: /workspace/selflify.config.json
+      SELFLIFY_CONFIG_PATH: /workspace/.dev/selflify.config.json
       SELFLIFY_PREVIEW_TTL_DAYS: ${SELFLIFY_PREVIEW_TTL_DAYS:-30}
       SELFLIFY_ORPHAN_TTL_DAYS: ${SELFLIFY_ORPHAN_TTL_DAYS:-30}
       SELFLIFY_CLEANUP_INTERVAL_SECONDS: ${SELFLIFY_CLEANUP_INTERVAL_SECONDS:-3600}

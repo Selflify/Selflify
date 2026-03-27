@@ -1,6 +1,6 @@
 {
     admin 0.0.0.0:2019
-    email admin@example.com
+    email __SELFLIFY_CADDY_EMAIL__
 }
 
 (common_headers) {
@@ -40,7 +40,7 @@
     }
 }
 
-preview.example.com {
+__SELFLIFY_DOMAIN__ {
     import common_site
 
     reverse_proxy selflify:3000
