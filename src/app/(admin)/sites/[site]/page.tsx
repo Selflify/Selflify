@@ -210,7 +210,7 @@ export default async function SiteDetailsPage({ params, searchParams }: SiteDeta
             p={{ base: "5", md: "6" }}
             boxShadow="panel"
           >
-            <Heading size="lg">Preview access</Heading>
+            <Heading size="lg">Preview access (optional)</Heading>
             <Text color="muted" mt="2">
               Protect preview deploys with a shared login and password. Stable remains public.
             </Text>
@@ -223,7 +223,7 @@ export default async function SiteDetailsPage({ params, searchParams }: SiteDeta
                     id="site-settings-preview-login"
                     name="previewLogin"
                     defaultValue={site.previewAuth.login ?? ""}
-                    placeholder="Optional"
+                    placeholder="Set preview login"
                     bg="rgba(255,255,255,0.04)"
                   />
                 </FormField>
