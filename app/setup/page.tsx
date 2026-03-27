@@ -47,11 +47,11 @@ export default async function SetupPage({ searchParams }: SetupPageProps) {
               First launch
             </Text>
             <Heading size="2xl" mt="3">
-              Create the admin account
+              Create account
             </Heading>
             <Text color="muted" mt="2">
-              Selflify stores credentials in {config.server.domain} configuration files. This
-              account is the only entry point to the panel.
+              Selflify stores credentials in {config.server.domain} configuration files. Use this
+              account to enter the panel.
             </Text>
           </Box>
 
@@ -59,11 +59,11 @@ export default async function SetupPage({ searchParams }: SetupPageProps) {
 
           <form action={setupAction}>
             <Stack gap="4">
-              <FormField label="Admin login" htmlFor="setup-login">
+              <FormField label="Login" htmlFor="setup-login">
                 <Input
                   id="setup-login"
                   name="login"
-                  placeholder="selflify-admin"
+                  placeholder="Enter login"
                   autoComplete="username"
                   required
                   bg="rgba(255,255,255,0.04)"
@@ -84,7 +84,7 @@ export default async function SetupPage({ searchParams }: SetupPageProps) {
                 />
               </FormField>
               <Button type="submit" bg="brand.600" color="white" _hover={{ bg: "brand.500" }}>
-                Create admin account
+                Create account
               </Button>
             </Stack>
           </form>
