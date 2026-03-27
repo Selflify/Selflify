@@ -36,6 +36,8 @@ yarn format:check
 yarn test:run
 yarn test:coverage
 yarn bootstrap:bundle
+yarn landing:dev
+yarn landing:build
 ```
 
 ## Local development
@@ -143,6 +145,28 @@ They exist so that local `Caddy` and the `Sites` screen can immediately see stab
 - `src/components`: reusable admin UI building blocks
 - `src/lib`: auth, config, operations, filesystem and provider logic
 - `src/auth.ts`: `next-auth` wiring
+- `landing`: static marketing site for GitHub Pages
+
+## Landing site
+
+The repository includes a standalone static landing page in [landing](/Users/aleksnick/dev/Selflify/landing).
+
+Local preview:
+
+```bash
+yarn landing:dev
+```
+
+This serves the landing at `http://127.0.0.1:4173`.
+
+Build for GitHub Pages:
+
+```bash
+yarn landing:build
+```
+
+This writes the publishable output to `dist/landing`.
+That directory is ready to deploy to `selflify.github.io` or any other static hosting target.
 
 ## Production rollout
 
