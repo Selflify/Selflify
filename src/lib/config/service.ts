@@ -4,6 +4,7 @@ import fsp from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 
+import { buildRuntimeSeedConfig } from "@/lib/bootstrap/runtime-seed";
 import { selflifyConfigSchema, type SelflifyConfig } from "@/lib/config/schema";
 import {
   getConfigPath,
@@ -24,37 +25,14 @@ function randomSecret(): string {
 
 export function createDefaultConfig(): SelflifyConfig {
   const now = isoNow();
-
-  return selflifyConfigSchema.parse({
-    version: 1,
-    configRevision: 0,
+  return buildRuntimeSeedConfig({
     updatedAt: now,
     sessionSecret: process.env.AUTH_SECRET ?? randomSecret(),
-    admin: {
-      login: "",
-      passwordHash: "",
-      configuredAt: null,
-    },
-    server: {
-      domain: "sendsay.dev",
-      serverIp: "",
-      cloudflareApiToken: "",
-      previewRootDir: getDefaultPreviewRoot(),
-      orphanedRootDir: getDefaultOrphanRoot(),
-      caddyConfigPath: getDefaultCaddyConfigPath(),
-      caddyBinaryPath: getDefaultCaddyBinaryPath(),
-      caddyAdminAddress: getDefaultCaddyAdminAddress(),
-      selflifyUpstream: "selflify:3000",
-      caddyContactEmail: "dev@sendsay.dev",
-    },
-    operations: {
-      lastOperationId: null,
-      lastOperationLabel: null,
-      lastStatus: "idle",
-      lastMessage: null,
-      lastAppliedAt: null,
-    },
-    sites: [],
+    previewRootDir: getDefaultPreviewRoot(),
+    orphanedRootDir: getDefaultOrphanRoot(),
+    caddyConfigPath: getDefaultCaddyConfigPath(),
+    caddyBinaryPath: getDefaultCaddyBinaryPath(),
+    caddyAdminAddress: getDefaultCaddyAdminAddress(),
   });
 }
 
