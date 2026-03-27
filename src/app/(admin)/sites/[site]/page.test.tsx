@@ -62,6 +62,7 @@ describe("site details page", () => {
     vi.mocked(listDeploys).mockResolvedValue([
       {
         name: "stable",
+        dir: "/var/www/app/stable",
         isMainBranch: true,
         sizeBytes: 1024,
         sizeLabel: "1.0 KB",
@@ -70,6 +71,7 @@ describe("site details page", () => {
       },
       {
         name: "pr-42",
+        dir: "/var/www/app/pr-42",
         isMainBranch: false,
         sizeBytes: 512,
         sizeLabel: "512 B",
@@ -87,6 +89,7 @@ describe("site details page", () => {
     expect(html).toContain("Deploy inventory");
     expect(html).toContain("pr-42");
     expect(html).toContain("https://pr-42.app.sendsay.dev");
+    expect(html).toContain("/var/www/app/pr-42");
     expect(html).not.toContain("Danger zone");
   });
 

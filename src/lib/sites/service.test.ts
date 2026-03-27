@@ -6,7 +6,12 @@ import { afterEach, describe, expect, it } from "vitest";
 
 import { type SelflifyConfig, type SiteConfig } from "@/lib/config/schema";
 import { createDefaultConfig } from "@/lib/config/service";
-import { deleteDeploy, ensureSiteDirectories, getSiteDirectory } from "@/lib/sites/service";
+import {
+  deleteDeploy,
+  ensureSiteDirectories,
+  getSiteDirectory,
+  listDeploys,
+} from "@/lib/sites/service";
 
 const tempDirs: string[] = [];
 
@@ -77,5 +82,17 @@ describe("site service", () => {
     await expect(deleteDeploy(config, site, "../escape")).rejects.toThrow(
       "Deploy path is outside the site root.",
     );
+  });
+
+  it("includes the absolute deploy directory in deploy summaries", async () => {
+    const previewRootDir = await makeTempDir();
+    const config = createConfig(previewRootDir);
+    const site = createSite();
+
+    await ensureSiteDirectories(config, site);
+
+    const deploys = await listDeploys(config, site);
+
+    expect(deploys[0]?.dir).toBe(path.join(getSiteDirectory(config, site), site.mainBranch));
   });
 });

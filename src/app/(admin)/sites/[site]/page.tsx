@@ -107,6 +107,9 @@ export default async function SiteDetailsPage({ params, searchParams }: SiteDeta
                   <Text color="whiteAlpha.700" mt="1">
                     {deploy.url}
                   </Text>
+                  <Text color="whiteAlpha.700" mt="2" fontSize="sm" fontFamily="mono">
+                    {deploy.dir}
+                  </Text>
                   <Text color="muted" mt="2" fontSize="sm">
                     {deploy.sizeLabel} · updated {formatDateTime(deploy.modifiedAt)}
                   </Text>

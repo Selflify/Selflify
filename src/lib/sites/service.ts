@@ -16,6 +16,7 @@ const SIZE_CACHE_TTL_MS = 90_000;
 
 export type DeploySummary = {
   name: string;
+  dir: string;
   isMainBranch: boolean;
   sizeBytes: number;
   sizeLabel: string;
@@ -276,6 +277,7 @@ export async function listDeploys(
 
         return {
           name: entry.name,
+          dir: fullPath,
           isMainBranch: entry.name === site.mainBranch,
           sizeBytes,
           sizeLabel: formatBytes(sizeBytes),
