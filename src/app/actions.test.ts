@@ -116,6 +116,11 @@ describe("server actions", () => {
     const formData = new FormData();
     formData.set("login", "owner");
     formData.set("password", "super-secret");
+    formData.set("passwordConfirm", "super-secret");
+    formData.set("domain", "example.com");
+    formData.set("serverIp", "203.0.113.10");
+    formData.set("caddyContactEmail", "ops@example.com");
+    formData.set("cloudflareApiToken", "cf-secret");
 
     await setupAction(formData);
 
@@ -137,12 +142,39 @@ describe("server actions", () => {
     const formData = new FormData();
     formData.set("login", "owner");
     formData.set("password", "super-secret");
+    formData.set("passwordConfirm", "super-secret");
+    formData.set("domain", "example.com");
+    formData.set("serverIp", "203.0.113.10");
+    formData.set("caddyContactEmail", "ops@example.com");
+    formData.set("cloudflareApiToken", "cf-secret");
 
     await setupAction(formData);
 
     expect(redirectMock).toHaveBeenCalledWith(
       "/setup?error=Admin+account+is+already+configured.",
     );
+  });
+
+  it("rejects mismatched setup password confirmation", async () => {
+    vi.mocked(ensureConfigOnDisk).mockResolvedValue(createDefaultConfig());
+    vi.mocked(isAdminConfigured).mockReturnValue(false);
+
+    const formData = new FormData();
+    formData.set("login", "owner");
+    formData.set("password", "super-secret");
+    formData.set("passwordConfirm", "different-secret");
+    formData.set("domain", "example.com");
+    formData.set("serverIp", "203.0.113.10");
+    formData.set("caddyContactEmail", "ops@example.com");
+    formData.set("cloudflareApiToken", "cf-secret");
+
+    await setupAction(formData);
+
+    const target = redirectMock.mock.calls.at(-1)?.[0] as string;
+    const error = new URL(target, "http://selflify.test").searchParams.get("error");
+
+    expect(target).toContain("/setup?error=");
+    expect(error).toContain("Password confirmation does not match the new password.");
   });
 
   it("rejects mismatched admin password confirmation", async () => {
@@ -196,6 +228,28 @@ describe("server actions", () => {
     );
   });
 
+  it("rejects empty infrastructure values in settings", async () => {
+    vi.mocked(requireAdminSession).mockResolvedValue({
+      config: { configRevision: 3 },
+      session: { user: { name: "owner" } },
+    } as never);
+
+    const formData = new FormData();
+    formData.set("configRevision", "3");
+    formData.set("domain", "example.com");
+    formData.set("serverIp", "");
+    formData.set("caddyContactEmail", "ops@example.com");
+
+    await saveServerSettingsAction(formData);
+
+    const target = redirectMock.mock.calls.at(-1)?.[0] as string;
+    const error = new URL(target, "http://selflify.test").searchParams.get("error");
+
+    expect(runConfigOperation).not.toHaveBeenCalled();
+    expect(target).toContain("/settings?error=");
+    expect(error).toContain("Enter the server IP address.");
+  });
+
   it("saves a cloudflare token and syncs DNS", async () => {
     vi.mocked(requireAdminSession).mockResolvedValue({
       config: { configRevision: 5 },
@@ -212,12 +266,31 @@ describe("server actions", () => {
     const formData = new FormData();
     formData.set("configRevision", "5");
     formData.set("cloudflareApiToken", "cf-secret");
-    formData.set("intent", "save");
 
     await saveCloudflareTokenAction(formData);
 
     expect(syncAllSiteDnsRecords).toHaveBeenCalledTimes(1);
     expect(redirectMock).toHaveBeenCalledWith("/settings?notice=Cloudflare+token+saved.");
+  });
+
+  it("rejects empty cloudflare tokens in settings", async () => {
+    vi.mocked(requireAdminSession).mockResolvedValue({
+      config: { configRevision: 5 },
+      session: { user: { name: "owner" } },
+    } as never);
+
+    const formData = new FormData();
+    formData.set("configRevision", "5");
+    formData.set("cloudflareApiToken", "");
+
+    await saveCloudflareTokenAction(formData);
+
+    const target = redirectMock.mock.calls.at(-1)?.[0] as string;
+    const error = new URL(target, "http://selflify.test").searchParams.get("error");
+
+    expect(runConfigOperation).not.toHaveBeenCalled();
+    expect(target).toContain("/settings?error=");
+    expect(error).toContain("Paste a Cloudflare API token.");
   });
 
   it("creates a site and keeps side effects in the success path", async () => {

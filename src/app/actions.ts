@@ -79,16 +79,51 @@ function createPreviewAuth(
   };
 }
 
-const setupSchema = z.object({
-  login: z.string().trim().min(3).max(128),
-  password: z.string().min(8).max(128),
-});
+const domainFieldSchema = z.string().trim().min(3, "Enter the primary domain.");
+const serverIpFieldSchema = z
+  .string()
+  .trim()
+  .min(1, "Enter the server IP address.");
+const caddyContactEmailFieldSchema = z
+  .string()
+  .trim()
+  .min(1, "Enter the Caddy contact email.")
+  .email("Enter a valid contact email.");
+const cloudflareTokenFieldSchema = z
+  .string()
+  .trim()
+  .min(1, "Paste a Cloudflare API token.");
+
+const setupSchema = z
+  .object({
+    login: z.string().trim().min(3).max(128),
+    password: z.string().min(8).max(128),
+    passwordConfirm: z.string().min(8).max(128),
+    domain: domainFieldSchema,
+    serverIp: serverIpFieldSchema,
+    caddyContactEmail: caddyContactEmailFieldSchema,
+    cloudflareApiToken: cloudflareTokenFieldSchema,
+  })
+  .superRefine((value, context) => {
+    if (value.password !== value.passwordConfirm) {
+      context.addIssue({
+        code: "custom",
+        message: "Password confirmation does not match the new password.",
+        path: ["passwordConfirm"],
+      });
+    }
+  });
 
 export async function setupAction(formData: FormData) {
   try {
     const payload = setupSchema.parse({
       login: getQueryValue(formData, "login"),
       password: getQueryValue(formData, "password"),
+      passwordConfirm: getQueryValue(formData, "passwordConfirm"),
+      domain: getQueryValue(formData, "domain"),
+      serverIp: getQueryValue(formData, "serverIp"),
+      caddyContactEmail: getQueryValue(formData, "caddyContactEmail"),
+      cloudflareApiToken: getQueryValue(formData, "cloudflareApiToken"),
     });
 
     const config = await ensureConfigOnDisk();
@@ -106,6 +141,10 @@ export async function setupAction(formData: FormData) {
         draft.admin.passwordHash = passwordHash;
         draft.admin.configuredAt = new Date().toISOString();
         draft.sessionSecret = draft.sessionSecret || config.sessionSecret;
+        draft.server.domain = payload.domain;
+        draft.server.serverIp = payload.serverIp;
+        draft.server.caddyContactEmail = payload.caddyContactEmail;
+        draft.server.cloudflareApiToken = payload.cloudflareApiToken;
 
         return {
           config: draft,
@@ -361,9 +400,9 @@ export async function deleteSiteAction(siteSlug: string, formData: FormData) {
 }
 
 const serverSettingsSchema = z.object({
-  domain: z.string().trim().min(3),
-  serverIp: z.string().trim().default(""),
-  caddyContactEmail: z.email(),
+  domain: domainFieldSchema,
+  serverIp: serverIpFieldSchema,
+  caddyContactEmail: caddyContactEmailFieldSchema,
 });
 
 const adminSettingsSchema = z
@@ -463,47 +502,35 @@ export async function saveAdminAccessAction(formData: FormData) {
 }
 
 const cloudflareTokenSchema = z.object({
-  cloudflareApiToken: z.string().trim().min(1, "Paste a Cloudflare API token."),
+  cloudflareApiToken: cloudflareTokenFieldSchema,
 });
 
 export async function saveCloudflareTokenAction(formData: FormData) {
   await requireAdminSession();
   const expectedRevision = toRevision(formData);
-  const intent = getQueryValue(formData, "intent") === "delete" ? "delete" : "save";
 
   try {
-    const payload =
-      intent === "save"
-        ? cloudflareTokenSchema.parse({
-            cloudflareApiToken: getQueryValue(formData, "cloudflareApiToken"),
-          })
-        : null;
+    const payload = cloudflareTokenSchema.parse({
+      cloudflareApiToken: getQueryValue(formData, "cloudflareApiToken"),
+    });
 
     await runConfigOperation({
       label: "save-settings:cloudflare",
       expectedRevision,
       mutate: async (draft) => {
-        draft.server.cloudflareApiToken =
-          intent === "delete" ? "" : payload?.cloudflareApiToken ?? "";
+        draft.server.cloudflareApiToken = payload.cloudflareApiToken;
 
         return {
           config: draft,
           result: null,
         };
       },
-      afterApply:
-        intent === "save"
-          ? async (config) => {
-              await syncAllSiteDnsRecords(config);
-            }
-          : undefined,
+      afterApply: async (config) => {
+        await syncAllSiteDnsRecords(config);
+      },
     });
 
-    redirectWith(
-      "/settings",
-      "notice",
-      intent === "delete" ? "Cloudflare token removed." : "Cloudflare token saved.",
-    );
+    redirectWith("/settings", "notice", "Cloudflare token saved.");
   } catch (error) {
     await handleSettingsFailure(error, "Could not update the Cloudflare token.");
   }

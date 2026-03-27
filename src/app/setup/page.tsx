@@ -1,9 +1,7 @@
-import { Box, Button, Heading, Input, Stack, Text } from "@chakra-ui/react";
+import { Box } from "@chakra-ui/react";
 import { redirect } from "next/navigation";
 
-import { FlashMessage } from "@/components/flash-message";
-import { FormField } from "@/components/form-field";
-import { setupAction } from "@/app/actions";
+import { SetupWizard } from "@/components/setup-wizard";
 import { isAdminConfigured, readSelflifyConfig } from "@/lib/config/service";
 
 type SetupPageProps = {
@@ -41,54 +39,13 @@ export default async function SetupPage({ searchParams }: SetupPageProps) {
         p={{ base: "6", md: "8" }}
         boxShadow="panel"
       >
-        <Stack gap="5">
-          <Box>
-            <Text textTransform="uppercase" letterSpacing="0.18em" fontSize="xs" color="brand.300">
-              First launch
-            </Text>
-            <Heading size="2xl" mt="3">
-              Create account
-            </Heading>
-            <Text color="muted" mt="2">
-              Selflify stores credentials in {config.server.domain} configuration files. Use this
-              account to enter the panel.
-            </Text>
-          </Box>
-
-          {error ? <FlashMessage kind="error" message={error} /> : null}
-
-          <form action={setupAction}>
-            <Stack gap="4">
-              <FormField label="Login" htmlFor="setup-login">
-                <Input
-                  id="setup-login"
-                  name="login"
-                  placeholder="Enter login"
-                  autoComplete="username"
-                  required
-                  bg="rgba(255,255,255,0.04)"
-                  borderColor="rgba(255,255,255,0.08)"
-                />
-              </FormField>
-              <FormField label="Password" htmlFor="setup-password">
-                <Input
-                  id="setup-password"
-                  name="password"
-                  type="password"
-                  placeholder="Strong password"
-                  autoComplete="new-password"
-                  required
-                  minLength={8}
-                  bg="rgba(255,255,255,0.04)"
-                  borderColor="rgba(255,255,255,0.08)"
-                />
-              </FormField>
-              <Button type="submit" bg="brand.600" color="white" _hover={{ bg: "brand.500" }}>
-                Create account
-              </Button>
-            </Stack>
-          </form>
-        </Stack>
+        <SetupWizard
+          defaultDomain={config.server.domain}
+          defaultServerIp={config.server.serverIp}
+          defaultCaddyContactEmail={config.server.caddyContactEmail}
+          defaultCloudflareToken={config.server.cloudflareApiToken}
+          error={error}
+        />
       </Box>
     </Box>
   );

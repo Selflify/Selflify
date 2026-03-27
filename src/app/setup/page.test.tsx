@@ -61,9 +61,10 @@ describe("setup page", () => {
     });
     const html = renderWithProviders(page);
 
+    expect(html).toContain("Step 1 of 2");
     expect(html).toContain("Create account");
-    expect(html).toContain("Selflify stores credentials in sendsay.dev configuration files.");
     expect(html).toContain("Setup failed.");
-    expect(html).toContain("Strong password");
+    expect(html).toContain("Confirm password");
+    expect(html).toContain("Continue");
   });
 });

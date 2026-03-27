@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Box, Button, Flex, IconButton, Input, Stack, Text } from "@chakra-ui/react";
-import { PencilLine, Trash2 } from "lucide-react";
+import { PencilLine } from "lucide-react";
 
 import { saveCloudflareTokenAction } from "@/app/actions";
 import { FormField } from "@/components/form-field";
@@ -31,7 +31,7 @@ export function CloudflareTokenSection({
     >
       <Text fontWeight="700">Cloudflare token</Text>
       <Text color="muted" mt="2" fontSize="sm">
-        Used to create and delete DNS records automatically.
+        Required for automatic DNS updates. The saved token can be replaced, but not cleared.
       </Text>
 
       {editing ? (
@@ -47,37 +47,19 @@ export function CloudflareTokenSection({
                   : "Paste a token to enable automatic DNS updates."
               }
             >
-              <Flex gap="3" align="end">
-                <Input
-                  id="settings-cloudflare-api-token"
-                  name="cloudflareApiToken"
-                  type="password"
-                  placeholder="Paste a Cloudflare API token"
-                  autoComplete="off"
-                  bg="rgba(255,255,255,0.04)"
-                  flex="1"
-                />
-                {hasToken ? (
-                  <IconButton
-                    type="submit"
-                    name="intent"
-                    value="delete"
-                    aria-label="Delete token"
-                    variant="outline"
-                    borderColor="rgba(255, 90, 111, 0.28)"
-                    color="red.200"
-                    _hover={{ bg: "rgba(98, 18, 31, 0.22)" }}
-                  >
-                    <Trash2 size={16} />
-                  </IconButton>
-                ) : null}
-              </Flex>
+              <Input
+                id="settings-cloudflare-api-token"
+                name="cloudflareApiToken"
+                type="password"
+                placeholder="Paste a Cloudflare API token"
+                autoComplete="off"
+                required
+                bg="rgba(255,255,255,0.04)"
+              />
             </FormField>
 
             <Flex gap="3" wrap="wrap">
               <FormSubmitButton
-                name="intent"
-                value="save"
                 alignSelf="flex-start"
                 bg="brand.600"
                 color="white"
@@ -135,22 +117,6 @@ export function CloudflareTokenSection({
             >
               <PencilLine size={16} />
             </IconButton>
-
-            <form action={saveCloudflareTokenAction}>
-              <input type="hidden" name="configRevision" value={String(configRevision)} />
-              <IconButton
-                type="submit"
-                name="intent"
-                value="delete"
-                aria-label="Delete token"
-                variant="outline"
-                borderColor="rgba(255, 90, 111, 0.28)"
-                color="red.200"
-                _hover={{ bg: "rgba(98, 18, 31, 0.22)" }}
-              >
-                <Trash2 size={16} />
-              </IconButton>
-            </form>
           </Flex>
         </Flex>
       )}

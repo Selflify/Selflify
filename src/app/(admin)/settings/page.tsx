@@ -53,7 +53,7 @@ export default async function SettingsPage({ searchParams }: SettingsPageProps) 
       >
         <Text fontWeight="700">Infrastructure</Text>
         <Text color="muted" mt="2" fontSize="sm">
-          Domain, public IP and the email used by Caddy certificates.
+          Keep the main domain, public IP and Caddy contact email filled in at all times.
         </Text>
 
         <form action={saveServerSettingsAction}>
@@ -75,6 +75,7 @@ export default async function SettingsPage({ searchParams }: SettingsPageProps) 
                 name="serverIp"
                 defaultValue={config.server.serverIp}
                 placeholder="203.0.113.10"
+                required
                 bg="rgba(255,255,255,0.04)"
               />
             </FormField>
