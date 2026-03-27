@@ -2,7 +2,7 @@ import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { createDefaultConfig, readSelflifyConfig, writeSelflifyConfig } from "@/lib/config/service";
 import { ConfigConflictError, runConfigOperation } from "@/lib/operations";
@@ -100,6 +100,7 @@ function createSiteConfigPaths(root: string) {
 
 afterEach(async () => {
   process.env = { ...originalEnv };
+  vi.unstubAllGlobals();
   await Promise.all(tempDirs.splice(0).map((dir) => fs.rm(dir, { recursive: true, force: true })));
 });
 
@@ -123,6 +124,14 @@ describe.sequential("runConfigOperation", () => {
     config.server.caddyBinaryPath = fakeCaddy.binaryPath;
     config.server.caddyAdminAddress = "http://caddy-test:2019";
     await writeSelflifyConfig(config);
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        new Response("", {
+          status: 200,
+        }),
+      ),
+    );
 
     await runConfigOperation({
       label: "save-settings",
@@ -140,7 +149,7 @@ describe.sequential("runConfigOperation", () => {
     expect(persisted.server.domain).toBe("preview.sendsay.dev");
     expect(persisted.operations.lastStatus).toBe("success");
     expect(caddyLog).toContain("validate");
-    expect(caddyLog).toContain("reload");
+    expect(caddyLog).not.toContain("reload");
   });
 
   it("rejects stale revisions with a conflict error", async () => {
@@ -192,6 +201,15 @@ describe.sequential("runConfigOperation", () => {
 
     await writeSelflifyConfig(config);
     await fs.writeFile(paths.caddyConfigPath, "original caddyfile\n", "utf8");
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        new Response("reload failed", {
+          status: 500,
+          statusText: "Internal Server Error",
+        }),
+      ),
+    );
 
     const site = {
       slug: "app",

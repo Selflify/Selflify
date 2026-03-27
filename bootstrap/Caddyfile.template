@@ -1,5 +1,7 @@
 {
-    admin 0.0.0.0:2019
+    admin 0.0.0.0:2019 {
+        origins http://0.0.0.0:2019 http://127.0.0.1:2019 http://localhost:2019 http://caddy:2019
+    }
     email __SELFLIFY_CADDY_EMAIL__
 }
 

@@ -1,5 +1,7 @@
 {
-    admin 0.0.0.0:2019
+    admin 0.0.0.0:2019 {
+        origins http://0.0.0.0:2019 http://127.0.0.1:2019 http://localhost:2019 http://caddy:2019
+    }
     email dev@sendsay.dev
     auto_https off
 }
@@ -61,7 +63,7 @@ http://chatbots.sendsay.dev, http://*.chatbots.sendsay.dev {
     @preview expression `{host} != "chatbots.sendsay.dev"`
 
     handle @preview {
-        basicauth {
+        basic_auth {
             nobotshere $2a$14$yljaNFg1HsgUtwps9bDhm.1T0y0Vcdu8nlg7C.iXyMil.yjmapX3a
         }
 

@@ -45,7 +45,14 @@ type CaddyCommandSpec = {
 };
 
 const DEV_CONTAINER_CADDY_CONFIG_PATH = "/etc/caddy/Caddyfile";
-const DEV_CONTAINER_CADDY_ADMIN_ADDRESS = "http://127.0.0.1:2019";
+const DEV_CONTAINER_CADDY_ADMIN_ADDRESS = "0.0.0.0:2019";
+const CADDY_ADMIN_BIND_ADDRESS = "0.0.0.0:2019";
+const DEFAULT_CADDY_ADMIN_ORIGINS = [
+  "http://0.0.0.0:2019",
+  "http://127.0.0.1:2019",
+  "http://localhost:2019",
+];
+const DEFAULT_CADDY_ADMIN_FETCH_ORIGIN = `http://${CADDY_ADMIN_BIND_ADDRESS}`;
 
 function isSpawnNotFound(error: unknown): boolean {
   return (
@@ -72,6 +79,71 @@ function shouldUseContainerizedCaddy(config: SelflifyConfig): boolean {
   return isDevelopmentRuntime() && getEffectiveCaddyBinaryPath(config) === "caddy";
 }
 
+function normalizeAdminAddressForCli(value: string): string {
+  const trimmed = value.trim();
+
+  if (!trimmed) {
+    return trimmed;
+  }
+
+  try {
+    const parsed = new URL(trimmed);
+
+    return parsed.host || trimmed;
+  } catch {
+    return trimmed.replace(/\/+$/, "");
+  }
+}
+
+function normalizeAdminOrigin(value: string): string | null {
+  const trimmed = value.trim();
+
+  if (!trimmed) {
+    return null;
+  }
+
+  try {
+    const parsed = new URL(trimmed);
+
+    return `${parsed.protocol}//${parsed.host}`;
+  } catch {
+    return `http://${normalizeAdminAddressForCli(trimmed)}`;
+  }
+}
+
+function normalizeAdminApiBaseUrl(value: string): string {
+  const trimmed = value.trim();
+
+  if (!trimmed) {
+    return "http://127.0.0.1:2019";
+  }
+
+  try {
+    const parsed = new URL(trimmed);
+
+    parsed.pathname = "";
+    parsed.search = "";
+    parsed.hash = "";
+
+    return parsed.toString().replace(/\/$/, "");
+  } catch {
+    return `http://${normalizeAdminAddressForCli(trimmed)}`;
+  }
+}
+
+function renderAdminBlock(config: SelflifyConfig): string {
+  const origins = new Set(DEFAULT_CADDY_ADMIN_ORIGINS);
+  const configuredOrigin = normalizeAdminOrigin(getEffectiveCaddyAdminAddress(config));
+
+  if (configuredOrigin) {
+    origins.add(configuredOrigin);
+  }
+
+  return `    admin ${CADDY_ADMIN_BIND_ADDRESS} {
+        origins ${Array.from(origins).join(" ")}
+    }`;
+}
+
 export function resolveCaddyCommand(config: SelflifyConfig, args: string[]): CaddyCommandSpec {
   if (shouldUseContainerizedCaddy(config)) {
     return {
@@ -95,9 +167,11 @@ export function resolveCaddyCommandConfigPath(config: SelflifyConfig): string {
 }
 
 export function resolveCaddyCommandAdminAddress(config: SelflifyConfig): string {
-  return shouldUseContainerizedCaddy(config)
+  const rawAddress = shouldUseContainerizedCaddy(config)
     ? DEV_CONTAINER_CADDY_ADMIN_ADDRESS
     : getEffectiveCaddyAdminAddress(config);
+
+  return normalizeAdminAddressForCli(rawAddress);
 }
 
 async function runCaddyCommand(
@@ -135,7 +209,7 @@ function renderPreviewBlock(config: SelflifyConfig, site: SiteConfig): string {
   const authBlock =
     site.previewAuth.enabled && site.previewAuth.login && site.previewAuth.passwordHash
       ? `
-        basicauth {
+        basic_auth {
             ${site.previewAuth.login} ${site.previewAuth.passwordHash}
         }
 `
@@ -173,7 +247,7 @@ export function generateCaddyfile(config: SelflifyConfig): string {
     .join("\n");
 
   return `{
-    admin 0.0.0.0:2019
+${renderAdminBlock(config)}
     email ${config.server.caddyContactEmail}
 ${autoHttps}}
 ${renderTlsBlock(config.server.cloudflareApiToken)}
@@ -222,7 +296,10 @@ ${withDevScheme(config.server.domain)} {
 ${siteBlocks}`.trim();
 }
 
-export function createCaddyGateway(commandRunner: CommandRunner = runCommand): CaddyGateway {
+export function createCaddyGateway(
+  commandRunner: CommandRunner = runCommand,
+  fetchImpl: typeof fetch = (...args) => globalThis.fetch(...args),
+): CaddyGateway {
   return {
     async writeGeneratedConfig(config) {
       const target = getEffectiveCaddyConfigPath(config);
@@ -243,14 +320,40 @@ export function createCaddyGateway(commandRunner: CommandRunner = runCommand): C
         return;
       }
 
-      const configPath = resolveCaddyCommandConfigPath(config);
-      const adminAddress = resolveCaddyCommandAdminAddress(config);
+      if (shouldUseContainerizedCaddy(config)) {
+        const configPath = resolveCaddyCommandConfigPath(config);
+        const adminAddress = resolveCaddyCommandAdminAddress(config);
 
-      await runCaddyCommand(
-        config,
-        ["reload", "--address", adminAddress, "--config", configPath, "--adapter", "caddyfile"],
-        commandRunner,
-      );
+        await runCaddyCommand(
+          config,
+          ["reload", "--address", adminAddress, "--config", configPath, "--adapter", "caddyfile"],
+          commandRunner,
+        );
+
+        return;
+      }
+
+      const configPath = getEffectiveCaddyConfigPath(config);
+      const rawAdminAddress = getEffectiveCaddyAdminAddress(config);
+      const adminBaseUrl = normalizeAdminApiBaseUrl(rawAdminAddress);
+      const payload = await fs.readFile(configPath, "utf8");
+      const response = await fetchImpl(`${adminBaseUrl}/load`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "text/caddyfile",
+          Origin: DEFAULT_CADDY_ADMIN_FETCH_ORIGIN,
+        },
+        body: payload,
+      });
+
+      if (!response.ok) {
+        const details = (await response.text()).trim();
+        const suffix = details ? ` ${details}` : "";
+
+        throw new Error(
+          `Caddy admin API reload failed (${response.status} ${response.statusText}).${suffix}`,
+        );
+      }
     },
     async hashPassword(config, password) {
       return runCaddyCommand(config, ["hash-password", "--plaintext", password], commandRunner);

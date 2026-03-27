@@ -1,8 +1,13 @@
+import fs from "node:fs/promises";
+import os from "node:os";
+import path from "node:path";
+
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { type SelflifyConfig, type SiteConfig } from "@/lib/config/schema";
 import { createDefaultConfig } from "@/lib/config/service";
 import {
+  createCaddyGateway,
   generateCaddyfile,
   resolveCaddyCommand,
   resolveCaddyCommandAdminAddress,
@@ -60,6 +65,7 @@ describe("generateCaddyfile", () => {
     expect(rendered).toContain("preview-user hashed-secret");
     expect(rendered).toContain("output file /var/log/caddy/access.log");
     expect(rendered).toContain("roll_keep 10");
+    expect(rendered).toContain("origins http://0.0.0.0:2019 http://127.0.0.1:2019 http://localhost:2019 http://caddy:2019");
   });
 
   it("omits preview basic auth and tls_cf import when no token or auth is configured", () => {
@@ -85,7 +91,7 @@ describe("generateCaddyfile", () => {
     const rendered = generateCaddyfile(config);
 
     expect(rendered).not.toContain("dns cloudflare");
-    expect(rendered).not.toContain("basicauth {");
+    expect(rendered).not.toContain("basic_auth {");
     expect(rendered).toContain("import common_headers");
     expect(rendered).toContain("import static_cache");
   });
@@ -118,7 +124,7 @@ describe("generateCaddyfile", () => {
       "secret",
     ]);
     expect(resolveCaddyCommandConfigPath(config)).toBe("/etc/caddy/Caddyfile");
-    expect(resolveCaddyCommandAdminAddress(config)).toBe("http://127.0.0.1:2019");
+    expect(resolveCaddyCommandAdminAddress(config)).toBe("0.0.0.0:2019");
   });
 
   it("uses the configured local caddy binary when it is explicitly overridden", () => {
@@ -131,6 +137,51 @@ describe("generateCaddyfile", () => {
     expect(command.command).toBe("/usr/local/bin/caddy");
     expect(command.args).toEqual(["validate"]);
     expect(resolveCaddyCommandConfigPath(config)).toBe(config.server.caddyConfigPath);
-    expect(resolveCaddyCommandAdminAddress(config)).toBe(config.server.caddyAdminAddress);
+    expect(resolveCaddyCommandAdminAddress(config)).toBe("caddy:2019");
+  });
+
+  it("uses the modern basic_auth directive for preview protection", () => {
+    const config = createConfig(createSite());
+    const rendered = generateCaddyfile(config);
+
+    expect(rendered).toContain("basic_auth {");
+    expect(rendered).not.toContain("basicauth {");
+  });
+
+  it("reloads through the admin API when running with a local caddy binary", async () => {
+    const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "selflify-caddy-test-"));
+    const config = createConfig(createSite(), {
+      server: {
+        ...createDefaultConfig().server,
+        domain: "sendsay.dev",
+        previewRootDir: "/var/www",
+        selflifyUpstream: "selflify:3000",
+        caddyContactEmail: "dev@sendsay.dev",
+        cloudflareApiToken: "cf-token",
+        caddyConfigPath: path.join(tempDir, "Caddyfile"),
+      },
+    });
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response("", {
+        status: 200,
+      }),
+    );
+    const commandRunner = vi.fn();
+    const gateway = createCaddyGateway(commandRunner, fetchMock as typeof fetch);
+
+    await gateway.writeGeneratedConfig(config);
+    await gateway.reload(config);
+
+    expect(commandRunner).not.toHaveBeenCalled();
+    expect(fetchMock).toHaveBeenCalledWith("http://caddy:2019/load", {
+      method: "POST",
+      headers: {
+        "Content-Type": "text/caddyfile",
+        Origin: "http://0.0.0.0:2019",
+      },
+      body: expect.stringContaining("reverse_proxy selflify:3000"),
+    });
+
+    await fs.rm(tempDir, { recursive: true, force: true });
   });
 });
