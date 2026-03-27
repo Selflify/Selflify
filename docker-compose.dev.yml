@@ -1,4 +1,36 @@
 services:
+  selflify:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: dev
+    container_name: selflify-dev-app
+    command:
+      - yarn
+      - dev
+      - --hostname
+      - 0.0.0.0
+      - --port
+      - "3000"
+    environment:
+      AUTH_SECRET: ${AUTH_SECRET}
+      SELFLIFY_CONFIG_PATH: /workspace/selflify.config.json
+      SELFLIFY_CADDY_CONFIG_PATH: /workspace/.dev/Caddyfile
+      SELFLIFY_CADDY_BIN: /usr/bin/caddy
+      SELFLIFY_CADDY_ADMIN_ADDRESS: http://caddy:2019
+      SELFLIFY_UPSTREAM: selflify:3000
+      SELFLIFY_PREVIEW_ROOT: /var/www
+      SELFLIFY_BACKUP_ROOT: /workspace/.selflify/backups
+      SELFLIFY_MOCK_CLOUDFLARE: ${SELFLIFY_MOCK_CLOUDFLARE:-1}
+      SELFLIFY_SKIP_CADDY_RELOAD: "0"
+      SELFLIFY_PREVIEW_TTL_DAYS: ${SELFLIFY_PREVIEW_TTL_DAYS:-30}
+      SELFLIFY_ORPHAN_TTL_DAYS: ${SELFLIFY_ORPHAN_TTL_DAYS:-30}
+    ports:
+      - "3000:3000"
+    volumes:
+      - .:/workspace
+      - ./.dev/var-www:/var/www
+
   cleanup:
     build:
       context: .
@@ -23,10 +55,10 @@ services:
       context: .
       dockerfile: docker/caddy/Dockerfile
     container_name: selflify-dev-caddy
+    depends_on:
+      - selflify
     ports:
       - "8080:80"
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
     volumes:
       - ./.dev/Caddyfile:/etc/caddy/Caddyfile
       - ./.dev/caddy-data:/data

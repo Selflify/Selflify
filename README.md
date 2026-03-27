@@ -61,18 +61,18 @@ Useful optional overrides:
 ```bash
 SELFLIFY_CADDY_CONFIG_PATH=./.dev/Caddyfile
 SELFLIFY_CADDY_ADMIN_ADDRESS=http://caddy:2019
-SELFLIFY_UPSTREAM=host.docker.internal:3000
 SELFLIFY_CADDY_CONTAINER=selflify-dev-caddy
 SELFLIFY_BACKUP_ROOT=./.selflify/backups
 SELFLIFY_BACKUP_KEEP=20
 SELFLIFY_MOCK_CLOUDFLARE=1
-SELFLIFY_SKIP_CADDY_RELOAD=1
+SELFLIFY_SKIP_CADDY_RELOAD=0
 ```
 
 If you run `yarn dev` directly on your host and want fixture files instead of `/var/www`, add:
 
 ```bash
 SELFLIFY_PREVIEW_ROOT=./.dev/var-www
+SELFLIFY_UPSTREAM=host.docker.internal:3000
 ```
 
 If you want to use a host-installed Caddy binary instead of the dev container, add:
@@ -84,7 +84,7 @@ SELFLIFY_CADDY_BIN=/usr/local/bin/caddy
 In local development, the recommended behavior is:
 
 - mock Cloudflare DNS operations
-- validate generated `Caddyfile`, but do not call `caddy reload`
+- allow real Caddy reloads inside the dev compose stack
 - keep a small rolling backup set for config and Caddy snapshots
 
 ## Main flows
@@ -103,19 +103,21 @@ docker compose -f docker-compose.dev.yml up --build
 
 This runs:
 
+- `selflify` on `http://localhost:3000`
 - `cleanup` worker against `/var/www` mounted from `.dev/var-www`
 - `caddy` on `http://localhost:8080`
 
-Run the Next.js app separately on the host:
+This is the full-fidelity development stack. It is the mode that correctly reflects preview
+directories, free-space reporting, masked token display and generated Caddy updates.
 
-```bash
-yarn dev --hostname 0.0.0.0 --port 3000
-```
+You can still run `yarn dev --hostname 0.0.0.0 --port 3000` directly on the host for isolated UI
+work, but that host-side mode is not the full preview stack unless you also override the filesystem
+paths manually.
 
 Inside the containers, the base preview root is always `/var/www`.
 In development, `docker-compose.dev.yml` mounts local fixture files from `.dev/var-www` into that path.
-`Caddy` proxies the admin panel to `host.docker.internal:3000`, so the host-side `yarn dev` process stays the source for the Next.js app.
-In this mode, Selflify also uses `docker exec selflify-dev-caddy caddy ...` for validation and password hashing unless `SELFLIFY_CADDY_BIN` is explicitly overridden.
+`Caddy` proxies the admin panel to the `selflify` service inside the compose network by default.
+When you intentionally run host-side `yarn dev`, Selflify can still use `docker exec selflify-dev-caddy caddy ...` for validation and password hashing unless `SELFLIFY_CADDY_BIN` is explicitly overridden.
 
 ## Dev fixtures
 

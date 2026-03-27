@@ -34,7 +34,7 @@
 http://sendsay.dev {
     import common_site
 
-    reverse_proxy host.docker.internal:3000
+    reverse_proxy selflify:3000
 }
 
 http://app.sendsay.dev, http://*.app.sendsay.dev {

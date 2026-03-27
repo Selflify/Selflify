@@ -20,7 +20,7 @@ Use this file as the first-stop operational guide before making changes.
 - Preview URL format: `<deploy>.<site>.<domain>`
 - Base preview root inside containers: `/var/www`
 - In dev compose, local fixtures from `.dev/var-www` are mounted into container `/var/www`
-- In dev compose, Next.js is expected to run on the host via `yarn dev`, and Caddy reaches it through `host.docker.internal:3000`
+- In dev compose, `selflify`, `caddy`, and `cleanup` run together; this is the only full-fidelity preview stack
 - In host-run dev mode, Caddy commands default to `docker exec selflify-dev-caddy caddy ...` unless `SELFLIFY_CADDY_BIN` is explicitly overridden
 - Caddy config is generated from app state, not hand-edited as the main control path
 
@@ -63,9 +63,9 @@ Use this file as the first-stop operational guide before making changes.
 ## Config And Path Rules
 
 - `config.server.previewRootDir` is the canonical base path for sites.
-- The effective preview root may still be overridden by `SELFLIFY_PREVIEW_ROOT` for direct host-side development.
+- The effective preview root may still be overridden by `SELFLIFY_PREVIEW_ROOT` for direct host-side development, but the default dev path assumes the compose stack.
 - Keep path handling centralized in `lib/config/paths.ts`.
-- If you change path semantics, verify both direct `yarn dev` usage and `docker-compose.dev.yml`.
+- If you change path semantics, verify the full `docker-compose.dev.yml` stack first, then direct `yarn dev` as a secondary mode.
 
 ## Auth Rules
 
