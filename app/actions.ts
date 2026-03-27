@@ -46,10 +46,6 @@ function toRevision(formData: FormData): number | undefined {
   return Number(raw);
 }
 
-function isChecked(formData: FormData, key: string): boolean {
-  return formData.get(key) === "on";
-}
-
 function redirectWith(pathname: string, kind: "notice" | "error", message: string): never {
   redirect(`${pathname}?${kind}=${encodeURIComponent(message)}`);
 }
@@ -360,48 +356,46 @@ export async function deleteSiteAction(siteSlug: string, formData: FormData) {
   }
 }
 
-const settingsSchema = z.object({
+const serverSettingsSchema = z.object({
   domain: z.string().trim().min(3),
   serverIp: z.string().trim().default(""),
-  cloudflareApiToken: z.string().trim().default(""),
   caddyContactEmail: z.email(),
+});
+
+const adminSettingsSchema = z.object({
   adminLogin: z.string().trim().min(3).max(128),
   adminPassword: z.string().max(128).default(""),
 });
 
-export async function saveSettingsAction(formData: FormData) {
+async function handleSettingsFailure(error: unknown, fallbackMessage: string): Promise<never> {
+  const message =
+    error instanceof ConfigConflictError
+      ? error.message
+      : error instanceof Error
+        ? error.message
+        : fallbackMessage;
+
+  redirectWith("/settings", "error", message);
+}
+
+export async function saveServerSettingsAction(formData: FormData) {
   await requireAdminSession();
   const expectedRevision = toRevision(formData);
-  const clearCloudflareToken = isChecked(formData, "clearCloudflareToken");
 
   try {
-    const payload = settingsSchema.parse({
+    const payload = serverSettingsSchema.parse({
       domain: getQueryValue(formData, "domain"),
       serverIp: getQueryValue(formData, "serverIp"),
-      cloudflareApiToken: getQueryValue(formData, "cloudflareApiToken"),
       caddyContactEmail: getQueryValue(formData, "caddyContactEmail"),
-      adminLogin: getQueryValue(formData, "adminLogin"),
-      adminPassword: getQueryValue(formData, "adminPassword"),
     });
 
     await runConfigOperation({
-      label: "save-settings",
+      label: "save-settings:server",
       expectedRevision,
       mutate: async (draft) => {
         draft.server.domain = payload.domain;
         draft.server.serverIp = payload.serverIp;
         draft.server.caddyContactEmail = payload.caddyContactEmail;
-        draft.admin.login = payload.adminLogin;
-
-        if (clearCloudflareToken) {
-          draft.server.cloudflareApiToken = "";
-        } else if (payload.cloudflareApiToken) {
-          draft.server.cloudflareApiToken = payload.cloudflareApiToken;
-        }
-
-        if (payload.adminPassword) {
-          draft.admin.passwordHash = await hashAdminPassword(payload.adminPassword);
-        }
 
         return {
           config: draft,
@@ -413,16 +407,89 @@ export async function saveSettingsAction(formData: FormData) {
       },
     });
 
-    redirectWith("/settings", "notice", "Settings applied.");
+    redirectWith("/settings", "notice", "Infrastructure settings applied.");
   } catch (error) {
-    const message =
-      error instanceof ConfigConflictError
-        ? error.message
-        : error instanceof Error
-          ? error.message
-          : "Could not save settings.";
+    await handleSettingsFailure(error, "Could not save infrastructure settings.");
+  }
+}
 
-    redirectWith("/settings", "error", message);
+export async function saveAdminAccessAction(formData: FormData) {
+  await requireAdminSession();
+  const expectedRevision = toRevision(formData);
+
+  try {
+    const payload = adminSettingsSchema.parse({
+      adminLogin: getQueryValue(formData, "adminLogin"),
+      adminPassword: getQueryValue(formData, "adminPassword"),
+    });
+
+    await runConfigOperation({
+      label: "save-settings:admin",
+      expectedRevision,
+      mutate: async (draft) => {
+        draft.admin.login = payload.adminLogin;
+
+        if (payload.adminPassword) {
+          draft.admin.passwordHash = await hashAdminPassword(payload.adminPassword);
+        }
+
+        return {
+          config: draft,
+          result: null,
+        };
+      },
+    });
+
+    redirectWith("/settings", "notice", "Admin access updated.");
+  } catch (error) {
+    await handleSettingsFailure(error, "Could not save admin access.");
+  }
+}
+
+const cloudflareTokenSchema = z.object({
+  cloudflareApiToken: z.string().trim().min(1, "Paste a Cloudflare API token."),
+});
+
+export async function saveCloudflareTokenAction(formData: FormData) {
+  await requireAdminSession();
+  const expectedRevision = toRevision(formData);
+  const intent = getQueryValue(formData, "intent") === "delete" ? "delete" : "save";
+
+  try {
+    const payload =
+      intent === "save"
+        ? cloudflareTokenSchema.parse({
+            cloudflareApiToken: getQueryValue(formData, "cloudflareApiToken"),
+          })
+        : null;
+
+    await runConfigOperation({
+      label: "save-settings:cloudflare",
+      expectedRevision,
+      mutate: async (draft) => {
+        draft.server.cloudflareApiToken =
+          intent === "delete" ? "" : payload?.cloudflareApiToken ?? "";
+
+        return {
+          config: draft,
+          result: null,
+        };
+      },
+      afterApply:
+        intent === "save"
+          ? async (config) => {
+              await syncAllSiteDnsRecords(config);
+            }
+          : undefined,
+    });
+
+    redirectWith(
+      "/settings",
+      "notice",
+      intent === "delete" ? "Cloudflare token removed." : "Cloudflare token saved.",
+    );
+  } catch (error) {
+    await handleSettingsFailure(error, "Could not update the Cloudflare token.");
   }
 }
 

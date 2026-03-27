@@ -25,6 +25,18 @@ function humanizeOperationLabel(label: string | null): string {
     return "Global settings update";
   }
 
+  if (label === "save-settings:server") {
+    return "Infrastructure settings update";
+  }
+
+  if (label === "save-settings:admin") {
+    return "Admin access update";
+  }
+
+  if (label === "save-settings:cloudflare") {
+    return "Cloudflare token update";
+  }
+
   if (label.startsWith("create-site:")) {
     return `Create site ${label.slice("create-site:".length)}`;
   }
