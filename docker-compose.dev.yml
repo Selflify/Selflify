@@ -2,16 +2,13 @@ services:
   selflify:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: docker/selflify/Dockerfile
       target: dev
     container_name: selflify-dev-app
     command:
-      - yarn
-      - dev
-      - --hostname
-      - 0.0.0.0
-      - --port
-      - "3000"
+      - sh
+      - -lc
+      - yarn install --immutable && yarn dev --hostname 0.0.0.0 --port 3000
     environment:
       AUTH_SECRET: ${AUTH_SECRET}
       SELFLIFY_CONFIG_PATH: /workspace/selflify.config.json
@@ -29,12 +26,14 @@ services:
       - "3000:3000"
     volumes:
       - .:/workspace
+      - selflify_dev_node_modules:/workspace/node_modules
+      - selflify_dev_next:/workspace/.next
       - ./.dev/var-www:/var/www
 
   cleanup:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: docker/selflify/Dockerfile
       target: dev
     container_name: selflify-dev-cleanup
     command:
@@ -67,3 +66,7 @@ services:
       - ./.dev/var-www:/var/www
     expose:
       - "2019"
+
+volumes:
+  selflify_dev_node_modules:
+  selflify_dev_next:

@@ -114,6 +114,10 @@ You can still run `yarn dev --hostname 0.0.0.0 --port 3000` directly on the host
 work, but that host-side mode is not the full preview stack unless you also override the filesystem
 paths manually.
 
+The dev stack now keeps container-native `node_modules` and `.next` volumes, so the Linux container
+does not try to reuse host dependencies. This avoids the blank `localhost:3000` / missing SWC
+startup failures that happen when macOS host modules leak into the container.
+
 Inside the containers, the base preview root is always `/var/www`.
 In development, `docker-compose.dev.yml` mounts local fixture files from `.dev/var-www` into that path.
 `Caddy` proxies the admin panel to the `selflify` service inside the compose network by default.

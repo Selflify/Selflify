@@ -38,6 +38,7 @@ Use this file as the first-stop operational guide before making changes.
 - `cleanup-previews.sh`: stale preview/orphan cleanup script
 - `docker-compose.yml`: production stack
 - `docker-compose.dev.yml`: development stack
+- `docker/selflify/Dockerfile`: main app image for prod/dev/cleanup
 - `.dev/var-www/`: tracked dev fixture deploys
 
 ## High-Risk Files And Behaviors
@@ -66,6 +67,7 @@ Use this file as the first-stop operational guide before making changes.
 - The effective preview root may still be overridden by `SELFLIFY_PREVIEW_ROOT` for direct host-side development, but the default dev path assumes the compose stack.
 - Keep path handling centralized in `lib/config/paths.ts`.
 - If you change path semantics, verify the full `docker-compose.dev.yml` stack first, then direct `yarn dev` as a secondary mode.
+- In dev compose, `node_modules` and `.next` are container-owned volumes on purpose; do not revert them to host bind mounts unless you also solve cross-platform SWC/runtime issues.
 
 ## Auth Rules
 

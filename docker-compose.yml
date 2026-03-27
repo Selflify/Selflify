@@ -2,7 +2,7 @@ services:
   selflify:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: docker/selflify/Dockerfile
     container_name: selflify
     restart: unless-stopped
     environment:
@@ -21,7 +21,7 @@ services:
   cleanup:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: docker/selflify/Dockerfile
     container_name: selflify-cleanup
     restart: unless-stopped
     depends_on:
