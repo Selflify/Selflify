@@ -8,7 +8,7 @@ services:
     command:
       - sh
       - -lc
-      - yarn install --immutable && yarn dev --hostname 0.0.0.0 --port 3000
+      - rm -rf /workspace/.next/* && yarn install --immutable && yarn dev --hostname 0.0.0.0 --port 3000
     environment:
       AUTH_SECRET: ${AUTH_SECRET}
       SELFLIFY_CONFIG_PATH: /workspace/selflify.config.json

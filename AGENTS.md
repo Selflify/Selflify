@@ -26,15 +26,15 @@ Use this file as the first-stop operational guide before making changes.
 
 ## Important Files
 
-- `app/`: App Router pages, layouts, and server actions
-- `app/actions.ts`: mutating server actions for setup, settings, sites, and deploys
-- `auth.ts`: `next-auth` setup
-- `components/`: admin UI building blocks
-- `lib/config/`: config schema, defaults, path resolution, persistence
-- `lib/operations.ts`: config operation pipeline, revision checks, rollback-oriented flow
-- `lib/sites/service.ts`: site/deploy filesystem operations and summaries
-- `lib/system/caddy.ts`: Caddyfile generation, validation, reload, password hashing
-- `lib/system/cloudflare.ts`: Cloudflare DNS sync adapter
+- `src/app/`: App Router pages, layouts, and server actions
+- `src/app/actions.ts`: mutating server actions for setup, settings, sites, and deploys
+- `src/auth.ts`: `next-auth` setup
+- `src/components/`: admin UI building blocks
+- `src/lib/config/`: config schema, defaults, path resolution, persistence
+- `src/lib/operations.ts`: config operation pipeline, revision checks, rollback-oriented flow
+- `src/lib/sites/service.ts`: site/deploy filesystem operations and summaries
+- `src/lib/system/caddy.ts`: Caddyfile generation, validation, reload, password hashing
+- `src/lib/system/cloudflare.ts`: Cloudflare DNS sync adapter
 - `cleanup-previews.sh`: stale preview/orphan cleanup script
 - `docker-compose.yml`: production stack
 - `docker-compose.dev.yml`: development stack
@@ -135,7 +135,7 @@ For Docker or dev environment changes:
 ## Testing Notes
 
 - `Vitest` covers service and operation invariants.
-- If you touch config operations, rollback logic, or filesystem workflows, update or add tests in `lib/*.test.ts`.
+- If you touch config operations, rollback logic, or filesystem workflows, update or add tests in `src/lib/*.test.ts`.
 - If you touch Caddy generation, verify rendered paths still point at `/var/www/...` in the effective runtime.
 
 ## Commit Hygiene

@@ -8,18 +8,18 @@ const rootDir = path.dirname(fileURLToPath(new URL(import.meta.url)));
 export default defineConfig({
   resolve: {
     alias: {
-      "@": rootDir,
+      "@": path.join(rootDir, "src"),
     },
   },
   test: {
     environment: "node",
-    include: ["lib/**/*.test.ts"],
+    include: ["src/lib/**/*.test.ts"],
     coverage: {
       provider: "v8",
       reporter: ["text", "html"],
       reportsDirectory: "./coverage/vitest",
-      include: ["lib/**/*.ts"],
-      exclude: ["lib/**/*.test.ts"],
+      include: ["src/lib/**/*.ts"],
+      exclude: ["src/lib/**/*.test.ts"],
     },
     restoreMocks: true,
   },

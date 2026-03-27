@@ -22,6 +22,7 @@ Implemented:
 - production `docker-compose.yml`
 - development `docker-compose.dev.yml`
 - dev fixture deploy directories in `.dev/var-www`
+- application source under `src/`
 
 ## Tooling
 
@@ -134,6 +135,13 @@ Examples:
 - [`.dev/var-www/storybook/release-3-189-30/index.html`](/Users/aleksnick/dev/Selflify/.dev/var-www/storybook/release-3-189-30/index.html)
 
 They exist so that local `Caddy` and the `Sites` screen can immediately see stable and preview deploy directories without waiting for real builds.
+
+## Source layout
+
+- `src/app`: App Router pages, layouts, route handlers and server actions
+- `src/components`: reusable admin UI building blocks
+- `src/lib`: auth, config, operations, filesystem and provider logic
+- `src/auth.ts`: `next-auth` wiring
 
 ## Production rollout
 
