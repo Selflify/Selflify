@@ -5,7 +5,6 @@ import { Box, Button, Flex, IconButton, Input, Stack, Text } from "@chakra-ui/re
 import { PencilLine } from "lucide-react";
 
 import { saveCloudflareTokenAction } from "@/app/actions";
-import { FormField } from "@/components/form-field";
 import { FormSubmitButton } from "@/components/form-submit-button";
 
 type CloudflareTokenSectionProps = {
@@ -38,25 +37,18 @@ export function CloudflareTokenSection({
         <form action={saveCloudflareTokenAction}>
           <input type="hidden" name="configRevision" value={String(configRevision)} />
           <Stack gap="4" mt="4">
-            <FormField
-              label="Cloudflare API token"
-              htmlFor="settings-cloudflare-api-token"
-              hint={
-                hasToken
-                  ? "Paste a new token to replace the current one."
-                  : "Paste a token to enable automatic DNS updates."
+            <Input
+              id="settings-cloudflare-api-token"
+              name="cloudflareApiToken"
+              type="password"
+              placeholder={
+                hasToken ? "Paste a new token to replace the current one" : "Paste a Cloudflare API token"
               }
-            >
-              <Input
-                id="settings-cloudflare-api-token"
-                name="cloudflareApiToken"
-                type="password"
-                placeholder="Paste a Cloudflare API token"
-                autoComplete="off"
-                required
-                bg="rgba(255,255,255,0.04)"
-              />
-            </FormField>
+              autoComplete="off"
+              aria-label="Cloudflare API token"
+              required
+              bg="rgba(255,255,255,0.04)"
+            />
 
             <Flex gap="3" wrap="wrap">
               <FormSubmitButton
