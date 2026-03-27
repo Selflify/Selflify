@@ -11,7 +11,9 @@ type NavItemProps = {
 
 export function NavItem({ href, label }: NavItemProps) {
   const pathname = usePathname();
-  const active = pathname === href || pathname.startsWith(`${href}/`);
+  const exactActive = pathname === href;
+  const sectionActive = !exactActive && pathname.startsWith(`${href}/`);
+  const active = exactActive || sectionActive;
 
   return (
     <Link href={href}>
@@ -20,15 +22,19 @@ export function NavItem({ href, label }: NavItemProps) {
         py="3"
         rounded="xl"
         borderWidth="1px"
-        borderColor={active ? "brand.500" : "transparent"}
-        bg={active ? "accentMuted" : "transparent"}
+        borderColor={exactActive ? "brand.500" : sectionActive ? "rgba(255,255,255,0.08)" : "transparent"}
+        bg={exactActive ? "accentMuted" : sectionActive ? "rgba(255,255,255,0.02)" : "transparent"}
         transition="all 0.2s ease"
         _hover={{
-          borderColor: "rgba(255,255,255,0.08)",
-          bg: "rgba(255,255,255,0.03)",
+          borderColor: exactActive ? "brand.500" : "rgba(255,255,255,0.08)",
+          bg: exactActive ? "accentMuted" : "rgba(255,255,255,0.03)",
         }}
       >
-        <Text fontWeight="700" letterSpacing="0.01em">
+        <Text
+          fontWeight="700"
+          letterSpacing="0.01em"
+          color={exactActive ? "whiteAlpha.950" : active ? "brand.200" : "whiteAlpha.950"}
+        >
           {label}
         </Text>
       </Box>
