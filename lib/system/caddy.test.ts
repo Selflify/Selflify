@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { type SelflifyConfig, type SiteConfig } from "@/lib/config/schema";
 import { createDefaultConfig } from "@/lib/config/service";
-import { generateCaddyfile } from "@/lib/system/caddy";
+import { generateCaddyfile, resolveCaddyCommand } from "@/lib/system/caddy";
 
 function createSite(partial?: Partial<SiteConfig>): SiteConfig {
   return {
@@ -95,5 +95,33 @@ describe("generateCaddyfile", () => {
     expect(rendered).toContain("http://sendsay.dev");
     expect(rendered).toContain("http://app.sendsay.dev, http://*.app.sendsay.dev");
     expect(rendered).toContain("reverse_proxy host.docker.internal:3000");
+  });
+
+  it("uses docker exec for caddy commands in development when no explicit local binary is configured", () => {
+    vi.stubEnv("NODE_ENV", "development");
+
+    const config = createConfig(createSite());
+    const command = resolveCaddyCommand(config, ["hash-password", "--plaintext", "secret"]);
+
+    expect(command.command).toBe("docker");
+    expect(command.args).toEqual([
+      "exec",
+      "selflify-dev-caddy",
+      "caddy",
+      "hash-password",
+      "--plaintext",
+      "secret",
+    ]);
+  });
+
+  it("uses the configured local caddy binary when it is explicitly overridden", () => {
+    vi.stubEnv("NODE_ENV", "development");
+    vi.stubEnv("SELFLIFY_CADDY_BIN", "/usr/local/bin/caddy");
+
+    const config = createConfig(createSite());
+    const command = resolveCaddyCommand(config, ["validate"]);
+
+    expect(command.command).toBe("/usr/local/bin/caddy");
+    expect(command.args).toEqual(["validate"]);
   });
 });

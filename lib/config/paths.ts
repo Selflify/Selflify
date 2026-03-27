@@ -37,6 +37,10 @@ export function getDefaultCaddyBinaryPath(): string {
   return process.env.SELFLIFY_CADDY_BIN ?? "caddy";
 }
 
+export function getDefaultCaddyContainerName(): string {
+  return process.env.SELFLIFY_CADDY_CONTAINER ?? "selflify-dev-caddy";
+}
+
 export function getDefaultCaddyAdminAddress(): string {
   return process.env.SELFLIFY_CADDY_ADMIN_ADDRESS ?? "http://caddy:2019";
 }
@@ -59,6 +63,10 @@ export function getEffectiveCaddyConfigPath(config: SelflifyConfig): string {
 
 export function getEffectiveCaddyBinaryPath(config: SelflifyConfig): string {
   return process.env.SELFLIFY_CADDY_BIN ?? config.server.caddyBinaryPath;
+}
+
+export function getEffectiveCaddyContainerName(): string {
+  return getDefaultCaddyContainerName();
 }
 
 export function getEffectiveCaddyAdminAddress(config: SelflifyConfig): string {

@@ -60,9 +60,9 @@ Useful optional overrides:
 
 ```bash
 SELFLIFY_CADDY_CONFIG_PATH=./.dev/Caddyfile
-SELFLIFY_CADDY_BIN=caddy
 SELFLIFY_CADDY_ADMIN_ADDRESS=http://caddy:2019
 SELFLIFY_UPSTREAM=host.docker.internal:3000
+SELFLIFY_CADDY_CONTAINER=selflify-dev-caddy
 SELFLIFY_BACKUP_ROOT=./.selflify/backups
 SELFLIFY_BACKUP_KEEP=20
 SELFLIFY_MOCK_CLOUDFLARE=1
@@ -73,6 +73,12 @@ If you run `yarn dev` directly on your host and want fixture files instead of `/
 
 ```bash
 SELFLIFY_PREVIEW_ROOT=./.dev/var-www
+```
+
+If you want to use a host-installed Caddy binary instead of the dev container, add:
+
+```bash
+SELFLIFY_CADDY_BIN=/usr/local/bin/caddy
 ```
 
 In local development, the recommended behavior is:
@@ -109,6 +115,7 @@ yarn dev --hostname 0.0.0.0 --port 3000
 Inside the containers, the base preview root is always `/var/www`.
 In development, `docker-compose.dev.yml` mounts local fixture files from `.dev/var-www` into that path.
 `Caddy` proxies the admin panel to `host.docker.internal:3000`, so the host-side `yarn dev` process stays the source for the Next.js app.
+In this mode, Selflify also uses `docker exec selflify-dev-caddy caddy ...` for validation and password hashing unless `SELFLIFY_CADDY_BIN` is explicitly overridden.
 
 ## Dev fixtures
 

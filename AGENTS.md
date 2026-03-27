@@ -21,6 +21,7 @@ Use this file as the first-stop operational guide before making changes.
 - Base preview root inside containers: `/var/www`
 - In dev compose, local fixtures from `.dev/var-www` are mounted into container `/var/www`
 - In dev compose, Next.js is expected to run on the host via `yarn dev`, and Caddy reaches it through `host.docker.internal:3000`
+- In host-run dev mode, Caddy commands default to `docker exec selflify-dev-caddy caddy ...` unless `SELFLIFY_CADDY_BIN` is explicitly overridden
 - Caddy config is generated from app state, not hand-edited as the main control path
 
 ## Important Files

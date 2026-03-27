@@ -5,6 +5,7 @@ import type { SelflifyConfig, SiteConfig } from "@/lib/config/schema";
 import {
   getEffectiveCaddyAdminAddress,
   getEffectiveCaddyBinaryPath,
+  getEffectiveCaddyContainerName,
   getEffectiveCaddyConfigPath,
   getEffectivePreviewRoot,
   getEffectiveSelflifyUpstream,
@@ -34,6 +35,73 @@ function renderCommonSiteImports(hasToken: boolean): string {
   return hasToken
     ? "    import tls_cf\n    import common_headers\n    import static_cache"
     : "    import common_headers\n    import static_cache";
+}
+
+type CaddyCommandSpec = {
+  command: string;
+  args: string[];
+  containerized: boolean;
+};
+
+function isSpawnNotFound(error: unknown): boolean {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    (error as { code?: unknown }).code === "ENOENT"
+  );
+}
+
+function getCommandFailureDetails(error: unknown): string {
+  if (typeof error === "object" && error !== null) {
+    const stderr = (error as { stderr?: unknown }).stderr;
+
+    if (typeof stderr === "string" && stderr.trim()) {
+      return stderr.trim();
+    }
+  }
+
+  return error instanceof Error ? error.message : "Unknown command failure.";
+}
+
+export function resolveCaddyCommand(config: SelflifyConfig, args: string[]): CaddyCommandSpec {
+  const caddyBin = getEffectiveCaddyBinaryPath(config);
+
+  if (isDevelopmentRuntime() && caddyBin === "caddy") {
+    return {
+      command: "docker",
+      args: ["exec", getEffectiveCaddyContainerName(), "caddy", ...args],
+      containerized: true,
+    };
+  }
+
+  return {
+    command: caddyBin,
+    args,
+    containerized: false,
+  };
+}
+
+async function runCaddyCommand(config: SelflifyConfig, args: string[]): Promise<string> {
+  const spec = resolveCaddyCommand(config, args);
+
+  try {
+    return await runCommand(spec.command, spec.args);
+  } catch (error) {
+    if (spec.containerized) {
+      throw new Error(
+        `Caddy is not available in local development. Start it with \`docker compose -f docker-compose.dev.yml up -d caddy cleanup\`, or set \`SELFLIFY_CADDY_BIN\` to a local caddy binary. Details: ${getCommandFailureDetails(error)}`,
+      );
+    }
+
+    if (isSpawnNotFound(error)) {
+      throw new Error(
+        `Caddy binary not found: ${spec.command}. Install Caddy or set \`SELFLIFY_CADDY_BIN\` to a valid binary path.`,
+      );
+    }
+
+    throw error;
+  }
 }
 
 function withDevScheme(host: string): string {
@@ -143,10 +211,9 @@ export async function writeGeneratedCaddyfile(config: SelflifyConfig): Promise<s
 }
 
 export async function validateCaddyfile(config: SelflifyConfig): Promise<void> {
-  const caddyBin = getEffectiveCaddyBinaryPath(config);
   const configPath = getEffectiveCaddyConfigPath(config);
 
-  await runCommand(caddyBin, ["validate", "--config", configPath, "--adapter", "caddyfile"]);
+  await runCaddyCommand(config, ["validate", "--config", configPath, "--adapter", "caddyfile"]);
 }
 
 export async function reloadCaddy(config: SelflifyConfig): Promise<void> {
@@ -154,11 +221,10 @@ export async function reloadCaddy(config: SelflifyConfig): Promise<void> {
     return;
   }
 
-  const caddyBin = getEffectiveCaddyBinaryPath(config);
   const configPath = getEffectiveCaddyConfigPath(config);
   const adminAddress = getEffectiveCaddyAdminAddress(config);
 
-  await runCommand(caddyBin, [
+  await runCaddyCommand(config, [
     "reload",
     "--address",
     adminAddress,
@@ -173,7 +239,5 @@ export async function hashPasswordWithCaddy(
   config: SelflifyConfig,
   password: string,
 ): Promise<string> {
-  const caddyBin = getEffectiveCaddyBinaryPath(config);
-
-  return runCommand(caddyBin, ["hash-password", "--plaintext", password]);
+  return runCaddyCommand(config, ["hash-password", "--plaintext", password]);
 }
