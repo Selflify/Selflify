@@ -25,6 +25,10 @@ FROM deps AS builder
 COPY . .
 RUN yarn build
 
+FROM deps AS cleanup
+
+COPY . .
+
 FROM base AS runner
 
 ENV NODE_ENV=production

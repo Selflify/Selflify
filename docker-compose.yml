@@ -22,6 +22,7 @@ services:
     build:
       context: .
       dockerfile: docker/selflify/Dockerfile
+      target: cleanup
     container_name: selflify-cleanup
     restart: unless-stopped
     depends_on:
@@ -29,7 +30,7 @@ services:
     command:
       - sh
       - -lc
-      - while true; do bash /workspace/cleanup-previews.sh; sleep "${SELFLIFY_CLEANUP_INTERVAL_SECONDS:-86400}"; done
+      - while true; do yarn cleanup:run; sleep "${SELFLIFY_CLEANUP_INTERVAL_SECONDS:-86400}"; done
     environment:
       SELFLIFY_CONFIG_PATH: /workspace/selflify.config.json
       SELFLIFY_PREVIEW_TTL_DAYS: ${SELFLIFY_PREVIEW_TTL_DAYS:-30}

@@ -34,12 +34,12 @@ services:
     build:
       context: .
       dockerfile: docker/selflify/Dockerfile
-      target: dev
+      target: cleanup
     container_name: selflify-dev-cleanup
     command:
       - sh
       - -lc
-      - while true; do bash /workspace/cleanup-previews.sh; sleep "${SELFLIFY_CLEANUP_INTERVAL_SECONDS:-3600}"; done
+      - yarn install --immutable && while true; do yarn cleanup:run; sleep "${SELFLIFY_CLEANUP_INTERVAL_SECONDS:-3600}"; done
     environment:
       SELFLIFY_CONFIG_PATH: /workspace/.dev/selflify.config.json
       SELFLIFY_PREVIEW_TTL_DAYS: ${SELFLIFY_PREVIEW_TTL_DAYS:-30}
@@ -47,6 +47,7 @@ services:
       SELFLIFY_CLEANUP_INTERVAL_SECONDS: ${SELFLIFY_CLEANUP_INTERVAL_SECONDS:-3600}
     volumes:
       - .:/workspace
+      - selflify_dev_node_modules:/workspace/node_modules
       - ./.dev/var-www:/var/www
 
   caddy:
