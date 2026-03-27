@@ -73,6 +73,22 @@ function getStatusColor(status: SelflifyConfig["operations"]["lastStatus"]): str
   return "gray";
 }
 
+function getStatusLabel(status: SelflifyConfig["operations"]["lastStatus"]): string {
+  if (status === "success") {
+    return "Applied";
+  }
+
+  if (status === "partial") {
+    return "Applied with warnings";
+  }
+
+  if (status === "failed") {
+    return "Apply failed";
+  }
+
+  return "Not run yet";
+}
+
 export function OperationStatusCard({ config }: OperationStatusCardProps) {
   const status = config.operations.lastStatus;
   const runtimeMode = getRuntimeModeLabel();
@@ -104,7 +120,7 @@ export function OperationStatusCard({ config }: OperationStatusCardProps) {
       >
         <Stack gap="2">
           <Text textTransform="uppercase" letterSpacing="0.18em" fontSize="xs" color="brand.300">
-            Operations
+            Last operation
           </Text>
           <Heading size="md">
             {humanizeOperationLabel(config.operations.lastOperationLabel)}
@@ -118,11 +134,10 @@ export function OperationStatusCard({ config }: OperationStatusCardProps) {
           <Badge
             colorPalette={getStatusColor(status)}
             variant="subtle"
-            textTransform="capitalize"
             px="2.5"
             py="1"
           >
-            {status}
+            {getStatusLabel(status)}
           </Badge>
           <Badge
             colorPalette={runtimeMode === "development" ? "blue" : "green"}
