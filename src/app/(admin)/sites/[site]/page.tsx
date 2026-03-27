@@ -35,6 +35,8 @@ export default async function SiteDetailsPage({ params, searchParams }: SiteDeta
   const error = typeof queries.error === "string" ? queries.error : "";
   const view = queries.view === "configuration" ? "configuration" : "deploys";
   const siteDisplayName = formatSiteName(site.name);
+  const stableDeploy = deploys.find((deploy) => deploy.isMainBranch) ?? null;
+  const previewDeploys = deploys.filter((deploy) => !deploy.isMainBranch);
 
   return (
     <Stack gap="8">
@@ -48,15 +50,24 @@ export default async function SiteDetailsPage({ params, searchParams }: SiteDeta
         p={{ base: "5", md: "6" }}
         boxShadow="panel"
       >
-        <Box>
-          <Heading size="lg">{siteDisplayName}</Heading>
-          <Text color="muted" mt="2">
-            {site.slug}.{config.server.domain} · {site.mainBranch}
-          </Text>
-          <Text color="whiteAlpha.700" mt="2" fontSize="sm">
-            {config.server.previewRootDir}/{site.slug}
-          </Text>
-        </Box>
+        <Flex justify="space-between" align={{ base: "flex-start", md: "center" }} gap="4" wrap="wrap">
+          <Box>
+            <Heading size="lg">{siteDisplayName}</Heading>
+            <Text color="muted" mt="2">
+              {site.slug}.{config.server.domain} · {site.mainBranch}
+            </Text>
+            <Text color="whiteAlpha.700" mt="2" fontSize="sm">
+              {config.server.previewRootDir}/{site.slug}
+            </Text>
+          </Box>
+          {stableDeploy ? (
+            <a href={stableDeploy.url} target="_blank" rel="noreferrer">
+              <Button as="span" variant="outline">
+                Open stable
+              </Button>
+            </a>
+          ) : null}
+        </Flex>
       </Box>
 
       {view === "deploys" ? (
@@ -71,13 +82,12 @@ export default async function SiteDetailsPage({ params, searchParams }: SiteDeta
           <Box>
             <Heading size="lg">Deploy inventory</Heading>
             <Text color="muted" mt="2">
-              Stable stays pinned on top. All preview deploys are sorted by latest modification
-              time.
+              Preview deploys are sorted by latest modification time.
             </Text>
           </Box>
 
           <Stack gap="4" mt="6">
-            {deploys.length === 0 ? (
+            {previewDeploys.length === 0 ? (
               <Box
                 rounded="xl"
                 borderWidth="1px"
@@ -85,14 +95,14 @@ export default async function SiteDetailsPage({ params, searchParams }: SiteDeta
                 px="4"
                 py="4"
               >
-                <Heading size="sm">No deploy directories found</Heading>
+                <Heading size="sm">No preview deploys found</Heading>
                 <Text color="muted" mt="2" fontSize="sm">
-                  Selflify will show stable and preview deploys here as soon as files appear under
-                  the site directory.
+                  Selflify will show preview deploys here as soon as directories appear under the
+                  site root.
                 </Text>
               </Box>
             ) : null}
-            {deploys.map((deploy) => (
+            {previewDeploys.map((deploy) => (
               <Flex
                 key={deploy.name}
                 justify="space-between"
@@ -101,10 +111,8 @@ export default async function SiteDetailsPage({ params, searchParams }: SiteDeta
                 wrap="wrap"
                 rounded="xl"
                 borderWidth="1px"
-                borderColor={
-                  deploy.isMainBranch ? "rgba(161,33,65,0.42)" : "rgba(255,255,255,0.08)"
-                }
-                bg={deploy.isMainBranch ? "rgba(161,33,65,0.1)" : "transparent"}
+                borderColor="rgba(255,255,255,0.08)"
+                bg="transparent"
                 px="4"
                 py="4"
               >
@@ -126,23 +134,21 @@ export default async function SiteDetailsPage({ params, searchParams }: SiteDeta
                       Open
                     </Button>
                   </a>
-                  {!deploy.isMainBranch ? (
-                    <form action={deleteDeployAction.bind(null, site.slug, deploy.name)}>
-                      <input
-                        type="hidden"
-                        name="configRevision"
-                        value={String(config.configRevision)}
-                      />
-                      <FormSubmitButton
-                        colorPalette="red"
-                        variant="outline"
-                        pendingText="Deleting deploy"
-                        confirmMessage={`Delete deploy ${deploy.name} for ${site.slug}? This action is irreversible.`}
-                      >
-                        Delete
-                      </FormSubmitButton>
-                    </form>
-                  ) : null}
+                  <form action={deleteDeployAction.bind(null, site.slug, deploy.name)}>
+                    <input
+                      type="hidden"
+                      name="configRevision"
+                      value={String(config.configRevision)}
+                    />
+                    <FormSubmitButton
+                      colorPalette="red"
+                      variant="outline"
+                      pendingText="Deleting deploy"
+                      confirmMessage={`Delete deploy ${deploy.name} for ${site.slug}? This action is irreversible.`}
+                    >
+                      Delete
+                    </FormSubmitButton>
+                  </form>
                 </Flex>
               </Flex>
             ))}
