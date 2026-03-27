@@ -243,6 +243,32 @@ describe("server actions", () => {
     );
   });
 
+  it("does not convert redirect control flow into an error toast during infrastructure save", async () => {
+    vi.mocked(requireAdminSession).mockResolvedValue({
+      config: { configRevision: 3 },
+      session: { user: { name: "owner" } },
+    } as never);
+    vi.mocked(runConfigOperation).mockResolvedValue(undefined as never);
+
+    const redirectError = Object.assign(new Error("NEXT_REDIRECT"), {
+      digest: "NEXT_REDIRECT;replace;/settings?notice=Infrastructure+settings+applied.;307;",
+    });
+
+    vi.mocked(redirectMock).mockImplementationOnce(() => {
+      throw redirectError;
+    });
+
+    const formData = new FormData();
+    formData.set("configRevision", "3");
+    formData.set("domain", "example.com");
+    formData.set("serverIp", "203.0.113.10");
+    formData.set("caddyContactEmail", "ops@example.com");
+
+    await expect(saveServerSettingsAction(formData)).rejects.toBe(redirectError);
+    expect(redirectMock).toHaveBeenCalledTimes(1);
+    expect(redirectMock).toHaveBeenCalledWith("/settings?notice=Infrastructure+settings+applied.");
+  });
+
   it("rejects empty infrastructure values in settings", async () => {
     vi.mocked(requireAdminSession).mockResolvedValue({
       config: { configRevision: 3 },

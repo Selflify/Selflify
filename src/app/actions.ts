@@ -1,6 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { isRedirectError } from "next/dist/client/components/redirect-error";
 import { z } from "zod";
 
 import { requireAdminSession } from "@/lib/auth/guards";
@@ -41,6 +42,12 @@ function redirectWith(pathname: string, kind: "notice" | "error", message: strin
   params.set(kind, message);
 
   redirect(`${basePath}?${params.toString()}`);
+}
+
+function rethrowIfRedirectError(error: unknown): void | never {
+  if (isRedirectError(error)) {
+    throw error;
+  }
 }
 
 const domainFieldSchema = z.string().trim().min(3, "Enter the primary domain.");
@@ -94,6 +101,8 @@ export async function setupAction(formData: FormData) {
 
     redirectWith("/login", "notice", "Admin account created. Sign in to continue.");
   } catch (error) {
+    rethrowIfRedirectError(error);
+
     const message = error instanceof Error ? error.message : "Setup failed.";
     redirectWith("/setup", "error", message);
   }
@@ -124,6 +133,8 @@ export async function createSiteAction(formData: FormData) {
 
     redirectWith("/sites", "notice", `Site ${payload.slug} created.`);
   } catch (error) {
+    rethrowIfRedirectError(error);
+
     const message =
       error instanceof ConfigConflictError
         ? error.message
@@ -172,6 +183,8 @@ export async function updateSiteAction(siteSlug: string, formData: FormData) {
 
     redirectWith(`/sites/${siteSlug}?view=configuration`, "notice", `Updated ${siteSlug}.`);
   } catch (error) {
+    rethrowIfRedirectError(error);
+
     const message =
       error instanceof ConfigConflictError
         ? error.message
@@ -202,6 +215,8 @@ export async function updateSitePreviewAccessAction(siteSlug: string, formData: 
       `Preview access updated for ${siteSlug}.`,
     );
   } catch (error) {
+    rethrowIfRedirectError(error);
+
     const message =
       error instanceof ConfigConflictError
         ? error.message
@@ -226,6 +241,8 @@ export async function resetSitePreviewAccessAction(siteSlug: string, formData: F
       `Preview access reset for ${siteSlug}.`,
     );
   } catch (error) {
+    rethrowIfRedirectError(error);
+
     const message =
       error instanceof ConfigConflictError
         ? error.message
@@ -246,6 +263,8 @@ export async function deleteSiteAction(siteSlug: string, formData: FormData) {
 
     redirectWith("/sites", "notice", `Site ${siteSlug} moved to orphan storage.`);
   } catch (error) {
+    rethrowIfRedirectError(error);
+
     const message =
       error instanceof ConfigConflictError
         ? error.message
@@ -280,6 +299,8 @@ const adminSettingsSchema = z
   });
 
 async function handleSettingsFailure(error: unknown, fallbackMessage: string): Promise<never> {
+  rethrowIfRedirectError(error);
+
   const message =
     error instanceof ConfigConflictError
       ? error.message
@@ -358,6 +379,8 @@ export async function deleteDeployAction(siteSlug: string, deployName: string, f
 
     redirectWith(`/sites/${siteSlug}`, "notice", `Deploy ${deployName} deleted.`);
   } catch (error) {
+    rethrowIfRedirectError(error);
+
     const message =
       error instanceof ConfigConflictError
         ? error.message
