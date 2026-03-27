@@ -11,7 +11,9 @@ import {
   createSite,
   deleteSite,
   deleteSiteDeploy,
+  resetSitePreviewAccess,
   updateSite,
+  updateSitePreviewAccess,
 } from "@/lib/use-cases/sites";
 import { runInitialSetup } from "@/lib/use-cases/setup";
 
@@ -137,9 +139,23 @@ const updateSiteSchema = z.object({
   slug: z.string().trim().regex(siteSlugPattern),
   name: z.string().trim().min(2).max(120),
   mainBranch: z.string().trim().regex(deployNamePattern),
-  previewLogin: z.string().trim().max(128).default(""),
-  previewPassword: z.string().max(128).default(""),
 });
+
+const updateSitePreviewAccessSchema = z
+  .object({
+    previewLogin: z.string().trim().max(128).default(""),
+    previewPassword: z.string().max(128).default(""),
+    previewPasswordConfirm: z.string().max(128).default(""),
+  })
+  .superRefine((value, context) => {
+    if (value.previewPassword !== value.previewPasswordConfirm) {
+      context.addIssue({
+        code: "custom",
+        message: "Password confirmation does not match the new password.",
+        path: ["previewPasswordConfirm"],
+      });
+    }
+  });
 
 export async function updateSiteAction(siteSlug: string, formData: FormData) {
   await requireAdminSession();
@@ -150,8 +166,6 @@ export async function updateSiteAction(siteSlug: string, formData: FormData) {
       slug: siteSlug,
       name: getQueryValue(formData, "name"),
       mainBranch: getQueryValue(formData, "mainBranch"),
-      previewLogin: getQueryValue(formData, "previewLogin"),
-      previewPassword: getQueryValue(formData, "previewPassword"),
     });
 
     await updateSite(siteSlug, payload, expectedRevision);
@@ -164,6 +178,60 @@ export async function updateSiteAction(siteSlug: string, formData: FormData) {
         : error instanceof Error
           ? error.message
           : "Could not update site.";
+
+    redirectWith(`/sites/${siteSlug}?view=configuration`, "error", message);
+  }
+}
+
+export async function updateSitePreviewAccessAction(siteSlug: string, formData: FormData) {
+  await requireAdminSession();
+  const expectedRevision = toRevision(formData);
+
+  try {
+    const payload = updateSitePreviewAccessSchema.parse({
+      previewLogin: getQueryValue(formData, "previewLogin"),
+      previewPassword: getQueryValue(formData, "previewPassword"),
+      previewPasswordConfirm: getQueryValue(formData, "previewPasswordConfirm"),
+    });
+
+    await updateSitePreviewAccess(siteSlug, payload, expectedRevision);
+
+    redirectWith(
+      `/sites/${siteSlug}?view=configuration`,
+      "notice",
+      `Preview access updated for ${siteSlug}.`,
+    );
+  } catch (error) {
+    const message =
+      error instanceof ConfigConflictError
+        ? error.message
+        : error instanceof Error
+          ? error.message
+          : "Could not update preview access.";
+
+    redirectWith(`/sites/${siteSlug}?view=configuration`, "error", message);
+  }
+}
+
+export async function resetSitePreviewAccessAction(siteSlug: string, formData: FormData) {
+  await requireAdminSession();
+  const expectedRevision = toRevision(formData);
+
+  try {
+    await resetSitePreviewAccess(siteSlug, expectedRevision);
+
+    redirectWith(
+      `/sites/${siteSlug}?view=configuration`,
+      "notice",
+      `Preview access reset for ${siteSlug}.`,
+    );
+  } catch (error) {
+    const message =
+      error instanceof ConfigConflictError
+        ? error.message
+        : error instanceof Error
+          ? error.message
+          : "Could not reset preview access.";
 
     redirectWith(`/sites/${siteSlug}?view=configuration`, "error", message);
   }

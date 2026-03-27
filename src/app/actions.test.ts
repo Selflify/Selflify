@@ -3,11 +3,13 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   createSiteAction,
   deleteDeployAction,
+  resetSitePreviewAccessAction,
   saveAdminAccessAction,
   saveCloudflareTokenAction,
   saveServerSettingsAction,
   setupAction,
   updateSiteAction,
+  updateSitePreviewAccessAction,
 } from "@/app/actions";
 import { requireAdminSession } from "@/lib/auth/guards";
 import { runConfigOperation, runTrackedSideEffectOperation } from "@/lib/operations";
@@ -16,7 +18,6 @@ import { ensureConfigOnDisk, isAdminConfigured } from "@/lib/config/service";
 import { createDefaultConfig } from "@/lib/config/service";
 import { ensureSiteDirectories } from "@/lib/sites/service";
 import { syncAllSiteDnsRecords, syncSiteDnsRecords } from "@/lib/system/cloudflare";
-import { hashPasswordWithCaddy } from "@/lib/system/caddy";
 
 const { redirectMock, dnsGatewayMock, caddyGatewayMock } = vi.hoisted(() => ({
   redirectMock: vi.fn(),
@@ -312,7 +313,7 @@ describe("server actions", () => {
       config: { configRevision: 2 },
       session: { user: { name: "owner" } },
     } as never);
-    vi.mocked(hashPasswordWithCaddy).mockResolvedValue("preview-hash");
+    vi.mocked(caddyGatewayMock.hashPassword).mockResolvedValue("preview-hash");
     vi.mocked(runConfigOperation).mockImplementation(
       async ({ mutate, beforePersist, afterApply, expectedRevision }) => {
         expect(expectedRevision).toBe(2);
@@ -336,7 +337,7 @@ describe("server actions", () => {
 
     await createSiteAction(formData);
 
-    expect(hashPasswordWithCaddy).toHaveBeenCalled();
+    expect(caddyGatewayMock.hashPassword).toHaveBeenCalled();
     expect(ensureSiteDirectories).toHaveBeenCalledTimes(1);
     expect(syncSiteDnsRecords).toHaveBeenCalledTimes(1);
     expect(redirectMock).toHaveBeenCalledWith("/sites?notice=Site+app+created.");
@@ -380,13 +381,52 @@ describe("server actions", () => {
     formData.set("configRevision", "2");
     formData.set("name", "App");
     formData.set("mainBranch", "stable");
-    formData.set("previewLogin", "");
-    formData.set("previewPassword", "");
 
     await updateSiteAction("app", formData);
 
     expect(redirectMock).toHaveBeenCalledWith(
       "/sites/app?view=configuration&notice=Updated+app.",
+    );
+  });
+
+  it("rejects mismatched preview password confirmation", async () => {
+    vi.mocked(requireAdminSession).mockResolvedValue({
+      config: { configRevision: 2 },
+      session: { user: { name: "owner" } },
+    } as never);
+
+    const formData = new FormData();
+    formData.set("configRevision", "2");
+    formData.set("previewLogin", "preview-user");
+    formData.set("previewPassword", "preview-secret");
+    formData.set("previewPasswordConfirm", "different-secret");
+
+    await updateSitePreviewAccessAction("app", formData);
+
+    expect(runConfigOperation).not.toHaveBeenCalled();
+
+    const target = redirectMock.mock.calls.at(-1)?.[0] as string;
+    const error = new URL(target, "http://selflify.test").searchParams.get("error");
+
+    expect(target).toContain("/sites/app?view=configuration&error=");
+    expect(error).toContain("Password confirmation does not match the new password.");
+    expect(error).toContain("previewPasswordConfirm");
+  });
+
+  it("resets preview access and keeps the configuration tab selected", async () => {
+    vi.mocked(requireAdminSession).mockResolvedValue({
+      config: { configRevision: 6 },
+      session: { user: { name: "owner" } },
+    } as never);
+    vi.mocked(runConfigOperation).mockResolvedValue(undefined as never);
+
+    const formData = new FormData();
+    formData.set("configRevision", "6");
+
+    await resetSitePreviewAccessAction("app", formData);
+
+    expect(redirectMock).toHaveBeenCalledWith(
+      "/sites/app?view=configuration&notice=Preview+access+reset+for+app.",
     );
   });
 

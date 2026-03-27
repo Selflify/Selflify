@@ -9,7 +9,9 @@ import { renderWithProviders } from "@/test/render-with-providers";
 vi.mock("@/app/actions", () => ({
   deleteDeployAction: vi.fn(),
   deleteSiteAction: vi.fn(),
+  resetSitePreviewAccessAction: vi.fn(),
   updateSiteAction: vi.fn(),
+  updateSitePreviewAccessAction: vi.fn(),
 }));
 
 vi.mock("@/components/form-submit-button", () => ({
@@ -121,7 +123,9 @@ describe("site details page", () => {
     const html = renderWithProviders(page);
 
     expect(html).toContain("Configuration");
+    expect(html).toContain("Preview access");
     expect(html).toContain("Preview login");
+    expect(html).toContain("Confirm password");
     expect(html).toContain("Danger zone");
     expect(html).toContain("Updated app.");
     expect(html).not.toContain("Deploy inventory");

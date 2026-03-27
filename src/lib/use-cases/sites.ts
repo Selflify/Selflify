@@ -32,7 +32,9 @@ export type CreateSiteInput = {
 export type UpdateSiteInput = {
   name: string;
   mainBranch: string;
-} & PreviewAuthInput;
+};
+
+export type UpdateSitePreviewAccessInput = PreviewAuthInput;
 
 function createPreviewAuth(
   site: SiteConfig | null,
@@ -143,19 +145,8 @@ export async function updateSite(
 
       previousMainBranch = site.mainBranch;
 
-      const previewHash =
-        payload.previewLogin && payload.previewPassword
-          ? await caddyGateway.hashPassword(draft, payload.previewPassword)
-          : null;
-
       site.name = payload.name;
       site.mainBranch = payload.mainBranch;
-      site.previewAuth = createPreviewAuth(
-        site,
-        payload.previewLogin,
-        payload.previewPassword,
-        previewHash,
-      );
       site.updatedAt = new Date().toISOString();
       updatedSite = { ...site };
 
@@ -184,6 +175,79 @@ export async function updateSite(
     afterApply: async (config) => {
       if (!updatedSite) return;
       await dnsGateway.syncSiteRecords(config, updatedSite);
+    },
+  });
+}
+
+export async function updateSitePreviewAccess(
+  siteSlug: string,
+  payload: UpdateSitePreviewAccessInput,
+  expectedRevision?: number,
+): Promise<string> {
+  return runConfigOperation({
+    label: `update-site-preview-access:${siteSlug}`,
+    expectedRevision,
+    mutate: async (draft) => {
+      const site = draft.sites.find((entry) => entry.slug === siteSlug);
+
+      if (!site) {
+        throw new Error("Site not found.");
+      }
+
+      if (!payload.previewLogin && payload.previewPassword) {
+        throw new Error("Preview password requires a preview login.");
+      }
+
+      if (site.previewAuth.enabled && !payload.previewLogin && !payload.previewPassword) {
+        throw new Error("Use Reset to clear preview access.");
+      }
+
+      const previewHash =
+        payload.previewLogin && payload.previewPassword
+          ? await caddyGateway.hashPassword(draft, payload.previewPassword)
+          : null;
+
+      site.previewAuth = createPreviewAuth(
+        site,
+        payload.previewLogin,
+        payload.previewPassword,
+        previewHash,
+      );
+      site.updatedAt = new Date().toISOString();
+
+      return {
+        config: draft,
+        result: site.slug,
+      };
+    },
+  });
+}
+
+export async function resetSitePreviewAccess(
+  siteSlug: string,
+  expectedRevision?: number,
+): Promise<string> {
+  return runConfigOperation({
+    label: `reset-site-preview-access:${siteSlug}`,
+    expectedRevision,
+    mutate: async (draft) => {
+      const site = draft.sites.find((entry) => entry.slug === siteSlug);
+
+      if (!site) {
+        throw new Error("Site not found.");
+      }
+
+      site.previewAuth = {
+        enabled: false,
+        login: null,
+        passwordHash: null,
+      };
+      site.updatedAt = new Date().toISOString();
+
+      return {
+        config: draft,
+        result: site.slug,
+      };
     },
   });
 }

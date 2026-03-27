@@ -1,7 +1,13 @@
 import { notFound } from "next/navigation";
 import { Box, Button, Flex, Heading, Input, Stack, Text } from "@chakra-ui/react";
 
-import { deleteDeployAction, deleteSiteAction, updateSiteAction } from "@/app/actions";
+import {
+  deleteDeployAction,
+  deleteSiteAction,
+  resetSitePreviewAccessAction,
+  updateSiteAction,
+  updateSitePreviewAccessAction,
+} from "@/app/actions";
 import { FlashMessage } from "@/components/flash-message";
 import { FormField } from "@/components/form-field";
 import { FormSubmitButton } from "@/components/form-submit-button";
@@ -180,6 +186,35 @@ export default async function SiteDetailsPage({ params, searchParams }: SiteDeta
                     bg="rgba(255,255,255,0.04)"
                   />
                 </FormField>
+                <FormSubmitButton
+                  alignSelf="flex-start"
+                  bg="brand.600"
+                  color="white"
+                  _hover={{ bg: "brand.500" }}
+                  pendingText="Saving site"
+                >
+                  Save site
+                </FormSubmitButton>
+              </Stack>
+            </form>
+          </Box>
+
+          <Box
+            rounded="2xl"
+            borderWidth="1px"
+            borderColor="rgba(255,255,255,0.08)"
+            bg="rgba(17,17,24,0.88)"
+            p={{ base: "5", md: "6" }}
+            boxShadow="panel"
+          >
+            <Heading size="lg">Preview access</Heading>
+            <Text color="muted" mt="2">
+              Protect preview deploys with a shared login and password. Stable remains public.
+            </Text>
+
+            <form id="site-preview-access-form" action={updateSitePreviewAccessAction.bind(null, site.slug)}>
+              <input type="hidden" name="configRevision" value={String(config.configRevision)} />
+              <Stack gap="4" mt="6">
                 <FormField label="Preview login" htmlFor="site-settings-preview-login">
                   <Input
                     id="site-settings-preview-login"
@@ -202,17 +237,46 @@ export default async function SiteDetailsPage({ params, searchParams }: SiteDeta
                     bg="rgba(255,255,255,0.04)"
                   />
                 </FormField>
-                <FormSubmitButton
-                  alignSelf="flex-start"
-                  bg="brand.600"
-                  color="white"
-                  _hover={{ bg: "brand.500" }}
-                  pendingText="Saving site"
+                <FormField
+                  label="Confirm password"
+                  htmlFor="site-settings-preview-password-confirm"
+                  hint="Repeat the new password to avoid saving a typo."
                 >
-                  Save site
-                </FormSubmitButton>
+                  <Input
+                    id="site-settings-preview-password-confirm"
+                    name="previewPasswordConfirm"
+                    type="password"
+                    placeholder="Repeat new preview password"
+                    bg="rgba(255,255,255,0.04)"
+                  />
+                </FormField>
               </Stack>
             </form>
+
+            <form id="site-preview-access-reset-form" action={resetSitePreviewAccessAction.bind(null, site.slug)}>
+              <input type="hidden" name="configRevision" value={String(config.configRevision)} />
+            </form>
+
+            <Flex gap="3" wrap="wrap" mt="4">
+              <FormSubmitButton
+                form="site-preview-access-form"
+                bg="brand.600"
+                color="white"
+                _hover={{ bg: "brand.500" }}
+                pendingText="Saving preview access"
+              >
+                Save preview access
+              </FormSubmitButton>
+              <FormSubmitButton
+                form="site-preview-access-reset-form"
+                variant="outline"
+                pendingText="Resetting preview access"
+                confirmMessage={`Reset preview login and password for ${site.slug}?`}
+                disabled={!site.previewAuth.enabled}
+              >
+                Reset
+              </FormSubmitButton>
+            </Flex>
           </Box>
 
           <Box

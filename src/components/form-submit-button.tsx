@@ -17,6 +17,7 @@ export function FormSubmitButton({
   confirmMessage,
   confirmTitle,
   onClick,
+  form,
   name,
   value,
   formAction,
@@ -40,6 +41,7 @@ export function FormSubmitButton({
         type="submit"
         loading={pending}
         onClick={onClick}
+        form={form}
         name={name}
         value={value}
       >
@@ -53,6 +55,7 @@ export function FormSubmitButton({
       <button
         ref={hiddenSubmitRef}
         type="submit"
+        form={form}
         name={name}
         value={typeof value === "string" ? value : value?.toString()}
         formAction={formAction}
@@ -103,6 +106,7 @@ export function FormSubmitButton({
                   {...buttonProps}
                   type="button"
                   loading={pending}
+                  form={form}
                   name={name}
                   value={value}
                   onClick={(event) => {
