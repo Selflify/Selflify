@@ -1,4 +1,5 @@
 import { hashAdminPassword } from "@/lib/auth/passwords";
+import type { SiteConfig } from "@/lib/config/schema";
 import { runConfigOperation } from "@/lib/operations";
 import { dnsGateway } from "@/lib/system/cloudflare";
 
@@ -12,10 +13,16 @@ export async function saveServerSettings(
   payload: SaveServerSettingsInput,
   expectedRevision?: number,
 ): Promise<void> {
+  let previousDomain = "";
+  let previousSites: SiteConfig[] = [];
+
   await runConfigOperation({
     label: "save-settings:server",
     expectedRevision,
     mutate: async (draft) => {
+      previousDomain = draft.server.domain;
+      previousSites = structuredClone(draft.sites);
+
       draft.server.domain = payload.domain;
       draft.server.serverIp = payload.serverIp;
       draft.server.caddyContactEmail = payload.caddyContactEmail;
@@ -27,6 +34,21 @@ export async function saveServerSettings(
     },
     afterApply: async (config) => {
       await dnsGateway.syncAllSiteRecords(config);
+
+      if (previousDomain && previousDomain !== config.server.domain) {
+        const previousConfig = {
+          ...structuredClone(config),
+          server: {
+            ...config.server,
+            domain: previousDomain,
+          },
+          sites: previousSites,
+        };
+
+        for (const site of previousSites) {
+          await dnsGateway.deleteSiteRecords(previousConfig, site);
+        }
+      }
     },
   });
 }

@@ -95,6 +95,8 @@ export default async function SettingsPage({ searchParams }: SettingsPageProps) 
               color="white"
               _hover={{ bg: "action.600" }}
               pendingText="Applying infrastructure"
+              confirmTitle="Apply infrastructure changes"
+              confirmMessage="Save infrastructure settings and update Cloudflare DNS records for all configured sites?"
             >
               Save infrastructure
             </FormSubmitButton>
