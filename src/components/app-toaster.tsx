@@ -3,7 +3,7 @@
 import { Flex, Stack, Text, Toast, Toaster, createToaster } from "@chakra-ui/react";
 
 export const toaster = createToaster({
-  placement: "top-end",
+  placement: "bottom-end",
   pauseOnPageIdle: true,
   max: 4,
 });
@@ -13,7 +13,7 @@ export function AppToaster() {
     <Toaster
       toaster={toaster}
       insetInline={{ base: "4", md: "6" }}
-      insetBlockStart={{ base: "4", md: "6" }}
+      insetBlockEnd={{ base: "4", md: "6" }}
     >
       {(toast) => (
         <Toast.Root maxW="sm">
