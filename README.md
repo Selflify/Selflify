@@ -35,6 +35,7 @@ yarn format
 yarn format:check
 yarn test:run
 yarn test:coverage
+yarn bootstrap:bundle
 ```
 
 ## Local development
@@ -146,6 +147,46 @@ They exist so that local `Caddy` and the `Sites` screen can immediately see stab
 ## Production rollout
 
 Production rollout, migration, smoke checks and rollback steps are documented in [docs/production-rollout.md](/Users/aleksnick/dev/Selflify/docs/production-rollout.md).
+
+## Bootstrap installer
+
+To prepare a bootstrap bundle for fresh servers:
+
+```bash
+yarn bootstrap:bundle
+```
+
+This creates:
+
+- `dist/bootstrap/install-selflify.sh`
+- `dist/bootstrap/selflify-bootstrap.tar.gz`
+
+Recommended distribution flow:
+
+1. Upload both files somewhere reachable over HTTPS, for example GitHub Release assets.
+2. Let users run a one-liner like:
+
+```bash
+curl -fsSL https://example.com/install-selflify.sh | bash -s -- \
+  --archive-url https://example.com/selflify-bootstrap.tar.gz \
+  --domain preview.example.com \
+  --server-ip 203.0.113.10 \
+  --email ops@example.com
+```
+
+What the installer does:
+
+- installs Docker and the Docker Compose plugin
+- downloads and extracts the bootstrap bundle into `/opt/selflify` by default
+- creates `.env` with a generated `AUTH_SECRET` if it does not exist yet
+- creates initial `selflify.config.json` and `Caddyfile` from templates if they do not exist yet
+- starts the production stack with `docker compose up -d --build`
+
+What still happens in the UI after bootstrap:
+
+- open `https://<domain>/setup`
+- create the first account
+- paste the Cloudflare API token during first-start setup
 
 ## Config migration
 
