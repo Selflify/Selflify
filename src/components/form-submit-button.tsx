@@ -47,6 +47,8 @@ export function FormSubmitButton({
   const [confirmValue, setConfirmValue] = useState("");
   const hiddenSubmitRef = useRef<HTMLButtonElement>(null);
   const buttonProps = { ...props };
+  const dialogActionProps =
+    buttonProps.colorPalette === "red" ? { ...buttonProps, variant: "solid" as const } : buttonProps;
   const requiresTypedConfirmation = Boolean(confirmInputValue);
   const typedConfirmationMatches =
     !requiresTypedConfirmation || confirmValue.trim() === confirmInputValue;
@@ -153,7 +155,7 @@ export function FormSubmitButton({
                   Cancel
                 </Button>
                 <Button
-                  {...buttonProps}
+                  {...dialogActionProps}
                   type="button"
                   loading={pending}
                   disabled={Boolean(buttonProps.disabled) || !typedConfirmationMatches}
