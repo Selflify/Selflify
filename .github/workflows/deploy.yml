@@ -1,0 +1,201 @@
+name: Deploy
+
+on:
+  push:
+    branches:
+      - stable
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
+
+jobs:
+  repo-checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: yarn
+
+      - name: Enable Corepack
+        run: |
+          corepack enable
+          corepack prepare yarn@4.13.0 --activate
+          yarn --version
+
+      - name: Install dependencies
+        run: yarn install --immutable
+
+      - name: Lint
+        run: yarn lint
+
+      - name: Unit tests
+        run: yarn test:run
+
+      - name: Typecheck
+        run: yarn typecheck
+
+      - name: Build
+        run: yarn build
+
+      - name: Validate production compose
+        run: docker compose config
+
+  deploy:
+    needs: repo-checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: production
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate deployment configuration
+        shell: bash
+        env:
+          DEPLOY_HOST: ${{ vars.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ vars.DEPLOY_USER }}
+          DEPLOY_PATH: ${{ vars.DEPLOY_PATH }}
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
+        run: |
+          set -euo pipefail
+
+          for required in DEPLOY_HOST DEPLOY_USER DEPLOY_PATH DEPLOY_SSH_KEY AUTH_SECRET; do
+            if [ -z "${!required:-}" ]; then
+              echo "Missing required GitHub variable/secret: ${required}" >&2
+              exit 1
+            fi
+          done
+
+      - name: Start SSH agent
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.DEPLOY_SSH_KEY }}
+
+      - name: Add SSH known hosts
+        shell: bash
+        env:
+          DEPLOY_HOST: ${{ vars.DEPLOY_HOST }}
+          DEPLOY_PORT: ${{ vars.DEPLOY_PORT }}
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+
+          if [ -n "${DEPLOY_KNOWN_HOSTS:-}" ]; then
+            printf '%s\n' "${DEPLOY_KNOWN_HOSTS}" >> ~/.ssh/known_hosts
+          else
+            ssh-keyscan -p "${DEPLOY_PORT:-22}" -H "${DEPLOY_HOST}" >> ~/.ssh/known_hosts
+          fi
+
+          chmod 600 ~/.ssh/known_hosts
+
+      - name: Prepare remote directory
+        shell: bash
+        env:
+          DEPLOY_HOST: ${{ vars.DEPLOY_HOST }}
+          DEPLOY_PORT: ${{ vars.DEPLOY_PORT }}
+          DEPLOY_USER: ${{ vars.DEPLOY_USER }}
+          DEPLOY_PATH: ${{ vars.DEPLOY_PATH }}
+        run: |
+          set -euo pipefail
+
+          ssh -p "${DEPLOY_PORT:-22}" "${DEPLOY_USER}@${DEPLOY_HOST}" "mkdir -p '${DEPLOY_PATH}'"
+
+      - name: Sync repository to server
+        shell: bash
+        env:
+          DEPLOY_HOST: ${{ vars.DEPLOY_HOST }}
+          DEPLOY_PORT: ${{ vars.DEPLOY_PORT }}
+          DEPLOY_USER: ${{ vars.DEPLOY_USER }}
+          DEPLOY_PATH: ${{ vars.DEPLOY_PATH }}
+        run: |
+          set -euo pipefail
+
+          rsync -az --delete \
+            --exclude '.git/' \
+            --exclude '.github/' \
+            --exclude 'node_modules/' \
+            --exclude '.next/' \
+            --exclude 'coverage/' \
+            --exclude '.dev/' \
+            --exclude '.selflify/' \
+            --exclude '.env' \
+            --exclude 'selflify.config.json' \
+            --exclude 'Caddyfile' \
+            --exclude 'data/' \
+            --exclude 'config/' \
+            --exclude 'logs/' \
+            --exclude 'sites.json' \
+            -e "ssh -p ${DEPLOY_PORT:-22}" \
+            ./ "${DEPLOY_USER}@${DEPLOY_HOST}:${DEPLOY_PATH}/"
+
+      - name: Upload production env
+        shell: bash
+        env:
+          DEPLOY_HOST: ${{ vars.DEPLOY_HOST }}
+          DEPLOY_PORT: ${{ vars.DEPLOY_PORT }}
+          DEPLOY_USER: ${{ vars.DEPLOY_USER }}
+          DEPLOY_PATH: ${{ vars.DEPLOY_PATH }}
+          AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
+          SELFLIFY_PREVIEW_TTL_DAYS: ${{ vars.SELFLIFY_PREVIEW_TTL_DAYS }}
+          SELFLIFY_ORPHAN_TTL_DAYS: ${{ vars.SELFLIFY_ORPHAN_TTL_DAYS }}
+          SELFLIFY_CLEANUP_INTERVAL_SECONDS: ${{ vars.SELFLIFY_CLEANUP_INTERVAL_SECONDS }}
+          SELFLIFY_BACKUP_KEEP: ${{ vars.SELFLIFY_BACKUP_KEEP }}
+        run: |
+          set -euo pipefail
+
+          cat <<EOF > .env.production
+          AUTH_SECRET=${AUTH_SECRET}
+          SELFLIFY_PREVIEW_TTL_DAYS=${SELFLIFY_PREVIEW_TTL_DAYS}
+          SELFLIFY_ORPHAN_TTL_DAYS=${SELFLIFY_ORPHAN_TTL_DAYS}
+          SELFLIFY_CLEANUP_INTERVAL_SECONDS=${SELFLIFY_CLEANUP_INTERVAL_SECONDS}
+          SELFLIFY_BACKUP_KEEP=${SELFLIFY_BACKUP_KEEP}
+          EOF
+
+          scp -P "${DEPLOY_PORT:-22}" .env.production "${DEPLOY_USER}@${DEPLOY_HOST}:${DEPLOY_PATH}/.env"
+
+      - name: Deploy on server
+        shell: bash
+        env:
+          DEPLOY_HOST: ${{ vars.DEPLOY_HOST }}
+          DEPLOY_PORT: ${{ vars.DEPLOY_PORT }}
+          DEPLOY_USER: ${{ vars.DEPLOY_USER }}
+          DEPLOY_PATH: ${{ vars.DEPLOY_PATH }}
+        run: |
+          set -euo pipefail
+
+          ssh -p "${DEPLOY_PORT:-22}" "${DEPLOY_USER}@${DEPLOY_HOST}" <<EOF
+          set -euo pipefail
+          cd "${DEPLOY_PATH}"
+
+          mkdir -p data config logs
+
+          if [ ! -f selflify.config.json ]; then
+            echo "selflify.config.json is missing on the server. Seed it once before the first deploy." >&2
+            exit 1
+          fi
+
+          if [ ! -f Caddyfile ]; then
+            echo "Caddyfile is missing on the server. Seed it once before the first deploy." >&2
+            exit 1
+          fi
+
+          docker compose up -d --build --remove-orphans
+          docker compose ps
+          EOF
