@@ -89,12 +89,14 @@ web_modules/
 .next
 out
 tmp_scaffold
+.tmp/
 .selflify
 .turbo
 .vercel
 runtime/**
 !runtime/
 !runtime/.gitkeep
+output/playwright/
 .dev/var-www/**
 !.dev/var-www/
 !.dev/var-www/**/
