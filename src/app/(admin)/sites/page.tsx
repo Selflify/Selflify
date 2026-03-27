@@ -108,7 +108,17 @@ export default async function SitesPage({ searchParams }: SitesPageProps) {
                 align={{ base: "flex-start", md: "center" }}
               >
                 <Box>
-                  <Heading size="md">{site.name}</Heading>
+                  <Link href={`/sites/${site.slug}`}>
+                    <Heading
+                      as="span"
+                      size="md"
+                      display="inline-block"
+                      transition="color 0.2s ease"
+                      _hover={{ color: "brand.300" }}
+                    >
+                      {site.name}
+                    </Heading>
+                  </Link>
                   <Text color="muted" mt="1">
                     {site.slug}.{config.server.domain} · {site.mainBranch}
                   </Text>

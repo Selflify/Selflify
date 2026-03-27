@@ -73,6 +73,7 @@ describe("sites page", () => {
     expect(html).toContain("App");
     expect(html).toContain("app.sendsay.dev");
     expect(html).toContain("/var/www/app");
+    expect(html).toContain('href="/sites/app"');
     expect(html).toContain("CREATE_SITE:3");
   });
 });
