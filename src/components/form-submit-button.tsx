@@ -143,12 +143,14 @@ export function FormSubmitButton({
                 pb={{ base: "6", md: "6" }}
                 pt="4"
                 justify="flex-end"
+                align="center"
                 gap="3"
                 wrap="nowrap"
               >
                 <Button
                   type="button"
                   variant="outline"
+                  h="10"
                   flexShrink={0}
                   onClick={() => setOpen(false)}
                 >
@@ -162,6 +164,7 @@ export function FormSubmitButton({
                   form={form}
                   name={name}
                   value={value}
+                  h="10"
                   flexShrink={0}
                   onClick={(event) => {
                     onClick?.(event);
