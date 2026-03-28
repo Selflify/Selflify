@@ -374,6 +374,32 @@ img {
   margin: 0.8rem 0 0;
 }
 
+.feature-card code,
+.note-card code {
+  padding: 0.1rem 0.35rem;
+  border-radius: 0.4rem;
+  background: rgba(255, 255, 255, 0.05);
+  font-family: "SFMono-Regular", "Menlo", monospace;
+  font-size: 0.88em;
+}
+
+.detail-list {
+  display: grid;
+  gap: 0.7rem;
+  margin: 0.9rem 0 0;
+  padding-left: 1.2rem;
+  color: var(--muted);
+  line-height: 1.75;
+}
+
+.detail-list li::marker {
+  color: #ffb5c7;
+}
+
+.setup-grid {
+  margin-top: 1rem;
+}
+
 .timeline {
   display: grid;
   gap: 1rem;

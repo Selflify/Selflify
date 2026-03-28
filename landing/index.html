@@ -35,6 +35,7 @@
           <div class="topbar-actions">
             <a class="ghost-link" href="#bootstrap">Bootstrap</a>
             <a class="ghost-link" href="#features">Features</a>
+            <a class="ghost-link" href="#dns-stack">DNS stack</a>
             <a class="ghost-link" href="#workflow">Workflow</a>
           </div>
         </nav>
@@ -171,6 +172,78 @@
                 <h3>Let the stack stay boring</h3>
                 <p>Caddy, Cloudflare sync and cleanup all operate against the same file-backed runtime state.</p>
               </div>
+            </article>
+          </div>
+        </section>
+
+        <section class="section" id="dns-stack">
+          <div class="section-heading compact">
+            <p class="eyebrow">DNS stack</p>
+            <h2>Why Selflify uses Cloudflare DNS together with Caddy wildcard routing.</h2>
+            <p>
+              Cloudflare gives Selflify an API for managing DNS records. Caddy serves the actual
+              traffic on your server. The point is not to proxy all traffic through Cloudflare. The
+              point is to keep DNS programmable while Caddy stays in control of routing and TLS on
+              the box.
+            </p>
+          </div>
+
+          <div class="bootstrap-notes">
+            <article class="note-card">
+              <h3>Cloudflare is used for DNS, not as the traffic path</h3>
+              <p>
+                Put the domain or subdomain zone under Cloudflare nameservers, but keep
+                Selflify-managed A records in <strong>DNS only</strong> mode. Requests still go
+                straight to your server instead of being proxied by Cloudflare.
+              </p>
+            </article>
+
+            <article class="note-card">
+              <h3>Caddy handles stable and preview hosts</h3>
+              <p>
+                Each site gets a stable hostname like <code>app.example.dev</code> plus a wildcard
+                preview hostname like <code>*.app.example.dev</code>. Selflify writes the Caddy
+                config, and Caddy resolves the right directory on the same server.
+              </p>
+            </article>
+
+            <article class="note-card">
+              <h3>Why this combination is useful</h3>
+              <p>
+                Selflify can create, update and clean up DNS automatically while Caddy keeps
+                zero-downtime reloads, local TLS termination and one routing layer for all sites.
+              </p>
+            </article>
+          </div>
+
+          <div class="feature-grid setup-grid">
+            <article class="feature-card">
+              <h3>What you need to do with the domain</h3>
+              <ul class="detail-list">
+                <li>Delegate the zone you want Selflify to manage to Cloudflare nameservers.</li>
+                <li>Keep the Selflify A records as <strong>DNS only</strong>, not proxied.</li>
+                <li>Let Selflify point those records at your server IP automatically.</li>
+              </ul>
+            </article>
+
+            <article class="feature-card">
+              <h3>How to get a Cloudflare API token</h3>
+              <ol class="detail-list ordered">
+                <li>Open Cloudflare and go to <strong>My Profile → API Tokens</strong>.</li>
+                <li>Create a token from the <strong>Edit zone DNS</strong> template or a custom token.</li>
+                <li>Grant <strong>Zone / DNS / Edit</strong> and <strong>Zone / Zone / Read</strong>.</li>
+                <li>Scope the token only to the zone used by Selflify.</li>
+                <li>Paste the token into <code>/setup</code> or later into <code>Settings</code>.</li>
+              </ol>
+            </article>
+
+            <article class="feature-card">
+              <h3>What Selflify updates in Cloudflare</h3>
+              <ul class="detail-list">
+                <li>The stable record for each site, for example <code>app.example.dev</code>.</li>
+                <li>The wildcard preview record for each site, for example <code>*.app.example.dev</code>.</li>
+                <li>Those records are refreshed when infrastructure settings or site definitions change.</li>
+              </ul>
             </article>
           </div>
         </section>
