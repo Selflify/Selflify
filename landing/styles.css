@@ -12,6 +12,10 @@
   --radius-lg: 1.125rem;
   --radius-md: 0.875rem;
   --shadow-panel: 0 30px 80px rgba(0, 0, 0, 0.34);
+  --page-background:
+    radial-gradient(circle at top left, rgba(161, 33, 65, 0.26), transparent 24%),
+    radial-gradient(circle at 88% 12%, rgba(247, 120, 155, 0.12), transparent 18%),
+    linear-gradient(180deg, #140d11 0%, #0b0910 42%, #070709 100%);
 }
 
 *,
@@ -22,6 +26,8 @@
 
 html {
   scroll-behavior: smooth;
+  min-height: 100%;
+  background: var(--page-background);
 }
 
 body {
@@ -29,10 +35,7 @@ body {
   min-height: 100vh;
   font-family: "Manrope", sans-serif;
   color: var(--text);
-  background:
-    radial-gradient(circle at top left, rgba(161, 33, 65, 0.26), transparent 24%),
-    radial-gradient(circle at 88% 12%, rgba(247, 120, 155, 0.12), transparent 18%),
-    linear-gradient(180deg, #140d11 0%, #0b0910 42%, #070709 100%);
+  background: var(--page-background);
 }
 
 a {
