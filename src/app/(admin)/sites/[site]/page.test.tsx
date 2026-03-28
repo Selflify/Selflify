@@ -92,9 +92,12 @@ describe("site details page", () => {
     expect(html).toContain("Open");
     expect(html).toContain("Deploy inventory");
     expect(html).toContain("pr-42");
-    expect(html).toContain("https://pr-42.app.example.dev");
+    expect(html).toContain(">app.example.dev<");
+    expect(html).toContain(">pr-42.app.example.dev<");
+    expect(html).toContain('href="https://app.example.dev"');
+    expect(html).toContain('href="https://pr-42.app.example.dev"');
+    expect(html).toContain("/var/www/app/stable");
     expect(html).toContain("/var/www/app/pr-42");
-    expect(html).not.toContain("/var/www/app/stable");
     expect(html).not.toContain("Danger zone");
   });
 

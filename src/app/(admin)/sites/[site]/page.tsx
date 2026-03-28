@@ -23,11 +23,7 @@ type SiteDetailsPageProps = {
 export default async function SiteDetailsPage({ params, searchParams }: SiteDetailsPageProps) {
   const { config } = await requireAdminSession();
   const { site: slug } = await params;
-  const site = config.sites.find((entry) => entry.slug === slug);
-
-  if (!site) {
-    notFound();
-  }
+  const site = config.sites.find((entry) => entry.slug === slug) ?? notFound();
 
   const deploys = await listDeploys(config, site);
   const queries = await searchParams;
@@ -38,47 +34,100 @@ export default async function SiteDetailsPage({ params, searchParams }: SiteDeta
   const stableDeploy = deploys.find((deploy) => deploy.isMainBranch) ?? null;
   const previewDeploys = deploys.filter((deploy) => !deploy.isMainBranch);
 
+  function formatDeployHost(url: string) {
+    return url.replace(/^https?:\/\//, "");
+  }
+
+  function renderDeployCard(
+    deploy: (typeof deploys)[number],
+    options?: {
+      title: string;
+      metaText?: string;
+      showDelete?: boolean;
+    },
+  ) {
+    const deployHost = formatDeployHost(deploy.url);
+
+    return (
+      <Flex
+        key={deploy.name}
+        justify="space-between"
+        align={{ base: "flex-start", md: "center" }}
+        gap="4"
+        wrap="wrap"
+        rounded="xl"
+        borderWidth="1px"
+        borderColor="rgba(255,255,255,0.08)"
+        bg="rgba(17,17,24,0.88)"
+        px="4"
+        py="4"
+      >
+        <Box>
+          <Heading size="md">{options?.title ?? deploy.name}</Heading>
+          <Flex mt="1" gap="2" wrap="wrap" align="center">
+            <a href={deploy.url} target="_blank" rel="noreferrer">
+              <Text
+                as="span"
+                color="whiteAlpha.700"
+                textDecoration="underline"
+                textDecorationColor="rgba(255,255,255,0.18)"
+                textUnderlineOffset="0.18em"
+                transition="color 0.2s ease"
+                _hover={{ color: "whiteAlpha.950" }}
+              >
+                {deployHost}
+              </Text>
+            </a>
+            {options?.metaText ? (
+              <Text color="muted" fontSize="sm">
+                · {options.metaText}
+              </Text>
+            ) : null}
+          </Flex>
+          <Text color="whiteAlpha.700" mt="2" fontSize="sm" fontFamily="mono">
+            {deploy.dir}
+          </Text>
+          <Text color="muted" mt="2" fontSize="sm">
+            {deploy.sizeLabel} · updated {formatDateTime(deploy.modifiedAt)}
+          </Text>
+        </Box>
+        <Flex gap="2" wrap="wrap">
+          <a href={deploy.url} target="_blank" rel="noreferrer">
+            <Button as="span" variant="outline">
+              Open
+            </Button>
+          </a>
+          {options?.showDelete ? (
+            <form action={deleteDeployAction.bind(null, site.slug, deploy.name)}>
+              <input type="hidden" name="configRevision" value={String(config.configRevision)} />
+              <FormSubmitButton
+                colorPalette="red"
+                variant="outline"
+                pendingText="Deleting deploy"
+                confirmMessage={`Delete deploy ${deploy.name} for ${site.slug}? This action is irreversible.`}
+              >
+                Delete
+              </FormSubmitButton>
+            </form>
+          ) : null}
+        </Flex>
+      </Flex>
+    );
+  }
+
   return (
     <Stack gap="8">
       <ActionFeedbackToast notice={notice} error={error} />
 
-      <Box
-        rounded="2xl"
-        borderWidth="1px"
-        borderColor="rgba(255,255,255,0.08)"
-        bg="rgba(17,17,24,0.88)"
-        p={{ base: "5", md: "6" }}
-        boxShadow="panel"
-      >
-        <Flex justify="space-between" align={{ base: "flex-start", md: "center" }} gap="4" wrap="wrap">
-          <Box>
-            <Heading size="lg">{siteDisplayName}</Heading>
-            <Text color="muted" mt="2">
-              {site.slug}.{config.server.domain} · {site.mainBranch}
-            </Text>
-            <Text color="whiteAlpha.700" mt="2" fontSize="sm">
-              {config.server.previewRootDir}/{site.slug}
-            </Text>
-          </Box>
-          {stableDeploy ? (
-            <a href={stableDeploy.url} target="_blank" rel="noreferrer">
-              <Button as="span" variant="outline">
-                Open
-              </Button>
-            </a>
-          ) : null}
-        </Flex>
-      </Box>
+      {stableDeploy
+        ? renderDeployCard(stableDeploy, {
+            title: siteDisplayName,
+            metaText: site.mainBranch,
+          })
+        : null}
 
       {view === "deploys" ? (
-        <Box
-          rounded="2xl"
-          borderWidth="1px"
-          borderColor="rgba(255,255,255,0.08)"
-          bg="rgba(17,17,24,0.88)"
-          p={{ base: "5", md: "6" }}
-          boxShadow="panel"
-        >
+        <Stack gap="4">
           <Box>
             <Heading size="lg">Deploy inventory</Heading>
             <Text color="muted" mt="2">
@@ -86,7 +135,7 @@ export default async function SiteDetailsPage({ params, searchParams }: SiteDeta
             </Text>
           </Box>
 
-          <Stack gap="4" mt="6">
+          <Stack gap="4">
             {previewDeploys.length === 0 ? (
               <Box
                 rounded="xl"
@@ -102,58 +151,9 @@ export default async function SiteDetailsPage({ params, searchParams }: SiteDeta
                 </Text>
               </Box>
             ) : null}
-            {previewDeploys.map((deploy) => (
-              <Flex
-                key={deploy.name}
-                justify="space-between"
-                align={{ base: "flex-start", md: "center" }}
-                gap="4"
-                wrap="wrap"
-                rounded="xl"
-                borderWidth="1px"
-                borderColor="rgba(255,255,255,0.08)"
-                bg="transparent"
-                px="4"
-                py="4"
-              >
-                <Box>
-                  <Heading size="sm">{deploy.name}</Heading>
-                  <Text color="whiteAlpha.700" mt="1">
-                    {deploy.url}
-                  </Text>
-                  <Text color="whiteAlpha.700" mt="2" fontSize="sm" fontFamily="mono">
-                    {deploy.dir}
-                  </Text>
-                  <Text color="muted" mt="2" fontSize="sm">
-                    {deploy.sizeLabel} · updated {formatDateTime(deploy.modifiedAt)}
-                  </Text>
-                </Box>
-                <Flex gap="2" wrap="wrap">
-                  <a href={deploy.url} target="_blank" rel="noreferrer">
-                    <Button as="span" variant="outline">
-                      Open
-                    </Button>
-                  </a>
-                  <form action={deleteDeployAction.bind(null, site.slug, deploy.name)}>
-                    <input
-                      type="hidden"
-                      name="configRevision"
-                      value={String(config.configRevision)}
-                    />
-                    <FormSubmitButton
-                      colorPalette="red"
-                      variant="outline"
-                      pendingText="Deleting deploy"
-                      confirmMessage={`Delete deploy ${deploy.name} for ${site.slug}? This action is irreversible.`}
-                    >
-                      Delete
-                    </FormSubmitButton>
-                  </form>
-                </Flex>
-              </Flex>
-            ))}
+            {previewDeploys.map((deploy) => renderDeployCard(deploy, { title: deploy.name, showDelete: true }))}
           </Stack>
-        </Box>
+        </Stack>
       ) : null}
 
       {view === "configuration" ? (
