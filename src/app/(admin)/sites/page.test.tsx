@@ -74,6 +74,8 @@ describe("sites page", () => {
     expect(html).toContain("App");
     expect(html).not.toContain(">app<");
     expect(html).toContain("app.example.dev");
+    expect(html).not.toContain(">https://app.example.dev<");
+    expect(html).toContain('href="https://app.example.dev"');
     expect(html).toContain("/var/www/app");
     expect(html).toContain('href="/sites/app"');
     expect(html).toContain(`CREATE_SITE:3:${config.server.domain}`);
