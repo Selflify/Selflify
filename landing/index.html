@@ -147,18 +147,22 @@
         <section class="section" id="workflow">
           <div class="section-heading compact">
             <p class="eyebrow">Workflow</p>
-            <h2>What running Selflify actually looks like</h2>
+            <h2>What daily Selflify operation looks like</h2>
+            <p>
+              After the stack is already installed, the panel becomes the place where you shape
+              site routing, preview access and cleanup without touching raw server config files.
+            </p>
           </div>
 
           <div class="timeline">
             <article class="timeline-step">
               <span class="timeline-index">01</span>
               <div>
-                <h3>Run the installer once</h3>
+                <h3>Point it at real site folders</h3>
                 <p>
-                  Pass the archive URL, main domain and server IP. The installer sets up Docker,
-                  unpacks the project, seeds <code>.env</code>, the runtime config and the initial
-                  <code>Caddyfile</code>, then starts the stack.
+                  Selflify reads stable and preview directories directly from <code>/var/www</code>,
+                  so the UI reflects what is actually present on disk instead of mirroring a second
+                  deploy database.
                 </p>
               </div>
             </article>
@@ -166,11 +170,10 @@
             <article class="timeline-step">
               <span class="timeline-index">02</span>
               <div>
-                <h3>Open <code>/setup</code> once</h3>
+                <h3>Create or edit sites from the panel</h3>
                 <p>
-                  Create the first account and paste the Cloudflare API token. Domain, server IP
-                  and contact email are already seeded by bootstrap, but stay editable later in
-                  Settings.
+                  Add a site, choose its subdomain and main branch, and let Selflify keep routing,
+                  wildcard DNS and placeholder content aligned with that config.
                 </p>
               </div>
             </article>
@@ -178,16 +181,22 @@
             <article class="timeline-step">
               <span class="timeline-index">03</span>
               <div>
-                <h3>Manage sites from one panel</h3>
-                <p>Create or edit sites, adjust preview auth, inspect deploy folders and remove obsolete previews.</p>
+                <h3>Control preview access and deploy cleanup</h3>
+                <p>
+                  Protect previews with a shared login and password, inspect deploy inventory from
+                  disk and remove obsolete preview folders when they are no longer needed.
+                </p>
               </div>
             </article>
 
             <article class="timeline-step">
               <span class="timeline-index">04</span>
               <div>
-                <h3>Let the stack stay boring</h3>
-                <p>Caddy, Cloudflare sync and cleanup all operate against the same file-backed runtime state.</p>
+                <h3>Apply changes without bouncing the stack</h3>
+                <p>
+                  Caddy reloads, Cloudflare DNS updates and cleanup jobs all operate against the
+                  same file-backed runtime state, with backups and revision checks around writes.
+                </p>
               </div>
             </article>
           </div>
