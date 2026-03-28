@@ -183,8 +183,8 @@
             <p>
               Cloudflare gives Selflify an API for managing DNS records. Caddy serves the actual
               traffic on your server. The point is not to proxy all traffic through Cloudflare. The
-              point is to keep DNS programmable while Caddy stays in control of routing and TLS on
-              the box.
+              point is to keep DNS programmable while Caddy stays in control of routing, reloads
+              and TLS on the box.
             </p>
           </div>
 
@@ -199,19 +199,22 @@
             </article>
 
             <article class="note-card">
-              <h3>Caddy handles stable and preview hosts</h3>
+              <h3>Why Caddy instead of nginx</h3>
               <p>
-                Each site gets a stable hostname like <code>app.example.dev</code> plus a wildcard
-                preview hostname like <code>*.app.example.dev</code>. Selflify writes the Caddy
-                config, and Caddy resolves the right directory on the same server.
+                Selflify rewrites web server config often. Caddy fits that model better because it
+                has a clean admin API for zero-downtime reloads, built-in
+                <code>caddy hash-password</code> for preview auth and a configuration format that
+                is easier to generate safely than a pile of nginx templates.
               </p>
             </article>
 
             <article class="note-card">
-              <h3>Why this combination is useful</h3>
+              <h3>What Caddy handles on the server</h3>
               <p>
-                Selflify can create, update and clean up DNS automatically while Caddy keeps
-                zero-downtime reloads, local TLS termination and one routing layer for all sites.
+                Each site gets a stable hostname like <code>app.example.dev</code> plus a wildcard
+                preview hostname like <code>*.app.example.dev</code>. Selflify writes one generated
+                Caddy config, and Caddy resolves the right directory without extra per-site nginx
+                vhost files.
               </p>
             </article>
           </div>
