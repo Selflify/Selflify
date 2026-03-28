@@ -9,6 +9,7 @@ import { requireAdminSession } from "@/lib/auth/guards";
 import { getEffectiveBackupRoot } from "@/lib/config/paths";
 import { dnsGateway } from "@/lib/system/cloudflare";
 import { shouldMockCloudflare } from "@/lib/system/runtime";
+import type { ManagedDnsRecord } from "@/lib/system/ports";
 
 type SettingsPageProps = {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
@@ -19,15 +20,47 @@ function maskCloudflareToken(token: string): string {
   return `********${tail || "****"}`;
 }
 
+function buildExpectedDnsRecords(
+  domain: string,
+  serverIp: string,
+  siteSlugs: string[],
+): ManagedDnsRecord[] {
+  return siteSlugs.flatMap((slug) => [
+    {
+      id: `${slug}:stable`,
+      type: "A",
+      name: `${slug}.${domain}`,
+      content: serverIp,
+      proxied: false,
+      ttl: 1,
+    },
+    {
+      id: `${slug}:wildcard`,
+      type: "A",
+      name: `*.${slug}.${domain}`,
+      content: serverIp,
+      proxied: false,
+      ttl: 1,
+    },
+  ]);
+}
+
 export default async function SettingsPage({ searchParams }: SettingsPageProps) {
   const { config } = await requireAdminSession();
   const queries = await searchParams;
   const notice = typeof queries.notice === "string" ? queries.notice : "";
   const error = typeof queries.error === "string" ? queries.error : "";
+  const cloudflareMocked = shouldMockCloudflare();
   let dnsRecords = [] as Awaited<ReturnType<typeof dnsGateway.listManagedRecords>>;
   let dnsRecordsError = "";
 
-  if (!shouldMockCloudflare() && config.server.cloudflareApiToken) {
+  if (cloudflareMocked) {
+    dnsRecords = buildExpectedDnsRecords(
+      config.server.domain,
+      config.server.serverIp,
+      config.sites.map((site) => site.slug),
+    );
+  } else if (config.server.cloudflareApiToken) {
     try {
       dnsRecords = await dnsGateway.listManagedRecords(config);
     } catch (recordsError) {
@@ -205,36 +238,38 @@ export default async function SettingsPage({ searchParams }: SettingsPageProps) 
         </Text>
 
         <Stack gap="3" mt="4">
-          {shouldMockCloudflare() ? (
+          {cloudflareMocked ? (
             <Text color="muted" fontSize="sm">
-              Cloudflare DNS is mocked in this runtime.
+              Cloudflare DNS is mocked in this runtime. These are the records Selflify expects to
+              manage.
             </Text>
           ) : null}
 
-          {!shouldMockCloudflare() && !config.server.cloudflareApiToken ? (
+          {!cloudflareMocked && !config.server.cloudflareApiToken ? (
             <Text color="muted" fontSize="sm">
               Add a Cloudflare API token to load managed DNS records.
             </Text>
           ) : null}
 
-          {!shouldMockCloudflare() && config.server.cloudflareApiToken && dnsRecordsError ? (
+          {!cloudflareMocked && config.server.cloudflareApiToken && dnsRecordsError ? (
             <Text color="red.200" fontSize="sm">
               {dnsRecordsError}
             </Text>
           ) : null}
 
-          {!shouldMockCloudflare() &&
-          config.server.cloudflareApiToken &&
-          !dnsRecordsError &&
-          dnsRecords.length === 0 ? (
+          {cloudflareMocked && dnsRecords.length === 0 ? (
+            <Text color="muted" fontSize="sm">
+              No sites are configured yet, so no managed DNS records are expected.
+            </Text>
+          ) : null}
+
+          {!cloudflareMocked && config.server.cloudflareApiToken && !dnsRecordsError && dnsRecords.length === 0 ? (
             <Text color="muted" fontSize="sm">
               No managed A records were found in Cloudflare for the current zone.
             </Text>
           ) : null}
 
-          {!shouldMockCloudflare() &&
-          config.server.cloudflareApiToken &&
-          !dnsRecordsError &&
+          {(cloudflareMocked || (!cloudflareMocked && config.server.cloudflareApiToken && !dnsRecordsError)) &&
           dnsRecords.length > 0
             ? dnsRecords.map((record) => (
                 <Box

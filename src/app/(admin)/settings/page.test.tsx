@@ -4,6 +4,7 @@ import SettingsPage from "@/app/(admin)/settings/page";
 import { requireAdminSession } from "@/lib/auth/guards";
 import { createDefaultConfig } from "@/lib/config/service";
 import { dnsGateway } from "@/lib/system/cloudflare";
+import { shouldMockCloudflare } from "@/lib/system/runtime";
 import { renderWithProviders } from "@/test/render-with-providers";
 
 vi.mock("@/app/actions", () => ({
@@ -35,12 +36,24 @@ vi.mock("@/lib/system/cloudflare", () => ({
   },
 }));
 
+vi.mock("@/lib/system/runtime", async () => {
+  const actual = await vi.importActual<typeof import("@/lib/system/runtime")>(
+    "@/lib/system/runtime",
+  );
+
+  return {
+    ...actual,
+    shouldMockCloudflare: vi.fn(),
+  };
+});
+
 describe("settings page", () => {
   afterEach(() => {
     vi.clearAllMocks();
   });
 
   it("renders admin confirm password and masked cloudflare token", async () => {
+    vi.mocked(shouldMockCloudflare).mockReturnValue(false);
     const config = createDefaultConfig();
     config.configRevision = 7;
     config.admin.login = "owner";
@@ -76,5 +89,42 @@ describe("settings page", () => {
     expect(html).toContain("Cloudflare DNS records");
     expect(html).toContain("app.example.dev");
     expect(html).toContain("203.0.113.10");
+  });
+
+  it("renders expected dns records in mocked runtimes", async () => {
+    vi.mocked(shouldMockCloudflare).mockReturnValue(true);
+    const config = createDefaultConfig();
+    config.server.domain = "sendsay.dev";
+    config.server.serverIp = "1.1.1.1";
+    config.sites = [
+      {
+        slug: "app",
+        name: "App",
+        mainBranch: "stable",
+        previewAuth: {
+          enabled: false,
+          login: null,
+          passwordHash: null,
+        },
+        createdAt: "2026-03-27T09:00:00.000Z",
+        updatedAt: "2026-03-27T09:00:00.000Z",
+      },
+    ];
+
+    vi.mocked(requireAdminSession).mockResolvedValue({
+      config,
+      session: { user: { name: "owner" }, expires: "2026-03-28T00:00:00.000Z" },
+    });
+
+    const page = await SettingsPage({
+      searchParams: Promise.resolve({}),
+    });
+    const html = renderWithProviders(page);
+
+    expect(dnsGateway.listManagedRecords).not.toHaveBeenCalled();
+    expect(html).toContain("Cloudflare DNS is mocked in this runtime.");
+    expect(html).toContain("app.sendsay.dev");
+    expect(html).toContain("*.app.sendsay.dev");
+    expect(html).toContain("1.1.1.1");
   });
 });
