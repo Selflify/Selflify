@@ -2,6 +2,15 @@ import type { SelflifyConfig, SiteConfig } from "@/lib/config/schema";
 
 export type CommandRunner = (command: string, args: string[], cwd?: string) => Promise<string>;
 
+export type ManagedDnsRecord = {
+  id: string;
+  type: string;
+  name: string;
+  content: string;
+  proxied: boolean;
+  ttl: number;
+};
+
 export interface CaddyGateway {
   writeGeneratedConfig(config: SelflifyConfig): Promise<string>;
   validateConfig(config: SelflifyConfig): Promise<void>;
@@ -13,4 +22,5 @@ export interface DnsGateway {
   syncSiteRecords(config: SelflifyConfig, site: SiteConfig): Promise<void>;
   deleteSiteRecords(config: SelflifyConfig, site: SiteConfig): Promise<void>;
   syncAllSiteRecords(config: SelflifyConfig): Promise<void>;
+  listManagedRecords(config: SelflifyConfig): Promise<ManagedDnsRecord[]>;
 }

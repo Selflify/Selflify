@@ -1,5 +1,5 @@
 import type { SelflifyConfig, SiteConfig } from "@/lib/config/schema";
-import type { DnsGateway } from "@/lib/system/ports";
+import type { DnsGateway, ManagedDnsRecord } from "@/lib/system/ports";
 import { shouldMockCloudflare } from "@/lib/system/runtime";
 
 type CloudflareResult = {
@@ -60,6 +60,16 @@ export function createDnsGateway(fetchImpl: typeof fetch = fetch): DnsGateway {
     return callCloudflare(
       config.server.cloudflareApiToken,
       `/zones/${zoneId}/dns_records?type=A&name=${encodeURIComponent(name)}`,
+    );
+  }
+
+  async function listZoneDnsRecords(
+    config: SelflifyConfig,
+    zoneId: string,
+  ): Promise<ManagedDnsRecord[]> {
+    return callCloudflare(
+      config.server.cloudflareApiToken,
+      `/zones/${zoneId}/dns_records?type=A&per_page=500`,
     );
   }
 
@@ -157,6 +167,31 @@ export function createDnsGateway(fetchImpl: typeof fetch = fetch): DnsGateway {
       for (const site of config.sites) {
         await this.syncSiteRecords(config, site);
       }
+    },
+    async listManagedRecords(config) {
+      if (shouldMockCloudflare()) {
+        return [];
+      }
+
+      if (!config.server.cloudflareApiToken) {
+        return [];
+      }
+
+      const zoneId = await resolveZoneId(config);
+      const records = await listZoneDnsRecords(config, zoneId);
+      const expectedNames = config.sites.flatMap((site) => [
+        `${site.slug}.${config.server.domain}`,
+        `*.${site.slug}.${config.server.domain}`,
+      ]);
+      const order = new Map(expectedNames.map((name, index) => [name, index]));
+
+      return records
+        .filter((record) => order.has(record.name))
+        .sort((left, right) => {
+          const leftIndex = order.get(left.name) ?? Number.MAX_SAFE_INTEGER;
+          const rightIndex = order.get(right.name) ?? Number.MAX_SAFE_INTEGER;
+          return leftIndex - rightIndex;
+        });
     },
   };
 }

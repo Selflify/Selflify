@@ -1,4 +1,4 @@
-import { Box, Heading, Input, Stack, Text } from "@chakra-ui/react";
+import { Badge, Box, Heading, Input, Stack, Text } from "@chakra-ui/react";
 
 import { saveAdminAccessAction, saveServerSettingsAction } from "@/app/actions";
 import { ActionFeedbackToast } from "@/components/action-feedback-toast";
@@ -7,6 +7,8 @@ import { FormField } from "@/components/form-field";
 import { FormSubmitButton } from "@/components/form-submit-button";
 import { requireAdminSession } from "@/lib/auth/guards";
 import { getEffectiveBackupRoot } from "@/lib/config/paths";
+import { dnsGateway } from "@/lib/system/cloudflare";
+import { shouldMockCloudflare } from "@/lib/system/runtime";
 
 type SettingsPageProps = {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
@@ -22,6 +24,17 @@ export default async function SettingsPage({ searchParams }: SettingsPageProps) 
   const queries = await searchParams;
   const notice = typeof queries.notice === "string" ? queries.notice : "";
   const error = typeof queries.error === "string" ? queries.error : "";
+  let dnsRecords = [] as Awaited<ReturnType<typeof dnsGateway.listManagedRecords>>;
+  let dnsRecordsError = "";
+
+  if (!shouldMockCloudflare() && config.server.cloudflareApiToken) {
+    try {
+      dnsRecords = await dnsGateway.listManagedRecords(config);
+    } catch (recordsError) {
+      dnsRecordsError =
+        recordsError instanceof Error ? recordsError.message : "Could not load Cloudflare DNS records.";
+    }
+  }
 
   return (
     <Stack gap="8">
@@ -177,6 +190,79 @@ export default async function SettingsPage({ searchParams }: SettingsPageProps) 
             : null
         }
       />
+
+      <Box
+        rounded="2xl"
+        borderWidth="1px"
+        borderColor="rgba(255,255,255,0.08)"
+        bg="rgba(17,17,24,0.88)"
+        p={{ base: "5", md: "6" }}
+        boxShadow="panel"
+      >
+        <Text fontWeight="700">Cloudflare DNS records</Text>
+        <Text color="muted" mt="2" fontSize="sm">
+          Read-only view of the A records Selflify manages for configured sites.
+        </Text>
+
+        <Stack gap="3" mt="4">
+          {shouldMockCloudflare() ? (
+            <Text color="muted" fontSize="sm">
+              Cloudflare DNS is mocked in this runtime.
+            </Text>
+          ) : null}
+
+          {!shouldMockCloudflare() && !config.server.cloudflareApiToken ? (
+            <Text color="muted" fontSize="sm">
+              Add a Cloudflare API token to load managed DNS records.
+            </Text>
+          ) : null}
+
+          {!shouldMockCloudflare() && config.server.cloudflareApiToken && dnsRecordsError ? (
+            <Text color="red.200" fontSize="sm">
+              {dnsRecordsError}
+            </Text>
+          ) : null}
+
+          {!shouldMockCloudflare() &&
+          config.server.cloudflareApiToken &&
+          !dnsRecordsError &&
+          dnsRecords.length === 0 ? (
+            <Text color="muted" fontSize="sm">
+              No managed A records were found in Cloudflare for the current zone.
+            </Text>
+          ) : null}
+
+          {!shouldMockCloudflare() &&
+          config.server.cloudflareApiToken &&
+          !dnsRecordsError &&
+          dnsRecords.length > 0
+            ? dnsRecords.map((record) => (
+                <Box
+                  key={record.id}
+                  rounded="xl"
+                  borderWidth="1px"
+                  borderColor="rgba(255,255,255,0.08)"
+                  px="4"
+                  py="4"
+                >
+                  <Stack gap="2">
+                    <Text fontWeight="700">{record.name}</Text>
+                    <Text color="whiteAlpha.700" fontSize="sm">
+                      {record.content}
+                    </Text>
+                    <Stack direction="row" gap="2" wrap="wrap">
+                      <Badge variant="outline">{record.type}</Badge>
+                      <Badge variant="outline">
+                        {record.proxied ? "Proxied" : "DNS only"}
+                      </Badge>
+                      <Badge variant="outline">TTL {record.ttl}</Badge>
+                    </Stack>
+                  </Stack>
+                </Box>
+              ))
+            : null}
+        </Stack>
+      </Box>
 
       <Box
         rounded="2xl"
