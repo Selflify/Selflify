@@ -151,6 +151,7 @@ export function FormSubmitButton({
                   type="button"
                   variant="outline"
                   h="10"
+                  m="0"
                   flexShrink={0}
                   onClick={() => setOpen(false)}
                 >
@@ -165,6 +166,7 @@ export function FormSubmitButton({
                   name={name}
                   value={value}
                   h="10"
+                  m="0"
                   flexShrink={0}
                   onClick={(event) => {
                     onClick?.(event);
