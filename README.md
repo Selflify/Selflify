@@ -50,7 +50,13 @@ yarn install
 
 2. Ensure `AUTH_SECRET` is set in `.env` or export it in your shell.
 
-3. Start the app:
+3. Seed local dev runtime files once:
+
+```bash
+yarn dev:prepare
+```
+
+4. Start the app:
 
 ```bash
 yarn dev --hostname 127.0.0.1 --port 3100
@@ -118,8 +124,8 @@ directories, free-space reporting, masked token display and generated Caddy upda
 
 The dev stack uses:
 
-- `.dev/selflify.config.json` for fixture sites
-- `.dev/Caddyfile` for local HTTP routing
+- `.dev/selflify.config.example.json` and `.dev/Caddyfile.example` as tracked templates
+- `.dev/selflify.config.json` and `.dev/Caddyfile` as local seeded runtime files
 - `.dev/var-www` for stable and preview deploy directories
 
 You can still run `yarn dev --hostname 0.0.0.0 --port 3000` directly on the host for isolated UI
@@ -146,6 +152,9 @@ Examples:
 - [`.dev/var-www/storybook/release-3-189-30/index.html`](/Users/aleksnick/dev/Selflify/.dev/var-www/storybook/release-3-189-30/index.html)
 
 They exist so that local `Caddy` and the `Sites` screen can immediately see stable and preview deploy directories without waiting for real builds.
+
+`docker-compose.dev.yml` and `yarn dev:prepare` seed local `.dev/Caddyfile` and `.dev/selflify.config.json`
+from the tracked `.example` files if they do not exist yet. Those real runtime files are gitignored on purpose.
 
 ## Source layout
 

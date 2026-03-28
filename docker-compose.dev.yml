@@ -8,7 +8,7 @@ services:
     command:
       - sh
       - -lc
-      - rm -rf /workspace/.next/* && yarn install --immutable && yarn dev --hostname 0.0.0.0 --port 3000
+      - yarn dev:prepare && rm -rf /workspace/.next/* && yarn install --immutable && yarn dev --hostname 0.0.0.0 --port 3000
     environment:
       AUTH_SECRET: ${AUTH_SECRET}
       SELFLIFY_CONFIG_PATH: /workspace/.dev/selflify.config.json
@@ -39,7 +39,7 @@ services:
     command:
       - sh
       - -lc
-      - yarn install --immutable && while true; do yarn cleanup:run; sleep "${SELFLIFY_CLEANUP_INTERVAL_SECONDS:-3600}"; done
+      - yarn dev:prepare && yarn install --immutable && while true; do yarn cleanup:run; sleep "${SELFLIFY_CLEANUP_INTERVAL_SECONDS:-3600}"; done
     environment:
       SELFLIFY_CONFIG_PATH: /workspace/.dev/selflify.config.json
       SELFLIFY_PREVIEW_TTL_DAYS: ${SELFLIFY_PREVIEW_TTL_DAYS:-30}
@@ -59,8 +59,14 @@ services:
       - selflify
     ports:
       - "8080:80"
+    command:
+      - sh
+      - -lc
+      - |
+        test -f /workspace/.dev/Caddyfile || cp /workspace/.dev/Caddyfile.example /workspace/.dev/Caddyfile
+        exec caddy run --config /workspace/.dev/Caddyfile --adapter caddyfile
     volumes:
-      - ./.dev/Caddyfile:/etc/caddy/Caddyfile
+      - ./.dev:/workspace/.dev
       - ./.dev/caddy-data:/data
       - ./.dev/caddy-config:/config
       - ./.dev/logs:/var/log/caddy

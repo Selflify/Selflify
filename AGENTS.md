@@ -43,13 +43,14 @@ Use this file as the first-stop operational guide before making changes.
 - `docker-compose.dev.yml`: development stack
 - `docker/selflify/Dockerfile`: main app image for prod/dev/cleanup
 - `.dev/var-www/`: tracked dev fixture deploys
+- `.dev/Caddyfile.example` and `.dev/selflify.config.example.json`: tracked dev runtime templates
 
 ## High-Risk Files And Behaviors
 
 - `runtime/` is gitignored mutable production state. Do not add or commit files from it.
-- `.dev/selflify.config.json` and `.dev/Caddyfile` are seeded dev runtime fixtures. Change them only when the task explicitly needs updated examples.
+- `.dev/selflify.config.json` and `.dev/Caddyfile` are local seeded runtime files and should stay out of commits.
 - `.dev/caddy-data`, `.dev/caddy-config`, `.dev/logs` are runtime artifacts and should stay out of commits.
-- `.dev/var-www/**/index.html` files are tracked fixture content. Other runtime files under `.dev/var-www` should remain ignored.
+- The tracked `.dev/var-www/**/index.html` files are fixture content. New runtime files under `.dev` should remain ignored.
 
 ## UI Conventions
 

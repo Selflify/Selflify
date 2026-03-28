@@ -4,6 +4,7 @@
   "private": true,
   "packageManager": "yarn@4.13.0",
   "scripts": {
+    "dev:prepare": "node ./scripts/prepare-dev-runtime.mjs",
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",

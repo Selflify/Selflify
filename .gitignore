@@ -97,10 +97,9 @@ runtime/**
 !runtime/
 !runtime/.gitkeep
 output/playwright/
+.dev/Caddyfile
+.dev/selflify.config.json
 .dev/var-www/**
-!.dev/var-www/
-!.dev/var-www/**/
-!.dev/var-www/**/index.html
 .dev/caddy-data
 .dev/caddy-config
 .dev/logs

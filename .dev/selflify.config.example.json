@@ -1,7 +1,7 @@
 {
   "version": 1,
   "configRevision": 0,
-  "updatedAt": "2026-03-27T12:00:35.599Z",
+  "updatedAt": "2026-03-28T00:00:00.000Z",
   "sessionSecret": "change-me-before-production-selflify-session-secret",
   "admin": {
     "login": "",
@@ -9,7 +9,7 @@
     "configuredAt": null
   },
   "server": {
-    "domain": "sendsay.dev",
+    "domain": "example.dev",
     "serverIp": "",
     "cloudflareApiToken": "",
     "previewRootDir": "/var/www",
@@ -18,14 +18,14 @@
     "caddyBinaryPath": "caddy",
     "caddyAdminAddress": "http://caddy:2019",
     "selflifyUpstream": "selflify:3000",
-    "caddyContactEmail": "dev@sendsay.dev"
+    "caddyContactEmail": "dev@example.dev"
   },
   "operations": {
-    "lastOperationId": "6db8713c-0c1f-4e46-9780-6e8b659c83de",
-    "lastOperationLabel": "setup-admin",
-    "lastStatus": "failed",
-    "lastMessage": "Command failed: /usr/bin/caddy reload --address http://caddy:2019 --config /workspace/.dev/Caddyfile --adapter caddyfile. {\"level\":\"info\",\"ts\":1774612835.5626433,\"msg\":\"using config from file\",\"file\":\"/workspace/.dev/Caddyfile\"}\n{\"level\":\"warn\",\"ts\":1774612835.5658884,\"logger\":\"config.adapter.caddyfile\",\"msg\":\"the 'basicauth' directive is deprecated, please use 'basic_auth' instead!\"}\n{\"level\":\"info\",\"ts\":1774612835.5696921,\"msg\":\"adapted config to JSON\",\"adapter\":\"caddyfile\"}\n{\"level\":\"warn\",\"ts\":1774612835.5697112,\"msg\":\"Caddyfile input is not formatted; run 'caddy fmt --overwrite' to fix inconsistencies\",\"adapter\":\"caddyfile\",\"file\":\"/workspace/.dev/Caddyfile\",\"line\":2}\nError: sending configuration to instance: performing request: Post \"http:///caddy:2019/load\": http: no Host in request URL",
-    "lastAppliedAt": "2026-03-27T12:00:35.597Z"
+    "lastOperationId": null,
+    "lastOperationLabel": null,
+    "lastStatus": "idle",
+    "lastMessage": null,
+    "lastAppliedAt": null
   },
   "sites": [
     {
