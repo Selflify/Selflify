@@ -3,12 +3,49 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Selflify</title>
+    <title>Selflify — Self-hosted preview deploy control for static SPAs</title>
     <meta
       name="description"
-      content="Selflify is a self-hosted control panel for static SPA previews with Caddy routing, Cloudflare DNS sync and filesystem-backed operations."
+      content="Selflify is a self-hosted preview deploy control panel for static SPA sites. Manage Caddy routing, Cloudflare DNS, preview auth, filesystem-backed deploys, and one-command server bootstrap."
     />
+    <meta
+      name="robots"
+      content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1"
+    />
+    <meta name="theme-color" content="#08070a" />
+    <meta name="application-name" content="Selflify" />
+    <link rel="canonical" href="https://selflify.github.io/" />
     <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
+    <link rel="alternate" type="text/plain" href="https://selflify.github.io/llms.txt" title="LLMs" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Selflify" />
+    <meta
+      property="og:title"
+      content="Selflify — Self-hosted preview deploy control for static SPAs"
+    />
+    <meta
+      property="og:description"
+      content="Run Netlify-like preview flows on your own server with filesystem-backed deploys, generated Caddy routing and Cloudflare DNS sync."
+    />
+    <meta property="og:url" content="https://selflify.github.io/" />
+    <meta property="og:image" content="https://selflify.github.io/og-card.svg" />
+    <meta
+      property="og:image:alt"
+      content="Selflify social card describing self-hosted preview deploy control for static SPAs."
+    />
+    <meta property="og:image:type" content="image/svg+xml" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta
+      name="twitter:title"
+      content="Selflify — Self-hosted preview deploy control for static SPAs"
+    />
+    <meta
+      name="twitter:description"
+      content="Manage Caddy routing, Cloudflare DNS, preview auth and filesystem-backed deploy previews on your own server."
+    />
+    <meta name="twitter:image" content="https://selflify.github.io/og-card.svg" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -16,6 +53,35 @@
       rel="stylesheet"
     />
     <link rel="stylesheet" href="./styles.css" />
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "WebSite",
+            "name": "Selflify",
+            "url": "https://selflify.github.io/",
+            "description": "Self-hosted preview deploy control panel for static SPA sites with Caddy routing, Cloudflare DNS sync and filesystem-backed operations."
+          },
+          {
+            "@type": "SoftwareApplication",
+            "name": "Selflify",
+            "applicationCategory": "DeveloperApplication",
+            "operatingSystem": "Linux",
+            "url": "https://selflify.github.io/",
+            "description": "Self-hosted preview deploy control panel for static SPA sites. Manage Caddy routing, Cloudflare DNS, preview auth, filesystem-backed deploys and one-command server bootstrap.",
+            "featureList": [
+              "Filesystem-backed stable and preview deploy inventory",
+              "Generated Caddy routing with zero-downtime reloads",
+              "Cloudflare DNS sync for stable and wildcard preview hosts",
+              "Preview authentication via caddy hash-password",
+              "One-command server bootstrap with Docker and Compose",
+              "Backups, revision checks and cleanup automation"
+            ]
+          }
+        ]
+      }
+    </script>
     <script defer src="./app.js"></script>
   </head>
   <body>
@@ -184,7 +250,10 @@
 
             <article class="note-card">
               <h3>Static landing</h3>
-              <p>The marketing site stays separate, so you can edit it locally and publish `dist/landing` to GitHub Pages.</p>
+              <p>
+                The marketing site stays separate, so you can edit it locally and publish
+                <code>dist/landing</code> to GitHub Pages.
+              </p>
             </article>
           </div>
         </section>

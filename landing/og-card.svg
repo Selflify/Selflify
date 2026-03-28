@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="120" y1="48" x2="1080" y2="582" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#140D11" />
+      <stop offset="0.48" stop-color="#0B0910" />
+      <stop offset="1" stop-color="#070709" />
+    </linearGradient>
+    <radialGradient id="glowA" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(160 80) rotate(35) scale(340 220)">
+      <stop stop-color="#A12141" stop-opacity="0.48" />
+      <stop offset="1" stop-color="#A12141" stop-opacity="0" />
+    </radialGradient>
+    <radialGradient id="glowB" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(1030 130) rotate(150) scale(260 180)">
+      <stop stop-color="#F7789B" stop-opacity="0.18" />
+      <stop offset="1" stop-color="#F7789B" stop-opacity="0" />
+    </radialGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="0" y2="1">
+      <stop stop-color="#D84A72" />
+      <stop offset="1" stop-color="#A12141" />
+    </linearGradient>
+  </defs>
+
+  <rect width="1200" height="630" fill="url(#bg)" />
+  <rect width="1200" height="630" fill="url(#glowA)" />
+  <rect width="1200" height="630" fill="url(#glowB)" />
+
+  <rect x="72" y="72" width="1056" height="486" rx="28" fill="#111118" fill-opacity="0.82" stroke="#FFFFFF" stroke-opacity="0.08" />
+
+  <rect x="108" y="112" width="64" height="64" rx="20" fill="#A12141" fill-opacity="0.20" stroke="#FFFFFF" stroke-opacity="0.10" />
+  <path d="M127 160V128H150.5C160.717 128 169 136.283 169 146.5C169 156.717 160.717 165 150.5 165H127L147 144.5" stroke="url(#accent)" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" />
+
+  <text x="198" y="140" fill="#FFF6F8" font-family="Inter, Arial, sans-serif" font-size="28" font-weight="700">Selflify</text>
+  <text x="198" y="175" fill="rgba(255,240,244,0.68)" font-family="Inter, Arial, sans-serif" font-size="18" font-weight="500">
+    Self-hosted preview deploy control
+  </text>
+
+  <text x="108" y="274" fill="#FFF6F8" font-family="Inter, Arial, sans-serif" font-size="72" font-weight="800">
+    Static SPA previews,
+  </text>
+  <text x="108" y="350" fill="#FFF6F8" font-family="Inter, Arial, sans-serif" font-size="72" font-weight="800">
+    Caddy routing,
+  </text>
+  <text x="108" y="426" fill="#FFF6F8" font-family="Inter, Arial, sans-serif" font-size="72" font-weight="800">
+    Cloudflare DNS
+  </text>
+
+  <text x="108" y="490" fill="rgba(255,240,244,0.74)" font-family="Inter, Arial, sans-serif" font-size="28" font-weight="500">
+    Filesystem-backed deploy control panel with preview auth,
+  </text>
+  <text x="108" y="528" fill="rgba(255,240,244,0.74)" font-family="Inter, Arial, sans-serif" font-size="28" font-weight="500">
+    zero-downtime Caddy reloads and one-command server bootstrap.
+  </text>
+</svg>
