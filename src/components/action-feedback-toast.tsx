@@ -28,33 +28,44 @@ export function ActionFeedbackToast({ notice = "", error = "" }: ActionFeedbackT
       return;
     }
 
-    if (notice) {
-      toaster.create({
-        type: "success",
-        title: "Saved",
-        description: notice,
-        closable: true,
-      });
-    }
-
-    if (error) {
-      toaster.create({
-        type: "error",
-        title: "Action failed",
-        description: error,
-        closable: true,
-      });
-    }
-
     handledKeyRef.current = handledKey;
+    let cancelled = false;
 
-    const nextParams = new URLSearchParams(searchParams.toString());
-    nextParams.delete("notice");
-    nextParams.delete("error");
+    queueMicrotask(() => {
+      if (cancelled) {
+        return;
+      }
 
-    const nextSearch = nextParams.toString();
+      if (notice) {
+        toaster.create({
+          type: "success",
+          title: "Saved",
+          description: notice,
+          closable: true,
+        });
+      }
 
-    router.replace(nextSearch ? `${pathname}?${nextSearch}` : pathname, { scroll: false });
+      if (error) {
+        toaster.create({
+          type: "error",
+          title: "Action failed",
+          description: error,
+          closable: true,
+        });
+      }
+
+      const nextParams = new URLSearchParams(searchParams.toString());
+      nextParams.delete("notice");
+      nextParams.delete("error");
+
+      const nextSearch = nextParams.toString();
+
+      router.replace(nextSearch ? `${pathname}?${nextSearch}` : pathname, { scroll: false });
+    });
+
+    return () => {
+      cancelled = true;
+    };
   }, [error, notice, pathname, router, searchParams]);
 
   return null;
