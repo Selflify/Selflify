@@ -144,6 +144,51 @@
           </div>
         </section>
 
+        <section class="section bootstrap-section" id="bootstrap">
+          <div class="section-heading compact">
+            <p class="eyebrow">Bootstrap</p>
+            <h2>Fresh server to running panel in one command</h2>
+            <p>
+              The installer prepares the host OS, seeds the base runtime files and leaves you with
+              a running stack plus editable config in the project directory.
+            </p>
+          </div>
+
+          <div class="code-block">
+            <button class="copy-button" type="button" data-copy-target="bootstrap-command">
+              Copy
+            </button>
+            <pre><code id="bootstrap-command">curl -fsSL https://example.com/install-selflify.sh | bash -s -- \
+  --archive-url https://example.com/selflify-bootstrap.tar.gz \
+  --domain preview.example.com \
+  --server-ip 203.0.113.10 \
+  --email ops@example.com</code></pre>
+          </div>
+
+          <div class="bootstrap-notes">
+            <article class="note-card">
+              <h3>Host bootstrap</h3>
+              <p>
+                Docker, the Compose plugin, project files, <code>.env</code> and the initial
+                runtime config are placed on the server automatically.
+              </p>
+            </article>
+
+            <article class="note-card">
+              <h3>First-time setup</h3>
+              <p>
+                After bootstrap you finish setup in the UI: create the account, paste the
+                Cloudflare token and then manage sites from the panel.
+              </p>
+            </article>
+
+            <article class="note-card">
+              <h3>Static landing</h3>
+              <p>The marketing site stays separate, so you can edit it locally and publish `dist/landing` to GitHub Pages.</p>
+            </article>
+          </div>
+        </section>
+
         <section class="section" id="workflow">
           <div class="section-heading compact">
             <p class="eyebrow">Workflow</p>
@@ -198,51 +243,6 @@
                   same file-backed runtime state, with backups and revision checks around writes.
                 </p>
               </div>
-            </article>
-          </div>
-        </section>
-
-        <section class="section bootstrap-section" id="bootstrap">
-          <div class="section-heading compact">
-            <p class="eyebrow">Bootstrap</p>
-            <h2>Fresh server to running panel in one command</h2>
-            <p>
-              The installer prepares the host OS, seeds the base runtime files and leaves you with
-              a running stack plus editable config in the project directory.
-            </p>
-          </div>
-
-          <div class="code-block">
-            <button class="copy-button" type="button" data-copy-target="bootstrap-command">
-              Copy
-            </button>
-            <pre><code id="bootstrap-command">curl -fsSL https://example.com/install-selflify.sh | bash -s -- \
-  --archive-url https://example.com/selflify-bootstrap.tar.gz \
-  --domain preview.example.com \
-  --server-ip 203.0.113.10 \
-  --email ops@example.com</code></pre>
-          </div>
-
-          <div class="bootstrap-notes">
-            <article class="note-card">
-              <h3>Host bootstrap</h3>
-              <p>
-                Docker, the Compose plugin, project files, <code>.env</code> and the initial
-                runtime config are placed on the server automatically.
-              </p>
-            </article>
-
-            <article class="note-card">
-              <h3>First-time setup</h3>
-              <p>
-                After bootstrap you finish setup in the UI: create the account, paste the
-                Cloudflare token and then manage sites from the panel.
-              </p>
-            </article>
-
-            <article class="note-card">
-              <h3>Static landing</h3>
-              <p>The marketing site stays separate, so you can edit it locally and publish `dist/landing` to GitHub Pages.</p>
             </article>
           </div>
         </section>
