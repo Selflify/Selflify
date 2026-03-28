@@ -63,9 +63,6 @@ jobs:
       DEPLOY_USER: ${{ vars.DEPLOY_USER }}
       DEPLOY_PATH: ${{ vars.DEPLOY_PATH }}
       AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
-      SELFLIFY_DOMAIN: ${{ vars.SELFLIFY_DOMAIN }}
-      SELFLIFY_SERVER_IP: ${{ vars.SELFLIFY_SERVER_IP }}
-      SELFLIFY_CADDY_EMAIL: ${{ vars.SELFLIFY_CADDY_EMAIL }}
 
     steps:
       - name: Checkout
@@ -164,25 +161,13 @@ jobs:
 
           mkdir -p runtime/data runtime/config runtime/logs
 
-          if [ ! -f bootstrap/seed-runtime-files.py ]; then
-            echo "bootstrap/seed-runtime-files.py is missing in the deployed project." >&2
-            exit 1
-          fi
-
-          python3 bootstrap/seed-runtime-files.py \
-            --root . \
-            --domain "${SELFLIFY_DOMAIN}" \
-            --server-ip "${SELFLIFY_SERVER_IP}" \
-            --caddy-email "${SELFLIFY_CADDY_EMAIL}" \
-            --session-secret "${AUTH_SECRET}"
-
           if [ ! -f runtime/selflify.config.json ]; then
-            echo "runtime/selflify.config.json is still missing after bootstrap seeding." >&2
+            echo "runtime/selflify.config.json is missing. Bootstrap the server first and complete /setup before using the deploy workflow." >&2
             exit 1
           fi
 
           if [ ! -f runtime/Caddyfile ]; then
-            echo "runtime/Caddyfile is still missing after bootstrap seeding." >&2
+            echo "runtime/Caddyfile is missing. Bootstrap the server first and complete /setup before using the deploy workflow." >&2
             exit 1
           fi
 

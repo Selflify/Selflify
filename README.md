@@ -228,12 +228,8 @@ What the installer does:
 - creates initial `runtime/selflify.config.json` and `runtime/Caddyfile` from templates if they do not exist yet
 - starts the production stack with `docker compose up -d --build`
 
-The GitHub deploy workflow can also seed those files automatically on the first deploy from the same
-templates. For that path, define these GitHub variables:
-
-- `SELFLIFY_DOMAIN`
-- `SELFLIFY_SERVER_IP`
-- `SELFLIFY_CADDY_EMAIL` (optional, defaults to `admin@<domain>`)
+The GitHub deploy workflow does not seed runtime config anymore. It expects the server to be bootstrapped
+already, with `runtime/selflify.config.json` and `runtime/Caddyfile` persisted on disk.
 
 What still happens in the UI after bootstrap:
 
