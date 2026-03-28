@@ -220,16 +220,13 @@
             </p>
           </div>
 
-          <div class="code-block">
-            <button class="copy-button" type="button" data-copy-target="bootstrap-command">
-              Copy
-            </button>
-            <pre><code id="bootstrap-command">curl -fsSL https://example.com/install-selflify.sh | bash -s -- \
-  --archive-url https://example.com/selflify-bootstrap.tar.gz \
-  --domain preview.example.com \
-  --server-ip 203.0.113.10 \
-  --email ops@example.com</code></pre>
-          </div>
+            <div class="code-block">
+              <button class="copy-button" type="button" data-copy-target="bootstrap-command">
+                Copy
+              </button>
+              <pre><code id="bootstrap-command">curl -fsSL https://example.com/install-selflify.sh | bash -s -- \
+  --archive-url https://example.com/selflify-bootstrap.tar.gz</code></pre>
+            </div>
 
           <div class="bootstrap-notes">
             <article class="note-card">
@@ -243,8 +240,9 @@
             <article class="note-card">
               <h3>First-time setup</h3>
               <p>
-                After bootstrap you finish setup in the UI: create the account, paste the
-                Cloudflare token and then manage sites from the panel.
+                After bootstrap you open <code>http://&lt;server-ip&gt;/setup</code>, create the
+                account, enter the domain, server IP and Caddy email, then paste the Cloudflare
+                token.
               </p>
             </article>
 

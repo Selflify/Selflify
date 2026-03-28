@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   buildRuntimeSeedConfig,
+  DEFAULT_RUNTIME_CADDY_EMAIL,
   DEFAULT_RUNTIME_DOMAIN,
   renderRuntimeSeedConfig,
 } from "@/lib/bootstrap/runtime-seed";
@@ -27,7 +28,7 @@ describe("runtime seed config", () => {
     const config = buildRuntimeSeedConfig();
 
     expect(config.server.domain).toBe(DEFAULT_RUNTIME_DOMAIN);
-    expect(config.server.caddyContactEmail).toBe("admin@preview.example.com");
+    expect(config.server.caddyContactEmail).toBe(DEFAULT_RUNTIME_CADDY_EMAIL);
     expect(config.sites).toEqual([]);
   });
 

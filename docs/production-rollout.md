@@ -5,7 +5,6 @@
 - Linux host with Docker Engine and `docker compose`
 - mounted `/var/www` with existing deploy directories
 - Cloudflare API token with DNS edit permissions for the target zone
-- public DNS A record for `example.dev` pointing to the server
 - `AUTH_SECRET` prepared for NextAuth sessions
 
 ## 2. Prepare the runtime config
@@ -54,15 +53,17 @@ The production stack includes:
 
 ## 5. First-launch flow
 
-1. Open `https://example.dev/setup`
+1. Open `http://<server-ip>/setup`
 2. Create the single admin account
-3. Sign in through `https://example.dev/login`
-4. Open Settings and verify domain, server IP and Cloudflare token
+3. Enter the main domain, public server IP, Caddy contact email and Cloudflare token
+4. Sign in through `http://<server-ip>/login` or `https://<domain>/login` once DNS is ready
+5. Open Settings and verify domain, server IP and Cloudflare token
 
 ## 6. Smoke checklist
 
 After the first launch, verify:
 
+- `http://<server-ip>` opens the Next.js app before DNS is ready
 - `https://example.dev` opens the Next.js app
 - login works and protected routes redirect correctly
 - Sites overview loads site inventory and disk stats

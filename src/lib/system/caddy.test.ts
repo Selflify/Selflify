@@ -68,6 +68,24 @@ describe("generateCaddyfile", () => {
     expect(rendered).toContain("origins http://0.0.0.0:2019 http://127.0.0.1:2019 http://localhost:2019 http://caddy:2019");
   });
 
+  it("keeps the panel reachable over the configured server ip", () => {
+    const config = createConfig(createSite(), {
+      server: {
+        ...createDefaultConfig().server,
+        domain: "example.dev",
+        serverIp: "203.0.113.10",
+        previewRootDir: "/var/www",
+        selflifyUpstream: "selflify:3000",
+        caddyContactEmail: "dev@example.dev",
+        cloudflareApiToken: "cf-token",
+      },
+    });
+    const rendered = generateCaddyfile(config);
+
+    expect(rendered).toContain("http://203.0.113.10");
+    expect(rendered).toContain("reverse_proxy selflify:3000");
+  });
+
   it("omits preview basic auth and tls_cf import when no token or auth is configured", () => {
     const config = createConfig(
       createSite({

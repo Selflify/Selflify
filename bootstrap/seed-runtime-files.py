@@ -6,6 +6,8 @@ import argparse
 import sys
 from pathlib import Path
 
+DEFAULT_DOMAIN = "preview.example.com"
+
 
 def render_template(template_path: Path, replacements: dict[str, str]) -> str:
     payload = template_path.read_text("utf-8")
@@ -29,11 +31,11 @@ def build_parser() -> argparse.ArgumentParser:
         description="Seed missing Selflify runtime files from bootstrap templates.",
     )
     parser.add_argument("--root", default=".", help="Project root where runtime files should exist.")
-    parser.add_argument("--domain", required=True, help="Primary Selflify domain.")
+    parser.add_argument("--domain", default=DEFAULT_DOMAIN, help="Primary Selflify domain.")
     parser.add_argument(
         "--server-ip",
         default="",
-        help="Server public IP. Required only when runtime/selflify.config.json is missing.",
+        help="Server public IP. Used as a bootstrap default in runtime/selflify.config.json.",
     )
     parser.add_argument(
         "--caddy-email",
@@ -57,7 +59,8 @@ def main() -> int:
     runtime_dir = root / "runtime"
     config_output = runtime_dir / "selflify.config.json"
     caddy_output = runtime_dir / "Caddyfile"
-    caddy_email = args.caddy_email or f"admin@{args.domain}"
+    domain = args.domain.strip() or DEFAULT_DOMAIN
+    caddy_email = args.caddy_email or f"admin@{domain}"
 
     if not config_template.is_file():
         raise SystemExit(f"Missing bootstrap template: {config_template}")
@@ -68,9 +71,6 @@ def main() -> int:
     runtime_dir.mkdir(parents=True, exist_ok=True)
 
     if not config_output.exists():
-        if not args.server_ip:
-            raise SystemExit("--server-ip is required when runtime/selflify.config.json is missing.")
-
         if not args.session_secret:
             raise SystemExit(
                 "--session-secret is required when runtime/selflify.config.json is missing."
@@ -79,7 +79,7 @@ def main() -> int:
         config_payload = render_template(
             config_template,
             {
-                "__SELFLIFY_DOMAIN__": args.domain,
+                "__SELFLIFY_DOMAIN__": domain,
                 "__SELFLIFY_SERVER_IP__": args.server_ip,
                 "__SELFLIFY_CADDY_EMAIL__": caddy_email,
                 "__SELFLIFY_SESSION_SECRET__": args.session_secret,
@@ -92,7 +92,6 @@ def main() -> int:
         caddy_payload = render_template(
             caddy_template,
             {
-                "__SELFLIFY_DOMAIN__": args.domain,
                 "__SELFLIFY_CADDY_EMAIL__": caddy_email,
             },
         )

@@ -237,6 +237,26 @@ function renderPreviewBlock(config: SelflifyConfig, site: SiteConfig): string {
 `;
 }
 
+function renderSelflifyPanelBlocks(config: SelflifyConfig): string {
+  const blocks = [
+    `${withDevScheme(config.server.domain)} {
+    import common_site
+
+    reverse_proxy ${getEffectiveSelflifyUpstream(config)}
+}`,
+  ];
+
+  if (config.server.serverIp.trim()) {
+    blocks.push(`http://${config.server.serverIp.trim()} {
+    import common_site
+
+    reverse_proxy ${getEffectiveSelflifyUpstream(config)}
+}`);
+  }
+
+  return blocks.join("\n\n");
+}
+
 export function generateCaddyfile(config: SelflifyConfig): string {
   const hasToken = Boolean(config.server.cloudflareApiToken);
   const autoHttps = isDevelopmentRuntime() ? "    auto_https off\n" : "";
@@ -287,12 +307,7 @@ ${renderCommonSiteImports(hasToken)}
     }
 }
 
-${withDevScheme(config.server.domain)} {
-    import common_site
-
-    reverse_proxy ${getEffectiveSelflifyUpstream(config)}
-}
-
+${renderSelflifyPanelBlocks(config)}
 ${siteBlocks}`.trim();
 }
 

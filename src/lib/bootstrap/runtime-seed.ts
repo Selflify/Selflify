@@ -3,6 +3,7 @@ import configTemplate from "../../../bootstrap/selflify.config.template.json";
 import { selflifyConfigSchema, type SelflifyConfig } from "@/lib/config/schema";
 
 export const DEFAULT_RUNTIME_DOMAIN = "preview.example.com";
+export const DEFAULT_RUNTIME_CADDY_EMAIL = `admin@${DEFAULT_RUNTIME_DOMAIN}`;
 const DEFAULT_SESSION_SECRET = "change-me-before-production-selflify-session-secret";
 
 type RuntimeSeedOverrides = {

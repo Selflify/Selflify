@@ -4,11 +4,9 @@ set -euo pipefail
 
 INSTALL_DIR="/opt/selflify"
 ARCHIVE_URL="${SELFLIFY_ARCHIVE_URL:-}"
-DOMAIN="${SELFLIFY_DOMAIN:-}"
-SERVER_IP="${SELFLIFY_SERVER_IP:-}"
-CADDY_EMAIL="${SELFLIFY_CADDY_EMAIL:-}"
 AUTH_SECRET_VALUE="${AUTH_SECRET:-}"
 SKIP_START="0"
+SERVER_IP=""
 
 log() {
   printf '\033[1;35m[selflify-bootstrap]\033[0m %s\n' "$*"
@@ -40,18 +38,6 @@ while [ $# -gt 0 ]; do
       ;;
     --install-dir)
       INSTALL_DIR="${2:-}"
-      shift 2
-      ;;
-    --domain)
-      DOMAIN="${2:-}"
-      shift 2
-      ;;
-    --server-ip)
-      SERVER_IP="${2:-}"
-      shift 2
-      ;;
-    --email)
-      CADDY_EMAIL="${2:-}"
       shift 2
       ;;
     --auth-secret)
@@ -152,17 +138,19 @@ PY
 
 write_runtime_templates() {
   local install_dir="$1"
-  local domain="$2"
-  local server_ip="$3"
-  local caddy_email="$4"
-  local auth_secret="$5"
-
-  python3 "${install_dir}/bootstrap/seed-runtime-files.py" \
+  local server_ip="$2"
+  local auth_secret="$3"
+  local args=(
+    "${install_dir}/bootstrap/seed-runtime-files.py"
     --root "${install_dir}" \
-    --domain "${domain}" \
-    --server-ip "${server_ip}" \
-    --caddy-email "${caddy_email}" \
     --session-secret "${auth_secret}"
+  )
+
+  if [ -n "${server_ip}" ]; then
+    args+=(--server-ip "${server_ip}")
+  fi
+
+  python3 "${args[@]}"
 }
 
 write_env_file() {
@@ -189,18 +177,6 @@ install_docker
 install_compose_plugin
 detect_server_ip
 
-if [ -z "${DOMAIN}" ]; then
-  fail "Pass --domain or set SELFLIFY_DOMAIN."
-fi
-
-if [ -z "${SERVER_IP}" ]; then
-  fail "Pass --server-ip or set SELFLIFY_SERVER_IP."
-fi
-
-if [ -z "${CADDY_EMAIL}" ]; then
-  CADDY_EMAIL="admin@${DOMAIN}"
-fi
-
 if [ -z "${AUTH_SECRET_VALUE}" ]; then
   AUTH_SECRET_VALUE="$(generate_secret)"
 fi
@@ -222,7 +198,7 @@ mkdir -p \
   "${INSTALL_DIR}/runtime/config" \
   "${INSTALL_DIR}/runtime/logs"
 
-write_runtime_templates "${INSTALL_DIR}" "${DOMAIN}" "${SERVER_IP}" "${CADDY_EMAIL}" "${AUTH_SECRET_VALUE}"
+write_runtime_templates "${INSTALL_DIR}" "${SERVER_IP}" "${AUTH_SECRET_VALUE}"
 write_env_file "${INSTALL_DIR}" "${AUTH_SECRET_VALUE}"
 
 rm -rf "${TMP_DIR}"
@@ -238,5 +214,9 @@ docker_compose up -d --build
 
 log "Bootstrap complete"
 printf '\n'
-printf 'Open https://%s/setup after your DNS points to %s\n' "${DOMAIN}" "${SERVER_IP}"
-printf 'Next step in UI: create the first account and paste your Cloudflare API token.\n'
+if [ -n "${SERVER_IP}" ]; then
+  printf 'Open http://%s/setup to finish first launch.\n' "${SERVER_IP}"
+else
+  printf 'Open http://<server-ip>/setup to finish first launch.\n'
+fi
+printf 'Next step in UI: create the first account, enter the domain, server IP, Caddy email and paste your Cloudflare API token.\n'

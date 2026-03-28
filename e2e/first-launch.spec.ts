@@ -20,8 +20,8 @@ test("completes first launch and signs in with the created account", async ({ pa
 
   await expect(page.getByRole("heading", { name: "Project settings" })).toBeVisible();
   await expect(page.getByText("Step 2 of 2")).toBeVisible();
-  await expect(page.getByLabel("Primary domain")).toHaveValue("preview.example.com");
-  await expect(page.getByLabel("Caddy contact email")).toHaveValue("admin@preview.example.com");
+  await expect(page.getByLabel("Primary domain")).toHaveValue("");
+  await expect(page.getByLabel("Caddy contact email")).toHaveValue("");
 
   await page.locator("#setup-domain").fill("example.dev");
   await page.locator("#setup-server-ip").fill("203.0.113.10");

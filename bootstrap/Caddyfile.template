@@ -3,6 +3,7 @@
         origins http://0.0.0.0:2019 http://127.0.0.1:2019 http://localhost:2019 http://caddy:2019
     }
     email __SELFLIFY_CADDY_EMAIL__
+    auto_https off
 }
 
 (common_headers) {
@@ -42,7 +43,7 @@
     }
 }
 
-__SELFLIFY_DOMAIN__ {
+:80 {
     import common_site
 
     reverse_proxy selflify:3000

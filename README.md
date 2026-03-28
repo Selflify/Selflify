@@ -214,10 +214,7 @@ Recommended distribution flow:
 
 ```bash
 curl -fsSL https://example.com/install-selflify.sh | bash -s -- \
-  --archive-url https://example.com/selflify-bootstrap.tar.gz \
-  --domain preview.example.com \
-  --server-ip 203.0.113.10 \
-  --email ops@example.com
+  --archive-url https://example.com/selflify-bootstrap.tar.gz
 ```
 
 What the installer does:
@@ -227,14 +224,16 @@ What the installer does:
 - creates `.env` with a generated `AUTH_SECRET` if it does not exist yet
 - creates initial `runtime/selflify.config.json` and `runtime/Caddyfile` from templates if they do not exist yet
 - starts the production stack with `docker compose up -d --build`
+- brings the panel up on `http://<server-ip>/setup` so the first session can collect runtime settings
 
 The GitHub deploy workflow does not seed runtime config anymore. It expects the server to be bootstrapped
 already, with `runtime/selflify.config.json` and `runtime/Caddyfile` persisted on disk.
 
 What still happens in the UI after bootstrap:
 
-- open `https://<domain>/setup`
+- open `http://<server-ip>/setup`
 - create the first account
+- enter the main domain, public server IP and Caddy contact email
 - paste the Cloudflare API token during first-start setup
 
 ## Cleanup job

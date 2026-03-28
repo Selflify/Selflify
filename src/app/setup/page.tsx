@@ -3,6 +3,10 @@ import { redirect } from "next/navigation";
 
 import { ActionFeedbackToast } from "@/components/action-feedback-toast";
 import { SetupWizard } from "@/components/setup-wizard";
+import {
+  DEFAULT_RUNTIME_CADDY_EMAIL,
+  DEFAULT_RUNTIME_DOMAIN,
+} from "@/lib/bootstrap/runtime-seed";
 import { isAdminConfigured, readSelflifyConfig } from "@/lib/config/service";
 
 type SetupPageProps = {
@@ -13,13 +17,20 @@ export const dynamic = "force-dynamic";
 
 export default async function SetupPage({ searchParams }: SetupPageProps) {
   const config = await readSelflifyConfig();
+  const adminConfigured = isAdminConfigured(config);
 
-  if (isAdminConfigured(config)) {
+  if (adminConfigured) {
     redirect("/login");
   }
 
   const params = await searchParams;
   const error = typeof params.error === "string" ? params.error : "";
+  const defaultDomain =
+    config.server.domain === DEFAULT_RUNTIME_DOMAIN ? "" : config.server.domain;
+  const defaultCaddyContactEmail =
+    config.server.caddyContactEmail === DEFAULT_RUNTIME_CADDY_EMAIL
+      ? ""
+      : config.server.caddyContactEmail;
 
   return (
     <Box
@@ -42,9 +53,9 @@ export default async function SetupPage({ searchParams }: SetupPageProps) {
       >
         <ActionFeedbackToast error={error} />
         <SetupWizard
-          defaultDomain={config.server.domain}
+          defaultDomain={defaultDomain}
           defaultServerIp={config.server.serverIp}
-          defaultCaddyContactEmail={config.server.caddyContactEmail}
+          defaultCaddyContactEmail={defaultCaddyContactEmail}
           defaultCloudflareToken={config.server.cloudflareApiToken}
         />
       </Box>
