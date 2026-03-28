@@ -26,6 +26,10 @@ vi.mock("@/components/cloudflare-token-section", () => ({
   }) => <div>{`CF_TOKEN:${maskedToken ?? "none"}:${configRevision}`}</div>,
 }));
 
+vi.mock("@/components/operation-status-card", () => ({
+  OperationStatusCard: () => <div>OPERATION_STATUS</div>,
+}));
+
 vi.mock("@/lib/auth/guards", () => ({
   requireAdminSession: vi.fn(),
 }));
@@ -83,6 +87,7 @@ describe("settings page", () => {
     const html = renderWithProviders(page);
 
     expect(html).toContain("Global settings");
+    expect(html).toContain("OPERATION_STATUS");
     expect(html).toContain("Confirm password");
     expect(html).toContain("Repeat the new password to avoid saving a typo.");
     expect(html).toContain("CF_TOKEN:********1234:7");

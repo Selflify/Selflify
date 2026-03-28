@@ -5,6 +5,7 @@ import { ActionFeedbackToast } from "@/components/action-feedback-toast";
 import { CloudflareTokenSection } from "@/components/cloudflare-token-section";
 import { FormField } from "@/components/form-field";
 import { FormSubmitButton } from "@/components/form-submit-button";
+import { OperationStatusCard } from "@/components/operation-status-card";
 import { requireAdminSession } from "@/lib/auth/guards";
 import { getEffectiveBackupRoot } from "@/lib/config/paths";
 import { dnsGateway } from "@/lib/system/cloudflare";
@@ -72,6 +73,7 @@ export default async function SettingsPage({ searchParams }: SettingsPageProps) 
   return (
     <Stack gap="8">
       <ActionFeedbackToast notice={notice} error={error} />
+      <OperationStatusCard config={config} />
 
       <Box
         rounded="2xl"
@@ -270,32 +272,119 @@ export default async function SettingsPage({ searchParams }: SettingsPageProps) 
           ) : null}
 
           {(cloudflareMocked || (!cloudflareMocked && config.server.cloudflareApiToken && !dnsRecordsError)) &&
-          dnsRecords.length > 0
-            ? dnsRecords.map((record) => (
-                <Box
-                  key={record.id}
-                  rounded="xl"
-                  borderWidth="1px"
-                  borderColor="rgba(255,255,255,0.08)"
-                  px="4"
-                  py="4"
-                >
-                  <Stack gap="2">
-                    <Text fontWeight="700">{record.name}</Text>
-                    <Text color="whiteAlpha.700" fontSize="sm">
-                      {record.content}
-                    </Text>
-                    <Stack direction="row" gap="2" wrap="wrap">
-                      <Badge variant="outline">{record.type}</Badge>
-                      <Badge variant="outline">
-                        {record.proxied ? "Proxied" : "DNS only"}
-                      </Badge>
-                      <Badge variant="outline">TTL {record.ttl}</Badge>
-                    </Stack>
-                  </Stack>
+          dnsRecords.length > 0 ? (
+            <Box
+              rounded="xl"
+              borderWidth="1px"
+              borderColor="rgba(255,255,255,0.08)"
+              overflowX="auto"
+            >
+              <Box as="table" width="full" minW="720px" borderCollapse="collapse">
+                <Box as="thead" bg="rgba(255,255,255,0.02)">
+                  <Box as="tr">
+                    <Box
+                      as="th"
+                      px="4"
+                      py="3"
+                      textAlign="left"
+                      fontSize="xs"
+                      letterSpacing="0.08em"
+                      textTransform="uppercase"
+                      color="whiteAlpha.600"
+                      fontWeight="600"
+                    >
+                      Host
+                    </Box>
+                    <Box
+                      as="th"
+                      px="4"
+                      py="3"
+                      textAlign="left"
+                      fontSize="xs"
+                      letterSpacing="0.08em"
+                      textTransform="uppercase"
+                      color="whiteAlpha.600"
+                      fontWeight="600"
+                    >
+                      Type
+                    </Box>
+                    <Box
+                      as="th"
+                      px="4"
+                      py="3"
+                      textAlign="left"
+                      fontSize="xs"
+                      letterSpacing="0.08em"
+                      textTransform="uppercase"
+                      color="whiteAlpha.600"
+                      fontWeight="600"
+                    >
+                      Value
+                    </Box>
+                    <Box
+                      as="th"
+                      px="4"
+                      py="3"
+                      textAlign="left"
+                      fontSize="xs"
+                      letterSpacing="0.08em"
+                      textTransform="uppercase"
+                      color="whiteAlpha.600"
+                      fontWeight="600"
+                    >
+                      Proxy
+                    </Box>
+                    <Box
+                      as="th"
+                      px="4"
+                      py="3"
+                      textAlign="left"
+                      fontSize="xs"
+                      letterSpacing="0.08em"
+                      textTransform="uppercase"
+                      color="whiteAlpha.600"
+                      fontWeight="600"
+                    >
+                      TTL
+                    </Box>
+                  </Box>
                 </Box>
-              ))
-            : null}
+                <Box as="tbody">
+                  {dnsRecords.map((record, index) => (
+                    <Box
+                      as="tr"
+                      key={record.id}
+                      borderTopWidth={index === 0 ? "0" : "1px"}
+                      borderColor="rgba(255,255,255,0.08)"
+                    >
+                      <Box as="td" px="4" py="3.5" fontWeight="700">
+                        {record.name}
+                      </Box>
+                      <Box as="td" px="4" py="3.5" verticalAlign="middle">
+                        <Badge variant="outline">{record.type}</Badge>
+                      </Box>
+                      <Box
+                        as="td"
+                        px="4"
+                        py="3.5"
+                        color="whiteAlpha.700"
+                        fontSize="sm"
+                        fontFamily="mono"
+                      >
+                        {record.content}
+                      </Box>
+                      <Box as="td" px="4" py="3.5" color="whiteAlpha.700" fontSize="sm">
+                        {record.proxied ? "Proxied" : "DNS only"}
+                      </Box>
+                      <Box as="td" px="4" py="3.5" color="whiteAlpha.700" fontSize="sm">
+                        {record.ttl}
+                      </Box>
+                    </Box>
+                  ))}
+                </Box>
+              </Box>
+            </Box>
+          ) : null}
         </Stack>
       </Box>
 

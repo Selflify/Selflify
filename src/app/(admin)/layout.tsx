@@ -1,7 +1,6 @@
 import { Heading, Stack, Text } from "@chakra-ui/react";
 
 import { AppShell } from "@/components/app-shell";
-import { OperationStatusCard } from "@/components/operation-status-card";
 import { requireAdminSession } from "@/lib/auth/guards";
 
 type AdminLayoutProps = {
@@ -23,7 +22,6 @@ export default async function AdminLayout({ children }: AdminLayoutProps) {
             filesystem-backed admin panel.
           </Text>
         </Stack>
-        <OperationStatusCard config={config} />
         {children}
       </Stack>
     </AppShell>

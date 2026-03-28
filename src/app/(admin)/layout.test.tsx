@@ -11,10 +11,6 @@ vi.mock("@/components/app-shell", () => ({
   ),
 }));
 
-vi.mock("@/components/operation-status-card", () => ({
-  OperationStatusCard: () => <div>OPERATION_STATUS</div>,
-}));
-
 vi.mock("@/lib/auth/guards", () => ({
   requireAdminSession: vi.fn(),
 }));
@@ -40,7 +36,6 @@ describe("admin layout", () => {
 
     expect(html).toContain("Selflify");
     expect(html).toContain("CHILD_CONTENT");
-    expect(html).toContain("OPERATION_STATUS");
     expect(html).toContain('data-domain="example.dev"');
   });
 });
