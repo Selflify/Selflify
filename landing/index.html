@@ -154,10 +154,11 @@
             <article class="timeline-step">
               <span class="timeline-index">01</span>
               <div>
-                <h3>Bootstrap the server</h3>
+                <h3>Run the installer once</h3>
                 <p>
-                  Install Docker, unpack the bundle, seed <code>.env</code>,
-                  <code>selflify.config.json</code> and <code>Caddyfile</code>.
+                  Pass the archive URL, main domain and server IP. The installer sets up Docker,
+                  unpacks the project, seeds <code>.env</code>, the runtime config and the initial
+                  <code>Caddyfile</code>, then starts the stack.
                 </p>
               </div>
             </article>
@@ -167,8 +168,9 @@
               <div>
                 <h3>Open <code>/setup</code> once</h3>
                 <p>
-                  Create the first account and fill in the main domain, server IP, Caddy email and
-                  Cloudflare token.
+                  Create the first account and paste the Cloudflare API token. Domain, server IP
+                  and contact email are already seeded by bootstrap, but stay editable later in
+                  Settings.
                 </p>
               </div>
             </article>
@@ -271,8 +273,8 @@
             <p class="eyebrow">Bootstrap</p>
             <h2>Fresh server to running panel in one command.</h2>
             <p>
-              The installer prepares the host OS and leaves you with a running stack plus editable
-              runtime files in the project directory.
+              The installer prepares the host OS, seeds the base runtime files and leaves you with
+              a running stack plus editable config in the project directory.
             </p>
           </div>
 
@@ -290,12 +292,18 @@
           <div class="bootstrap-notes">
             <article class="note-card">
               <h3>Host bootstrap</h3>
-              <p>Docker, the Compose plugin and the production project files are placed on the server.</p>
+              <p>
+                Docker, the Compose plugin, project files, <code>.env</code> and the initial
+                runtime config are placed on the server automatically.
+              </p>
             </article>
 
             <article class="note-card">
               <h3>First-time setup</h3>
-              <p>After bootstrap you finish setup in the UI: account, domain settings, token and site management.</p>
+              <p>
+                After bootstrap you finish setup in the UI: create the account, paste the
+                Cloudflare token and then manage sites from the panel.
+              </p>
             </article>
 
             <article class="note-card">
