@@ -132,7 +132,7 @@ export default async function SitesPage({ searchParams }: SitesPageProps) {
                   <Flex gap="2" wrap="wrap">
                     <Link href={site.stableUrl} target="_blank" rel="noreferrer">
                       <Button as="span" variant="outline">
-                        Open stable
+                        Open
                       </Button>
                     </Link>
                     <Link href={`/sites/${site.slug}`}>

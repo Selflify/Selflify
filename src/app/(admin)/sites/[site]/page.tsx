@@ -63,7 +63,7 @@ export default async function SiteDetailsPage({ params, searchParams }: SiteDeta
           {stableDeploy ? (
             <a href={stableDeploy.url} target="_blank" rel="noreferrer">
               <Button as="span" variant="outline">
-                Open stable
+                Open
               </Button>
             </a>
           ) : null}
