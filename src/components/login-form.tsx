@@ -7,6 +7,7 @@ import { signIn } from "next-auth/react";
 
 import { toaster } from "@/components/app-toaster";
 import { FormField } from "@/components/form-field";
+import { resolveAuthClientRedirect } from "@/lib/auth/redirects";
 
 export function LoginForm() {
   const router = useRouter();
@@ -36,7 +37,7 @@ export function LoginForm() {
       return;
     }
 
-    router.push(result.url ?? "/sites");
+    router.push(resolveAuthClientRedirect(result.url, "/sites", window.location.origin));
     router.refresh();
   }
 
