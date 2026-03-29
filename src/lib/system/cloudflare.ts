@@ -3,7 +3,8 @@ import type { DnsGateway, ManagedDnsRecord } from "@/lib/system/ports";
 import { shouldMockCloudflare } from "@/lib/system/runtime";
 
 type CloudflareResult = {
-  ok: boolean;
+  success?: boolean;
+  ok?: boolean;
   errors?: Array<{ message?: string }>;
   result?: unknown;
 };
@@ -28,7 +29,9 @@ export function createDnsGateway(fetchImpl: typeof fetch = fetch): DnsGateway {
 
     const payload = (await response.json()) as CloudflareResult;
 
-    if (!payload.ok) {
+    const isSuccess = payload.success ?? payload.ok ?? false;
+
+    if (!isSuccess) {
       const details = payload.errors
         ?.map((entry) => entry.message)
         .filter(Boolean)
