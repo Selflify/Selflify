@@ -51,7 +51,7 @@ export default async function SitesPage({ searchParams }: SitesPageProps) {
         <Box>
           <Heading size="lg">Site inventory</Heading>
           <Text color="muted" mt="2">
-            Open the site page to manage settings and deploys. Deploy counts and disk usage load progressively.
+            Open the site page to manage settings and deploys.
           </Text>
         </Box>
 
