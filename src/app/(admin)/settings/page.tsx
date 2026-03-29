@@ -1,4 +1,4 @@
-import { Badge, Box, Heading, Input, Stack, Text } from "@chakra-ui/react";
+import { Box, Heading, Input, Stack, Text } from "@chakra-ui/react";
 
 import { saveAdminAccessAction, saveServerSettingsAction } from "@/app/actions";
 import { ActionFeedbackToast } from "@/components/action-feedback-toast";
@@ -6,11 +6,9 @@ import { CloudflareTokenSection } from "@/components/cloudflare-token-section";
 import { FormField } from "@/components/form-field";
 import { FormSubmitButton } from "@/components/form-submit-button";
 import { OperationStatusCard } from "@/components/operation-status-card";
+import { SettingsDnsRecordsCard } from "@/components/settings-dns-records-card";
 import { requireAdminSession } from "@/lib/auth/guards";
 import { getEffectiveBackupRoot } from "@/lib/config/paths";
-import { dnsGateway } from "@/lib/system/cloudflare";
-import { shouldMockCloudflare } from "@/lib/system/runtime";
-import type { ManagedDnsRecord } from "@/lib/system/ports";
 
 type SettingsPageProps = {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
@@ -21,54 +19,11 @@ function maskCloudflareToken(token: string): string {
   return `********${tail || "****"}`;
 }
 
-function buildExpectedDnsRecords(
-  domain: string,
-  serverIp: string,
-  siteSlugs: string[],
-): ManagedDnsRecord[] {
-  return siteSlugs.flatMap((slug) => [
-    {
-      id: `${slug}:stable`,
-      type: "A",
-      name: `${slug}.${domain}`,
-      content: serverIp,
-      proxied: false,
-      ttl: 1,
-    },
-    {
-      id: `${slug}:wildcard`,
-      type: "A",
-      name: `*.${slug}.${domain}`,
-      content: serverIp,
-      proxied: false,
-      ttl: 1,
-    },
-  ]);
-}
-
 export default async function SettingsPage({ searchParams }: SettingsPageProps) {
   const { config } = await requireAdminSession();
   const queries = await searchParams;
   const notice = typeof queries.notice === "string" ? queries.notice : "";
   const error = typeof queries.error === "string" ? queries.error : "";
-  const cloudflareMocked = shouldMockCloudflare();
-  let dnsRecords = [] as Awaited<ReturnType<typeof dnsGateway.listManagedRecords>>;
-  let dnsRecordsError = "";
-
-  if (cloudflareMocked) {
-    dnsRecords = buildExpectedDnsRecords(
-      config.server.domain,
-      config.server.serverIp,
-      config.sites.map((site) => site.slug),
-    );
-  } else if (config.server.cloudflareApiToken) {
-    try {
-      dnsRecords = await dnsGateway.listManagedRecords(config);
-    } catch (recordsError) {
-      dnsRecordsError =
-        recordsError instanceof Error ? recordsError.message : "Could not load Cloudflare DNS records.";
-    }
-  }
 
   return (
     <Stack gap="8">
@@ -225,168 +180,7 @@ export default async function SettingsPage({ searchParams }: SettingsPageProps) 
             : null
         }
       />
-
-      <Box
-        rounded="2xl"
-        borderWidth="1px"
-        borderColor="rgba(255,255,255,0.08)"
-        bg="rgba(17,17,24,0.88)"
-        p={{ base: "5", md: "6" }}
-        boxShadow="panel"
-      >
-        <Text fontWeight="700">Cloudflare DNS records</Text>
-        <Text color="muted" mt="2" fontSize="sm">
-          Read-only view of the A records Selflify manages for configured sites.
-        </Text>
-
-        <Stack gap="3" mt="4">
-          {cloudflareMocked ? (
-            <Text color="muted" fontSize="sm">
-              Cloudflare DNS is mocked in this runtime. These are the records Selflify expects to
-              manage.
-            </Text>
-          ) : null}
-
-          {!cloudflareMocked && !config.server.cloudflareApiToken ? (
-            <Text color="muted" fontSize="sm">
-              Add a Cloudflare API token to load managed DNS records.
-            </Text>
-          ) : null}
-
-          {!cloudflareMocked && config.server.cloudflareApiToken && dnsRecordsError ? (
-            <Text color="red.200" fontSize="sm">
-              {dnsRecordsError}
-            </Text>
-          ) : null}
-
-          {cloudflareMocked && dnsRecords.length === 0 ? (
-            <Text color="muted" fontSize="sm">
-              No sites are configured yet, so no managed DNS records are expected.
-            </Text>
-          ) : null}
-
-          {!cloudflareMocked && config.server.cloudflareApiToken && !dnsRecordsError && dnsRecords.length === 0 ? (
-            <Text color="muted" fontSize="sm">
-              No managed A records were found in Cloudflare for the current zone.
-            </Text>
-          ) : null}
-
-          {(cloudflareMocked || (!cloudflareMocked && config.server.cloudflareApiToken && !dnsRecordsError)) &&
-          dnsRecords.length > 0 ? (
-            <Box
-              rounded="xl"
-              borderWidth="1px"
-              borderColor="rgba(255,255,255,0.08)"
-              overflowX="auto"
-            >
-              <Box as="table" width="full" minW="720px" borderCollapse="collapse">
-                <Box as="thead" bg="rgba(255,255,255,0.02)">
-                  <Box as="tr">
-                    <Box
-                      as="th"
-                      px="4"
-                      py="3"
-                      textAlign="left"
-                      fontSize="xs"
-                      letterSpacing="0.08em"
-                      textTransform="uppercase"
-                      color="whiteAlpha.600"
-                      fontWeight="600"
-                    >
-                      Host
-                    </Box>
-                    <Box
-                      as="th"
-                      px="4"
-                      py="3"
-                      textAlign="left"
-                      fontSize="xs"
-                      letterSpacing="0.08em"
-                      textTransform="uppercase"
-                      color="whiteAlpha.600"
-                      fontWeight="600"
-                    >
-                      Type
-                    </Box>
-                    <Box
-                      as="th"
-                      px="4"
-                      py="3"
-                      textAlign="left"
-                      fontSize="xs"
-                      letterSpacing="0.08em"
-                      textTransform="uppercase"
-                      color="whiteAlpha.600"
-                      fontWeight="600"
-                    >
-                      Value
-                    </Box>
-                    <Box
-                      as="th"
-                      px="4"
-                      py="3"
-                      textAlign="left"
-                      fontSize="xs"
-                      letterSpacing="0.08em"
-                      textTransform="uppercase"
-                      color="whiteAlpha.600"
-                      fontWeight="600"
-                    >
-                      Proxy
-                    </Box>
-                    <Box
-                      as="th"
-                      px="4"
-                      py="3"
-                      textAlign="left"
-                      fontSize="xs"
-                      letterSpacing="0.08em"
-                      textTransform="uppercase"
-                      color="whiteAlpha.600"
-                      fontWeight="600"
-                    >
-                      TTL
-                    </Box>
-                  </Box>
-                </Box>
-                <Box as="tbody">
-                  {dnsRecords.map((record, index) => (
-                    <Box
-                      as="tr"
-                      key={record.id}
-                      borderTopWidth={index === 0 ? "0" : "1px"}
-                      borderColor="rgba(255,255,255,0.08)"
-                    >
-                      <Box as="td" px="4" py="3.5" fontWeight="700">
-                        {record.name}
-                      </Box>
-                      <Box as="td" px="4" py="3.5" verticalAlign="middle">
-                        <Badge variant="outline">{record.type}</Badge>
-                      </Box>
-                      <Box
-                        as="td"
-                        px="4"
-                        py="3.5"
-                        color="whiteAlpha.700"
-                        fontSize="sm"
-                        fontFamily="mono"
-                      >
-                        {record.content}
-                      </Box>
-                      <Box as="td" px="4" py="3.5" color="whiteAlpha.700" fontSize="sm">
-                        {record.proxied ? "Proxied" : "DNS only"}
-                      </Box>
-                      <Box as="td" px="4" py="3.5" color="whiteAlpha.700" fontSize="sm">
-                        {record.ttl}
-                      </Box>
-                    </Box>
-                  ))}
-                </Box>
-              </Box>
-            </Box>
-          ) : null}
-        </Stack>
-      </Box>
+      <SettingsDnsRecordsCard />
 
       <Box
         rounded="2xl"

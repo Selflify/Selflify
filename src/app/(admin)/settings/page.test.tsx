@@ -3,8 +3,6 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import SettingsPage from "@/app/(admin)/settings/page";
 import { requireAdminSession } from "@/lib/auth/guards";
 import { createDefaultConfig } from "@/lib/config/service";
-import { dnsGateway } from "@/lib/system/cloudflare";
-import { shouldMockCloudflare } from "@/lib/system/runtime";
 import { renderWithProviders } from "@/test/render-with-providers";
 
 vi.mock("@/app/actions", () => ({
@@ -30,26 +28,13 @@ vi.mock("@/components/operation-status-card", () => ({
   OperationStatusCard: () => <div>OPERATION_STATUS</div>,
 }));
 
+vi.mock("@/components/settings-dns-records-card", () => ({
+  SettingsDnsRecordsCard: () => <div>DNS_RECORDS_CARD</div>,
+}));
+
 vi.mock("@/lib/auth/guards", () => ({
   requireAdminSession: vi.fn(),
 }));
-
-vi.mock("@/lib/system/cloudflare", () => ({
-  dnsGateway: {
-    listManagedRecords: vi.fn(),
-  },
-}));
-
-vi.mock("@/lib/system/runtime", async () => {
-  const actual = await vi.importActual<typeof import("@/lib/system/runtime")>(
-    "@/lib/system/runtime",
-  );
-
-  return {
-    ...actual,
-    shouldMockCloudflare: vi.fn(),
-  };
-});
 
 describe("settings page", () => {
   afterEach(() => {
@@ -57,22 +42,11 @@ describe("settings page", () => {
   });
 
   it("renders admin confirm password and masked cloudflare token", async () => {
-    vi.mocked(shouldMockCloudflare).mockReturnValue(false);
     const config = createDefaultConfig();
     config.configRevision = 7;
     config.admin.login = "owner";
     config.admin.passwordHash = "hash";
     config.server.cloudflareApiToken = "token-1234";
-    vi.mocked(dnsGateway.listManagedRecords).mockResolvedValue([
-      {
-        id: "record-1",
-        type: "A",
-        name: "app.example.dev",
-        content: "203.0.113.10",
-        proxied: false,
-        ttl: 1,
-      },
-    ]);
 
     vi.mocked(requireAdminSession).mockResolvedValue({
       config,
@@ -91,30 +65,11 @@ describe("settings page", () => {
     expect(html).toContain("Confirm password");
     expect(html).toContain("Repeat the new password to avoid saving a typo.");
     expect(html).toContain("CF_TOKEN:********1234:7");
-    expect(html).toContain("Cloudflare DNS records");
-    expect(html).toContain("app.example.dev");
-    expect(html).toContain("203.0.113.10");
+    expect(html).toContain("DNS_RECORDS_CARD");
   });
 
-  it("renders expected dns records in mocked runtimes", async () => {
-    vi.mocked(shouldMockCloudflare).mockReturnValue(true);
+  it("renders dns card alongside runtime paths", async () => {
     const config = createDefaultConfig();
-    config.server.domain = "sendsay.dev";
-    config.server.serverIp = "1.1.1.1";
-    config.sites = [
-      {
-        slug: "app",
-        name: "App",
-        mainBranch: "stable",
-        previewAuth: {
-          enabled: false,
-          login: null,
-          passwordHash: null,
-        },
-        createdAt: "2026-03-27T09:00:00.000Z",
-        updatedAt: "2026-03-27T09:00:00.000Z",
-      },
-    ];
 
     vi.mocked(requireAdminSession).mockResolvedValue({
       config,
@@ -126,10 +81,8 @@ describe("settings page", () => {
     });
     const html = renderWithProviders(page);
 
-    expect(dnsGateway.listManagedRecords).not.toHaveBeenCalled();
-    expect(html).toContain("Cloudflare DNS is mocked in this runtime.");
-    expect(html).toContain("app.sendsay.dev");
-    expect(html).toContain("*.app.sendsay.dev");
-    expect(html).toContain("1.1.1.1");
+    expect(html).toContain("DNS_RECORDS_CARD");
+    expect(html).toContain("Runtime paths");
+    expect(html).toContain(config.server.previewRootDir);
   });
 });
