@@ -3,7 +3,6 @@ services:
     build:
       context: .
       dockerfile: docker/selflify/Dockerfile
-    container_name: selflify
     restart: unless-stopped
     environment:
       AUTH_SECRET: ${AUTH_SECRET}
@@ -12,8 +11,7 @@ services:
       SELFLIFY_CADDY_BIN: /usr/bin/caddy
       SELFLIFY_CADDY_ADMIN_ADDRESS: http://caddy:2019
     volumes:
-      - ./runtime/selflify.config.json:/workspace/runtime/selflify.config.json
-      - ./runtime/Caddyfile:/workspace/runtime/Caddyfile
+      - ./runtime:/workspace/runtime
       - /var/www:/var/www
     expose:
       - "3000"
@@ -23,7 +21,6 @@ services:
       context: .
       dockerfile: docker/selflify/Dockerfile
       target: cleanup
-    container_name: selflify-cleanup
     restart: unless-stopped
     depends_on:
       - selflify
@@ -37,14 +34,13 @@ services:
       SELFLIFY_ORPHAN_TTL_DAYS: ${SELFLIFY_ORPHAN_TTL_DAYS:-30}
       SELFLIFY_CLEANUP_INTERVAL_SECONDS: ${SELFLIFY_CLEANUP_INTERVAL_SECONDS:-86400}
     volumes:
-      - ./runtime/selflify.config.json:/workspace/runtime/selflify.config.json
+      - ./runtime:/workspace/runtime
       - /var/www:/var/www
 
   caddy:
     build:
       context: .
       dockerfile: docker/caddy/Dockerfile
-    container_name: caddy
     restart: unless-stopped
     depends_on:
       - selflify
