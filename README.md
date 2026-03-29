@@ -1,6 +1,7 @@
 # Selflify
 
 Filesystem-backed admin panel for managing static SPA preview environments.
+Free and open source under the MIT license.
 
 The project uses `Yarn 4` as the package manager.
 
@@ -209,12 +210,12 @@ Bootstrap templates live in `bootstrap/`:
 
 Recommended distribution flow:
 
-1. Upload both files somewhere reachable over HTTPS, for example GitHub Release assets.
-2. Let users run a one-liner like:
+1. Push `stable` to `github.com/Selflify/Selflify`.
+2. Let the bootstrap publish workflow upload release assets.
+3. Let users run a one-liner like:
 
 ```bash
-curl -fsSL https://example.com/install-selflify.sh | bash -s -- \
-  --archive-url https://example.com/selflify-bootstrap.tar.gz
+curl -fsSL https://github.com/Selflify/Selflify/releases/latest/download/install-selflify.sh | bash
 ```
 
 What the installer does:
@@ -225,6 +226,7 @@ What the installer does:
 - creates initial `runtime/selflify.config.json` and `runtime/Caddyfile` from templates if they do not exist yet
 - starts the production stack with `docker compose up -d --build`
 - brings the panel up on `http://<server-ip>/setup` so the first session can collect runtime settings
+- downloads `selflify-bootstrap.tar.gz` from the latest GitHub release by default
 
 The GitHub deploy workflow does not seed runtime config anymore. It expects the server to be bootstrapped
 already, with `runtime/selflify.config.json` and `runtime/Caddyfile` persisted on disk.

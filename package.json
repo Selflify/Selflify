@@ -2,6 +2,12 @@
   "name": "selflify",
   "version": "0.1.0",
   "private": true,
+  "license": "MIT",
+  "homepage": "https://selflify.github.io/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Selflify/Selflify.git"
+  },
   "packageManager": "yarn@4.13.0",
   "scripts": {
     "dev:prepare": "node ./scripts/prepare-dev-runtime.mjs",

@@ -3,7 +3,8 @@
 set -euo pipefail
 
 INSTALL_DIR="/opt/selflify"
-ARCHIVE_URL="${SELFLIFY_ARCHIVE_URL:-}"
+DEFAULT_ARCHIVE_URL="https://github.com/Selflify/Selflify/releases/latest/download/selflify-bootstrap.tar.gz"
+ARCHIVE_URL="${SELFLIFY_ARCHIVE_URL:-${DEFAULT_ARCHIVE_URL}}"
 AUTH_SECRET_VALUE="${AUTH_SECRET:-}"
 SKIP_START="0"
 SERVER_IP=""
@@ -53,10 +54,6 @@ while [ $# -gt 0 ]; do
       ;;
   esac
 done
-
-if [ -z "${ARCHIVE_URL}" ]; then
-  fail "Pass --archive-url or set SELFLIFY_ARCHIVE_URL."
-fi
 
 SUDO=""
 if [ "$(id -u)" -ne 0 ]; then

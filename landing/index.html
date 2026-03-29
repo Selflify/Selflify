@@ -6,7 +6,7 @@
     <title>Selflify — Self-hosted preview deploy control for static SPAs</title>
     <meta
       name="description"
-      content="Selflify is a self-hosted preview deploy control panel for static SPA sites. Manage Caddy routing, Cloudflare DNS, preview auth, filesystem-backed deploys, and one-command server bootstrap."
+      content="Selflify is a free and open source self-hosted preview deploy control panel for static SPA sites. Manage Caddy routing, Cloudflare DNS, preview auth, filesystem-backed deploys, and one-command server bootstrap."
     />
     <meta
       name="robots"
@@ -61,7 +61,8 @@
             "@type": "WebSite",
             "name": "Selflify",
             "url": "https://selflify.github.io/",
-            "description": "Self-hosted preview deploy control panel for static SPA sites with Caddy routing, Cloudflare DNS sync and filesystem-backed operations."
+            "description": "Self-hosted preview deploy control panel for static SPA sites with Caddy routing, Cloudflare DNS sync and filesystem-backed operations.",
+            "sameAs": ["https://github.com/Selflify/Selflify"]
           },
           {
             "@type": "SoftwareApplication",
@@ -69,7 +70,9 @@
             "applicationCategory": "DeveloperApplication",
             "operatingSystem": "Linux",
             "url": "https://selflify.github.io/",
-            "description": "Self-hosted preview deploy control panel for static SPA sites. Manage Caddy routing, Cloudflare DNS, preview auth, filesystem-backed deploys and one-command server bootstrap.",
+            "description": "Free and open source self-hosted preview deploy control panel for static SPA sites. Manage Caddy routing, Cloudflare DNS, preview auth, filesystem-backed deploys and one-command server bootstrap.",
+            "isAccessibleForFree": true,
+            "license": "https://github.com/Selflify/Selflify/blob/stable/LICENSE",
             "featureList": [
               "Filesystem-backed stable and preview deploy inventory",
               "Generated Caddy routing with zero-downtime reloads",
@@ -103,6 +106,14 @@
             <a class="ghost-link" href="#features">Features</a>
             <a class="ghost-link" href="#dns-stack">DNS stack</a>
             <a class="ghost-link" href="#workflow">Workflow</a>
+            <a
+              class="ghost-link"
+              href="https://github.com/Selflify/Selflify"
+              target="_blank"
+              rel="noreferrer"
+            >
+              GitHub
+            </a>
           </div>
         </nav>
 
@@ -114,10 +125,19 @@
               Selflify turns your existing preview directories into a manageable control surface:
               one panel for sites, deploys, auth and runtime settings on your own server.
             </p>
+            <p class="hero-note">Free &amp; open source under the MIT license</p>
 
             <div class="hero-actions">
               <a class="primary-action" href="#bootstrap">See bootstrap flow</a>
               <a class="secondary-action" href="#workflow">How it works</a>
+              <a
+                class="secondary-action"
+                href="https://github.com/Selflify/Selflify"
+                target="_blank"
+                rel="noreferrer"
+              >
+                View on GitHub
+              </a>
             </div>
 
             <ul class="hero-points">
@@ -220,20 +240,20 @@
             </p>
           </div>
 
-            <div class="code-block">
-              <button class="copy-button" type="button" data-copy-target="bootstrap-command">
-                Copy
-              </button>
-              <pre><code id="bootstrap-command">curl -fsSL https://example.com/install-selflify.sh | bash -s -- \
-  --archive-url https://example.com/selflify-bootstrap.tar.gz</code></pre>
-            </div>
+          <div class="code-block">
+            <button class="copy-button" type="button" data-copy-target="bootstrap-command">
+              Copy
+            </button>
+            <pre><code id="bootstrap-command">curl -fsSL https://github.com/Selflify/Selflify/releases/latest/download/install-selflify.sh | bash</code></pre>
+          </div>
 
           <div class="bootstrap-notes">
             <article class="note-card">
               <h3>Host bootstrap</h3>
               <p>
                 Docker, the Compose plugin, project files, <code>.env</code> and the initial
-                runtime config are placed on the server automatically.
+                runtime config are placed on the server automatically from the GitHub release
+                assets.
               </p>
             </article>
 
@@ -450,8 +470,16 @@ SELFLIFY_CLEANUP_INTERVAL_SECONDS=3600</code></pre>
       </main>
 
       <footer class="footer">
-        <p>Selflify is built for teams that want deploy previews without outsourcing the platform.</p>
-        <a href="#top">Back to top</a>
+        <p>
+          Selflify is a free and open source MIT-licensed project for teams that want deploy
+          previews without outsourcing the platform.
+        </p>
+        <div class="footer-links">
+          <a href="https://github.com/Selflify/Selflify" target="_blank" rel="noreferrer">
+            GitHub
+          </a>
+          <a href="#top">Back to top</a>
+        </div>
       </footer>
     </div>
   </body>

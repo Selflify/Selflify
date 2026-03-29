@@ -1,0 +1,52 @@
+name: Publish Bootstrap
+
+on:
+  push:
+    branches:
+      - stable
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: bootstrap-release
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: yarn
+
+      - name: Enable Corepack
+        run: |
+          corepack enable
+          corepack prepare yarn@4.13.0 --activate
+          yarn --version
+
+      - name: Install dependencies
+        run: yarn install --immutable
+
+      - name: Build bootstrap bundle
+        run: yarn bootstrap:bundle
+
+      - name: Publish latest bootstrap release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: bootstrap-latest
+          name: Bootstrap latest
+          body: Latest Selflify bootstrap assets built from the stable branch.
+          make_latest: true
+          files: |
+            dist/bootstrap/install-selflify.sh
+            dist/bootstrap/selflify-bootstrap.tar.gz
