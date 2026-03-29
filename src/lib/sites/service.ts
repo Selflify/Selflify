@@ -24,6 +24,17 @@ export type DeploySummary = {
   url: string;
 };
 
+type DeployRecord = Omit<DeploySummary, "sizeBytes" | "sizeLabel">;
+
+export type DeployPage = {
+  items: DeploySummary[];
+  totalCount: number;
+  nextOffset: number | null;
+};
+
+export const DEFAULT_DEPLOY_PAGE_SIZE = 20;
+const MAX_DEPLOY_PAGE_SIZE = 100;
+
 export type SiteSummary = {
   slug: string;
   name: string;
@@ -84,6 +95,40 @@ export function getDeployUrl(config: SelflifyConfig, site: SiteConfig, deployNam
   }
 
   return `https://${deployName}.${site.slug}.${config.server.domain}`;
+}
+
+function normalizeDeploySearchQuery(query: string): string {
+  return query.trim().toLowerCase();
+}
+
+function formatDeployHost(url: string): string {
+  return url.replace(/^https?:\/\//, "");
+}
+
+function matchesDeploySearch(deploy: DeployRecord, normalizedQuery: string): boolean {
+  if (!normalizedQuery) {
+    return true;
+  }
+
+  return [deploy.name, formatDeployHost(deploy.url), deploy.dir].some((value) =>
+    value.toLowerCase().includes(normalizedQuery),
+  );
+}
+
+function sanitizePageSize(limit: number | undefined): number {
+  if (!Number.isFinite(limit)) {
+    return DEFAULT_DEPLOY_PAGE_SIZE;
+  }
+
+  return Math.min(Math.max(Math.floor(limit ?? DEFAULT_DEPLOY_PAGE_SIZE), 1), MAX_DEPLOY_PAGE_SIZE);
+}
+
+function sanitizeOffset(offset: number | undefined): number {
+  if (!Number.isFinite(offset)) {
+    return 0;
+  }
+
+  return Math.max(Math.floor(offset ?? 0), 0);
 }
 
 export async function ensureSiteDirectories(
@@ -253,10 +298,7 @@ export function invalidateSiteCache(config: SelflifyConfig, site: SiteConfig): v
   sizeCache.delete(cacheKey(siteDir));
 }
 
-export async function listDeploys(
-  config: SelflifyConfig,
-  site: SiteConfig,
-): Promise<DeploySummary[]> {
+async function readDeployRecords(config: SelflifyConfig, site: SiteConfig): Promise<DeployRecord[]> {
   const siteDir = getSiteDirectory(config, site);
   let entries: Array<{ name: string; isDirectory: boolean }> = [];
 
@@ -273,17 +315,14 @@ export async function listDeploys(
       .map(async (entry) => {
         const fullPath = path.join(siteDir, entry.name);
         const stats = await fs.stat(fullPath);
-        const sizeBytes = await getDirectorySizeBytes(fullPath);
 
         return {
           name: entry.name,
           dir: fullPath,
           isMainBranch: entry.name === site.mainBranch,
-          sizeBytes,
-          sizeLabel: formatBytes(sizeBytes),
           modifiedAt: stats.mtime.toISOString(),
           url: getDeployUrl(config, site, entry.name),
-        };
+        } satisfies DeployRecord;
       }),
   );
 
@@ -292,6 +331,75 @@ export async function listDeploys(
     if (right.isMainBranch) return 1;
     return right.modifiedAt.localeCompare(left.modifiedAt);
   });
+}
+
+async function toDeploySummary(deploy: DeployRecord): Promise<DeploySummary> {
+  const sizeBytes = await getDirectorySizeBytes(deploy.dir);
+
+  return {
+    ...deploy,
+    sizeBytes,
+    sizeLabel: formatBytes(sizeBytes),
+  };
+}
+
+export async function getDeploySummary(
+  config: SelflifyConfig,
+  site: SiteConfig,
+  deployName: string,
+): Promise<DeploySummary | null> {
+  const siteDir = getSiteDirectory(config, site);
+  const fullPath = resolveSiteChildPath(siteDir, deployName);
+
+  try {
+    const stats = await fs.stat(fullPath);
+
+    if (!stats.isDirectory()) {
+      return null;
+    }
+
+    return toDeploySummary({
+      name: deployName,
+      dir: fullPath,
+      isMainBranch: deployName === site.mainBranch,
+      modifiedAt: stats.mtime.toISOString(),
+      url: getDeployUrl(config, site, deployName),
+    });
+  } catch {
+    return null;
+  }
+}
+
+export async function listPreviewDeployPage(
+  config: SelflifyConfig,
+  site: SiteConfig,
+  options?: {
+    query?: string;
+    offset?: number;
+    limit?: number;
+  },
+): Promise<DeployPage> {
+  const normalizedQuery = normalizeDeploySearchQuery(options?.query ?? "");
+  const offset = sanitizeOffset(options?.offset);
+  const limit = sanitizePageSize(options?.limit);
+  const deploys = (await readDeployRecords(config, site))
+    .filter((deploy) => !deploy.isMainBranch)
+    .filter((deploy) => matchesDeploySearch(deploy, normalizedQuery));
+  const pageItems = deploys.slice(offset, offset + limit);
+
+  return {
+    items: await Promise.all(pageItems.map((deploy) => toDeploySummary(deploy))),
+    totalCount: deploys.length,
+    nextOffset: offset + pageItems.length < deploys.length ? offset + pageItems.length : null,
+  };
+}
+
+export async function listDeploys(
+  config: SelflifyConfig,
+  site: SiteConfig,
+): Promise<DeploySummary[]> {
+  const deploys = await readDeployRecords(config, site);
+  return Promise.all(deploys.map((deploy) => toDeploySummary(deploy)));
 }
 
 export async function getSiteSummary(

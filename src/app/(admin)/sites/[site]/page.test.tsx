@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import SiteDetailsPage from "@/app/(admin)/sites/[site]/page";
 import { requireAdminSession } from "@/lib/auth/guards";
 import { createDefaultConfig } from "@/lib/config/service";
-import { listDeploys } from "@/lib/sites/service";
+import { getDeploySummary, listPreviewDeployPage } from "@/lib/sites/service";
 import { renderWithProviders } from "@/test/render-with-providers";
 
 vi.mock("@/app/actions", () => ({
@@ -31,7 +31,8 @@ vi.mock("@/lib/sites/service", async () => {
 
   return {
     ...actual,
-    listDeploys: vi.fn(),
+    getDeploySummary: vi.fn(),
+    listPreviewDeployPage: vi.fn(),
   };
 });
 
@@ -61,26 +62,30 @@ describe("site details page", () => {
       config,
       session: { user: { name: "owner" }, expires: "2026-03-28T00:00:00.000Z" },
     });
-    vi.mocked(listDeploys).mockResolvedValue([
-      {
-        name: "stable",
-        dir: "/var/www/app/stable",
-        isMainBranch: true,
-        sizeBytes: 1024,
-        sizeLabel: "1.0 KB",
-        modifiedAt: "2026-03-27T09:20:00.000Z",
-        url: "https://app.example.dev",
-      },
-      {
-        name: "pr-42",
-        dir: "/var/www/app/pr-42",
-        isMainBranch: false,
-        sizeBytes: 512,
-        sizeLabel: "512 B",
-        modifiedAt: "2026-03-27T09:25:00.000Z",
-        url: "https://pr-42.app.example.dev",
-      },
-    ]);
+    vi.mocked(getDeploySummary).mockResolvedValue({
+      name: "stable",
+      dir: "/var/www/app/stable",
+      isMainBranch: true,
+      sizeBytes: 1024,
+      sizeLabel: "1.0 KB",
+      modifiedAt: "2026-03-27T09:20:00.000Z",
+      url: "https://app.example.dev",
+    });
+    vi.mocked(listPreviewDeployPage).mockResolvedValue({
+      items: [
+        {
+          name: "pr-42",
+          dir: "/var/www/app/pr-42",
+          isMainBranch: false,
+          sizeBytes: 512,
+          sizeLabel: "512 B",
+          modifiedAt: "2026-03-27T09:25:00.000Z",
+          url: "https://pr-42.app.example.dev",
+        },
+      ],
+      totalCount: 1,
+      nextOffset: null,
+    });
 
     const page = await SiteDetailsPage({
       params: Promise.resolve({ site: "app" }),
@@ -91,6 +96,7 @@ describe("site details page", () => {
     expect(html).toContain("App");
     expect(html).toContain("Open");
     expect(html).toContain("Deploy inventory");
+    expect(html).toContain("Search deploys by name or hostname");
     expect(html).toContain("pr-42");
     expect(html).toContain(">app.example.dev<");
     expect(html).toContain(">pr-42.app.example.dev<");
@@ -122,7 +128,12 @@ describe("site details page", () => {
       config,
       session: { user: { name: "owner" }, expires: "2026-03-28T00:00:00.000Z" },
     });
-    vi.mocked(listDeploys).mockResolvedValue([]);
+    vi.mocked(getDeploySummary).mockResolvedValue(null);
+    vi.mocked(listPreviewDeployPage).mockResolvedValue({
+      items: [],
+      totalCount: 0,
+      nextOffset: null,
+    });
 
     const page = await SiteDetailsPage({
       params: Promise.resolve({ site: "app" }),

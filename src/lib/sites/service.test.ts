@@ -10,6 +10,7 @@ import {
   deleteDeploy,
   ensureSiteDirectories,
   getSiteDirectory,
+  listPreviewDeployPage,
   listDeploys,
 } from "@/lib/sites/service";
 
@@ -94,5 +95,27 @@ describe("site service", () => {
     const deploys = await listDeploys(config, site);
 
     expect(deploys[0]?.dir).toBe(path.join(getSiteDirectory(config, site), site.mainBranch));
+  });
+
+  it("paginates and filters preview deploys without returning the main branch", async () => {
+    const previewRootDir = await makeTempDir();
+    const config = createConfig(previewRootDir);
+    const site = createSite();
+
+    await ensureSiteDirectories(config, site);
+    await fs.mkdir(path.join(getSiteDirectory(config, site), "pr-100"));
+    await fs.mkdir(path.join(getSiteDirectory(config, site), "pr-200"));
+
+    const page = await listPreviewDeployPage(config, site, {
+      query: "200",
+      offset: 0,
+      limit: 10,
+    });
+
+    expect(page.totalCount).toBe(1);
+    expect(page.nextOffset).toBeNull();
+    expect(page.items).toHaveLength(1);
+    expect(page.items[0]?.name).toBe("pr-200");
+    expect(page.items[0]?.isMainBranch).toBe(false);
   });
 });

@@ -1,8 +1,7 @@
 import { notFound } from "next/navigation";
-import { Box, Button, Flex, Heading, Input, Stack, Text } from "@chakra-ui/react";
+import { Box, Flex, Heading, Input, Stack, Text } from "@chakra-ui/react";
 
 import {
-  deleteDeployAction,
   deleteSiteAction,
   resetSitePreviewAccessAction,
   updateSiteAction,
@@ -11,9 +10,11 @@ import {
 import { ActionFeedbackToast } from "@/components/action-feedback-toast";
 import { FormField } from "@/components/form-field";
 import { FormSubmitButton } from "@/components/form-submit-button";
+import { SiteDeployCard } from "@/components/site-deploy-card";
+import { SiteDeployInventory } from "@/components/site-deploy-inventory";
 import { requireAdminSession } from "@/lib/auth/guards";
-import { listDeploys } from "@/lib/sites/service";
-import { formatDateTime, formatSiteName } from "@/lib/utils/format";
+import { getDeploySummary, listPreviewDeployPage } from "@/lib/sites/service";
+import { formatSiteName } from "@/lib/utils/format";
 
 type SiteDetailsPageProps = {
   params: Promise<{ site: string }>;
@@ -25,135 +26,38 @@ export default async function SiteDetailsPage({ params, searchParams }: SiteDeta
   const { site: slug } = await params;
   const site = config.sites.find((entry) => entry.slug === slug) ?? notFound();
 
-  const deploys = await listDeploys(config, site);
+  const [stableDeploy, previewPage] = await Promise.all([
+    getDeploySummary(config, site, site.mainBranch),
+    listPreviewDeployPage(config, site),
+  ]);
   const queries = await searchParams;
   const notice = typeof queries.notice === "string" ? queries.notice : "";
   const error = typeof queries.error === "string" ? queries.error : "";
   const view = queries.view === "configuration" ? "configuration" : "deploys";
   const siteDisplayName = formatSiteName(site.name);
-  const stableDeploy = deploys.find((deploy) => deploy.isMainBranch) ?? null;
-  const previewDeploys = deploys.filter((deploy) => !deploy.isMainBranch);
-
-  function formatDeployHost(url: string) {
-    return url.replace(/^https?:\/\//, "");
-  }
-
-  function renderDeployCard(
-    deploy: (typeof deploys)[number],
-    options?: {
-      title: string;
-      metaText?: string;
-      showDelete?: boolean;
-    },
-  ) {
-    const deployHost = formatDeployHost(deploy.url);
-
-    return (
-      <Flex
-        key={deploy.name}
-        justify="space-between"
-        align={{ base: "flex-start", md: "center" }}
-        gap="4"
-        wrap="wrap"
-        rounded="xl"
-        borderWidth="1px"
-        borderColor="rgba(255,255,255,0.08)"
-        bg="rgba(17,17,24,0.88)"
-        px="4"
-        py="4"
-      >
-        <Box>
-          <Heading size="md">{options?.title ?? deploy.name}</Heading>
-          <Flex mt="1" gap="2" wrap="wrap" align="center">
-            <a href={deploy.url} target="_blank" rel="noreferrer">
-              <Text
-                as="span"
-                color="whiteAlpha.700"
-                textDecoration="underline"
-                textDecorationColor="rgba(255,255,255,0.18)"
-                textUnderlineOffset="0.18em"
-                transition="color 0.2s ease"
-                _hover={{ color: "whiteAlpha.950" }}
-              >
-                {deployHost}
-              </Text>
-            </a>
-            {options?.metaText ? (
-              <Text color="muted" fontSize="sm">
-                · {options.metaText}
-              </Text>
-            ) : null}
-          </Flex>
-          <Text color="whiteAlpha.700" mt="2" fontSize="sm" fontFamily="mono">
-            {deploy.dir}
-          </Text>
-          <Text color="muted" mt="2" fontSize="sm">
-            {deploy.sizeLabel} · updated {formatDateTime(deploy.modifiedAt)}
-          </Text>
-        </Box>
-        <Flex gap="2" wrap="wrap">
-          <a href={deploy.url} target="_blank" rel="noreferrer">
-            <Button as="span" variant="outline">
-              Open
-            </Button>
-          </a>
-          {options?.showDelete ? (
-            <form action={deleteDeployAction.bind(null, site.slug, deploy.name)}>
-              <input type="hidden" name="configRevision" value={String(config.configRevision)} />
-              <FormSubmitButton
-                colorPalette="red"
-                variant="outline"
-                pendingText="Deleting deploy"
-                confirmMessage={`Delete deploy ${deploy.name} for ${site.slug}? This action is irreversible.`}
-              >
-                Delete
-              </FormSubmitButton>
-            </form>
-          ) : null}
-        </Flex>
-      </Flex>
-    );
-  }
 
   return (
     <Stack gap="8">
       <ActionFeedbackToast notice={notice} error={error} />
 
       {stableDeploy
-        ? renderDeployCard(stableDeploy, {
-            title: siteDisplayName,
-            metaText: site.mainBranch,
-          })
+        ? <SiteDeployCard
+            siteSlug={site.slug}
+            configRevision={config.configRevision}
+            deploy={stableDeploy}
+            title={siteDisplayName}
+            metaText={site.mainBranch}
+          />
         : null}
 
       {view === "deploys" ? (
-        <Stack gap="4">
-          <Box>
-            <Heading size="lg">Deploy inventory</Heading>
-            <Text color="muted" mt="2">
-              Preview deploys are sorted by latest modification time.
-            </Text>
-          </Box>
-
-          <Stack gap="4">
-            {previewDeploys.length === 0 ? (
-              <Box
-                rounded="xl"
-                borderWidth="1px"
-                borderColor="rgba(255,255,255,0.08)"
-                px="4"
-                py="4"
-              >
-                <Heading size="sm">No preview deploys found</Heading>
-                <Text color="muted" mt="2" fontSize="sm">
-                  Selflify will show preview deploys here as soon as directories appear under the
-                  site root.
-                </Text>
-              </Box>
-            ) : null}
-            {previewDeploys.map((deploy) => renderDeployCard(deploy, { title: deploy.name, showDelete: true }))}
-          </Stack>
-        </Stack>
+        <SiteDeployInventory
+          siteSlug={site.slug}
+          configRevision={config.configRevision}
+          initialItems={previewPage.items}
+          initialTotalCount={previewPage.totalCount}
+          initialNextOffset={previewPage.nextOffset}
+        />
       ) : null}
 
       {view === "configuration" ? (
