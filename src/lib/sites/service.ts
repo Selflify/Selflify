@@ -407,7 +407,7 @@ export async function getSiteSummary(
   site: SiteConfig,
 ): Promise<SiteSummary> {
   const dir = getSiteDirectory(config, site);
-  const deploys = await listDeploys(config, site);
+  const deployCount = (await readDeployRecords(config, site)).length;
   const totalSizeBytes = await getDirectorySizeBytes(dir);
 
   return {
@@ -417,7 +417,7 @@ export async function getSiteSummary(
     dir,
     totalSizeBytes,
     totalSizeLabel: formatBytes(totalSizeBytes),
-    deployCount: deploys.length,
+    deployCount,
     stableUrl: getStableUrl(config, site),
     previewAuthEnabled: site.previewAuth.enabled,
   };

@@ -3,7 +3,6 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import SitesPage from "@/app/(admin)/sites/page";
 import { requireAdminSession } from "@/lib/auth/guards";
 import { createDefaultConfig } from "@/lib/config/service";
-import { getAllSiteSummaries, getDiskUsage } from "@/lib/sites/service";
 import { renderWithProviders } from "@/test/render-with-providers";
 
 vi.mock("@/components/create-site-dialog", () => ({
@@ -16,19 +15,19 @@ vi.mock("@/components/action-feedback-toast", () => ({
   ActionFeedbackToast: () => null,
 }));
 
+vi.mock("@/components/site-inventory-card-metrics", () => ({
+  SiteInventoryCardMetrics: ({ siteSlug }: { siteSlug: string }) => <div>{`SITE_METRICS:${siteSlug}`}</div>,
+}));
+
+vi.mock("@/components/sites-overview-metrics", () => ({
+  SitesOverviewMetrics: ({ siteCount, previewRootDir }: { siteCount: number; previewRootDir: string }) => (
+    <div>{`OVERVIEW:${siteCount}:${previewRootDir}`}</div>
+  ),
+}));
+
 vi.mock("@/lib/auth/guards", () => ({
   requireAdminSession: vi.fn(),
 }));
-
-vi.mock("@/lib/sites/service", async () => {
-  const actual = await vi.importActual<typeof import("@/lib/sites/service")>("@/lib/sites/service");
-
-  return {
-    ...actual,
-    getAllSiteSummaries: vi.fn(),
-    getDiskUsage: vi.fn(),
-  };
-});
 
 describe("sites page", () => {
   afterEach(() => {
@@ -43,24 +42,20 @@ describe("sites page", () => {
       config,
       session: { user: { name: "owner" }, expires: "2026-03-28T00:00:00.000Z" },
     });
-    vi.mocked(getAllSiteSummaries).mockResolvedValue([
+    config.sites = [
       {
         slug: "app",
         name: "app",
         mainBranch: "stable",
-        dir: "/var/www/app",
-        totalSizeBytes: 2048,
-        totalSizeLabel: "2.0 KB",
-        deployCount: 2,
-        stableUrl: "https://app.example.dev",
-        previewAuthEnabled: true,
+        previewAuth: {
+          enabled: true,
+          login: "preview-user",
+          passwordHash: "hashed",
+        },
+        createdAt: "2026-03-27T09:00:00.000Z",
+        updatedAt: "2026-03-27T09:00:00.000Z",
       },
-    ]);
-    vi.mocked(getDiskUsage).mockResolvedValue({
-      totalBytes: 10 * 1024 * 1024,
-      usedBytes: 5 * 1024 * 1024,
-      availableBytes: 5 * 1024 * 1024,
-    });
+    ];
 
     const page = await SitesPage({
       searchParams: Promise.resolve({
@@ -73,9 +68,11 @@ describe("sites page", () => {
     expect(html).toContain("Site inventory");
     expect(html).toContain("App");
     expect(html).not.toContain(">app<");
-    expect(html).toContain("app.example.dev");
-    expect(html).not.toContain(">https://app.example.dev<");
-    expect(html).toContain('href="https://app.example.dev"');
+    expect(html).toContain(`OVERVIEW:1:${config.server.previewRootDir}`);
+    expect(html).toContain("SITE_METRICS:app");
+    expect(html).toContain("app.preview.example.com");
+    expect(html).not.toContain(">https://app.preview.example.com<");
+    expect(html).toContain('href="https://app.preview.example.com"');
     expect(html).toContain("/var/www/app");
     expect(html).toContain('href="/sites/app"');
     expect(html).toContain(`CREATE_SITE:3:${config.server.domain}`);
