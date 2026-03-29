@@ -6,8 +6,12 @@ const config = defineConfig({
       minHeight: "100%",
       margin: 0,
       color: "whiteAlpha.900",
-      background:
-        "radial-gradient(circle at top left, rgba(161,33,65,0.24), transparent 28%), linear-gradient(180deg, #130d11 0%, #09070a 52%, #050507 100%)",
+      backgroundColor: "#050507",
+      backgroundImage:
+        "radial-gradient(circle at top left, rgba(161,33,65,0.24), transparent 28%), linear-gradient(180deg, #130d11 0%, #09070a 58%, #050507 100%)",
+      backgroundPosition: "top left, top left",
+      backgroundRepeat: "no-repeat, no-repeat",
+      backgroundSize: "100% 30rem, 100% 30rem",
       fontFeatureSettings: '"ss01" 1',
     },
     body: {
