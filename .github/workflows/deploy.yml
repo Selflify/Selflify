@@ -36,6 +36,9 @@ jobs:
       - name: Install dependencies
         run: yarn install --immutable
 
+      - name: Validate GitHub workflows
+        run: yarn workflow:lint
+
       - name: Lint
         run: yarn lint
 
@@ -125,7 +128,7 @@ jobs:
         run: |
           set -euo pipefail
 
-          for attempt in $(seq 1 30); do
+          for _ in $(seq 1 30); do
             if curl -fsS http://127.0.0.1/setup >/dev/null; then
               exit 0
             fi
@@ -171,7 +174,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     environment:
-      name: production
+      name: "production"
     env:
       DEPLOY_HOST: ${{ vars.DEPLOY_HOST }}
       DEPLOY_PORT: ${{ vars.DEPLOY_PORT }}
@@ -232,7 +235,7 @@ jobs:
         run: |
           set -euo pipefail
 
-          ssh -p "${DEPLOY_PORT:-22}" "${DEPLOY_USER}@${DEPLOY_HOST}" <<EOF
+          ssh -p "${DEPLOY_PORT:-22}" "${DEPLOY_USER}@${DEPLOY_HOST}" "DEPLOY_PATH='${DEPLOY_PATH}' bash -s" <<'EOF'
           set -euo pipefail
           cd "${DEPLOY_PATH}"
 
@@ -316,7 +319,7 @@ jobs:
         run: |
           set -euo pipefail
 
-          ssh -p "${DEPLOY_PORT:-22}" "${DEPLOY_USER}@${DEPLOY_HOST}" <<EOF
+          ssh -p "${DEPLOY_PORT:-22}" "${DEPLOY_USER}@${DEPLOY_HOST}" "DEPLOY_PATH='${DEPLOY_PATH}' bash -s" <<'EOF'
           set -euo pipefail
           cd "${DEPLOY_PATH}"
 

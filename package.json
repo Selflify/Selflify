@@ -16,6 +16,7 @@
     "start": "next start",
     "lint": "eslint . --max-warnings=0",
     "lint:fix": "eslint . --fix",
+    "workflow:lint": "docker run --rm -v \"$PWD\":/repo -w /repo rhysd/actionlint:1.7.8",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test": "vitest",
@@ -30,6 +31,7 @@
   },
   "dependencies": {
     "@chakra-ui/react": "3.34.0",
+    "@emotion/cache": "^11.14.0",
     "@emotion/react": "^11.14.0",
     "bcryptjs": "^3.0.3",
     "lucide-react": "^1.7.0",

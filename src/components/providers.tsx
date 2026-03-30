@@ -3,6 +3,7 @@
 import { ChakraProvider } from "@chakra-ui/react";
 
 import { AppToaster } from "@/components/app-toaster";
+import { EmotionCacheProvider } from "@/components/emotion-cache-provider";
 import { system } from "@/lib/ui/system";
 
 type ProvidersProps = {
@@ -11,9 +12,11 @@ type ProvidersProps = {
 
 export function Providers({ children }: ProvidersProps) {
   return (
-    <ChakraProvider value={system}>
-      {children}
-      <AppToaster />
-    </ChakraProvider>
+    <EmotionCacheProvider>
+      <ChakraProvider value={system}>
+        {children}
+        <AppToaster />
+      </ChakraProvider>
+    </EmotionCacheProvider>
   );
 }

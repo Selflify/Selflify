@@ -6156,6 +6156,7 @@ __metadata:
   resolution: "selflify@workspace:."
   dependencies:
     "@chakra-ui/react": "npm:3.34.0"
+    "@emotion/cache": "npm:^11.14.0"
     "@emotion/react": "npm:^11.14.0"
     "@playwright/test": "npm:^1.58.2"
     "@types/node": "npm:^20.19.24"
