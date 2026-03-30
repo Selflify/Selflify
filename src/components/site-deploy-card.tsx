@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { Box, Button, Flex, Heading, Text } from "@chakra-ui/react";
 
 import { deleteDeployAction } from "@/app/actions";
@@ -16,7 +17,7 @@ type SiteDeployCardProps = {
     sizeLabel: string;
     url: string;
   };
-  title?: string;
+  title?: ReactNode;
   metaText?: string;
   showDelete?: boolean;
 };

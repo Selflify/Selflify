@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Box, Skeleton, Stack, Text } from "@chakra-ui/react";
 
@@ -122,7 +123,26 @@ export function RecentDeploysSection() {
             siteSlug={item.siteSlug}
             configRevision={0}
             deploy={item.deploy}
-            title={`${formatSiteName(item.siteName)} · ${formatSiteName(item.deploy.name)}`}
+            title={
+              <>
+                <Link href={`/sites/${item.siteSlug}`}>
+                  <Text
+                    as="span"
+                    textDecoration="underline"
+                    textDecorationColor="rgba(255,255,255,0.18)"
+                    textUnderlineOffset="0.18em"
+                    transition="color 0.2s ease"
+                    _hover={{ color: "brand.300" }}
+                  >
+                    {formatSiteName(item.siteName)}
+                  </Text>
+                </Link>
+                <Text as="span" color="muted">
+                  {" "}
+                  · {formatSiteName(item.deploy.name)}
+                </Text>
+              </>
+            }
           />
         ))}
       </Stack>
