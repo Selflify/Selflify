@@ -1,8 +1,16 @@
+import dynamic from "next/dynamic";
 import { Box, Flex, Heading, Stack, Text } from "@chakra-ui/react";
 
-import { LogoutButton } from "@/components/logout-button";
 import { NavItem } from "@/components/nav-item";
 import { SiteSidebarNav } from "@/components/site-sidebar-nav";
+
+const LogoutButton = dynamic(
+  () => import("@/components/logout-button").then((module) => module.LogoutButton),
+  {
+    ssr: false,
+    loading: () => <Box aria-hidden="true" h="10" />,
+  },
+);
 
 type AppShellProps = {
   domain: string;
