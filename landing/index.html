@@ -236,7 +236,8 @@
             <h2>Fresh server to running panel in one command</h2>
             <p>
               The installer prepares the host OS, seeds the base runtime files and leaves you with
-              a running stack plus editable config in the project directory.
+              a running stack plus editable config in the project directory. By default, everything
+              is installed into <code>/opt/selflify</code>.
             </p>
           </div>
 
@@ -253,7 +254,8 @@
               <p>
                 Docker, the Compose plugin, project files, <code>.env</code> and the initial
                 runtime config are placed on the server automatically from the GitHub release
-                assets.
+                assets. Unless you override the target directory, the bootstrap script installs
+                Selflify into <code>/opt/selflify</code>.
               </p>
             </article>
 
@@ -444,7 +446,8 @@ SELFLIFY_CLEANUP_INTERVAL_SECONDS=3600</code></pre>
               <p>
                 Create <code>.env</code> in the root of the project before running
                 <code>docker compose</code> or <code>yarn dev</code>. On a server installed through
-                the bootstrap script, that file lives in the deployed Selflify directory.
+                the bootstrap script, that file lives in the deployed Selflify directory, which is
+                <code>/opt/selflify</code> by default.
               </p>
             </article>
 
