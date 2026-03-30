@@ -68,8 +68,8 @@ describe("sites page", () => {
     });
     const html = renderWithProviders(page);
 
+    expect(html).toContain("Dashboard");
     expect(html).toContain("Sites");
-    expect(html).toContain("Site inventory");
     expect(html).toContain("App");
     expect(html).not.toContain(">app<");
     expect(html).toContain("RECENT_DEPLOYS");

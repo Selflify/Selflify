@@ -35,7 +35,7 @@ export default async function SitesPage({ searchParams }: SitesPageProps) {
         wrap="wrap"
       >
         <Box>
-          <Heading size="xl">Sites</Heading>
+          <Heading size="xl">Dashboard</Heading>
           <Text color="muted" mt="2">
             All site routing, preview auth and deploy inventory live here now.
           </Text>
@@ -56,7 +56,7 @@ export default async function SitesPage({ searchParams }: SitesPageProps) {
         <Stack gap="4" minW="0">
           <Box>
             <Text fontWeight="700" fontSize="2xl">
-              Site inventory
+              Sites
             </Text>
             <Text color="muted" mt="2">
               Open the site page to manage settings and deploys.
