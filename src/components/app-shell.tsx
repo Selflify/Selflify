@@ -1,16 +1,8 @@
-import dynamic from "next/dynamic";
 import { Box, Flex, Heading, Stack, Text } from "@chakra-ui/react";
 
 import { NavItem } from "@/components/nav-item";
+import { LogoutButtonHost } from "@/components/logout-button-host";
 import { SiteSidebarNav } from "@/components/site-sidebar-nav";
-
-const LogoutButton = dynamic(
-  () => import("@/components/logout-button").then((module) => module.LogoutButton),
-  {
-    ssr: false,
-    loading: () => <Box aria-hidden="true" h="10" />,
-  },
-);
 
 type AppShellProps = {
   domain: string;
@@ -60,7 +52,7 @@ export function AppShell({ domain, children }: AppShellProps) {
         </Stack>
 
         <Flex mt={{ base: "6", lg: "auto" }} pt={{ base: "0", lg: "6" }}>
-          <LogoutButton />
+          <LogoutButtonHost />
         </Flex>
       </Flex>
 
