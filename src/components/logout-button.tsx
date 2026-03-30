@@ -1,15 +1,20 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@chakra-ui/react";
 import { signOut } from "next-auth/react";
 
 import { resolveAuthClientRedirect } from "@/lib/auth/redirects";
 
+function subscribeToMount() {
+  return () => {};
+}
+
 export function LogoutButton() {
   const router = useRouter();
   const [pending, setPending] = useState(false);
+  const mounted = useSyncExternalStore(subscribeToMount, () => true, () => false);
 
   async function handleSignOut() {
     setPending(true);
@@ -21,6 +26,10 @@ export function LogoutButton() {
 
     router.push(resolveAuthClientRedirect(result?.url, "/login", window.location.origin));
     router.refresh();
+  }
+
+  if (!mounted) {
+    return <div aria-hidden="true" style={{ height: "40px" }} />;
   }
 
   return (
