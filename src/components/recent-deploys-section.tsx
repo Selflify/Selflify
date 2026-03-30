@@ -122,8 +122,7 @@ export function RecentDeploysSection() {
             siteSlug={item.siteSlug}
             configRevision={0}
             deploy={item.deploy}
-            title={item.deploy.name}
-            metaText={formatSiteName(item.siteName)}
+            title={`${formatSiteName(item.siteName)} · ${formatSiteName(item.deploy.name)}`}
           />
         ))}
       </Stack>
