@@ -477,6 +477,26 @@ img {
   margin-top: 1.4rem;
 }
 
+.integration-code-stack {
+  display: grid;
+  gap: 1.25rem;
+  margin-top: 2rem;
+}
+
+.integration-code-stack .code-block {
+  margin-top: 0;
+}
+
+.note-card a {
+  text-decoration: underline;
+  text-decoration-color: rgba(255, 255, 255, 0.22);
+  text-underline-offset: 0.2em;
+}
+
+.note-card a:hover {
+  color: #ffd0db;
+}
+
 .footer {
   display: flex;
   align-items: center;

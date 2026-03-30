@@ -106,6 +106,7 @@
             <a class="ghost-link" href="#features">Features</a>
             <a class="ghost-link" href="#dns-stack">DNS stack</a>
             <a class="ghost-link" href="#workflow">Workflow</a>
+            <a class="ghost-link" href="#github-integration">GitHub integration</a>
             <a
               class="ghost-link"
               href="https://github.com/Selflify/Selflify"
@@ -468,6 +469,216 @@ SELFLIFY_CLEANUP_INTERVAL_SECONDS=3600</code></pre>
                 overridden and let Selflify use the seeded <code>runtime/</code> paths by default.
               </p>
             </article>
+          </div>
+        </section>
+
+        <section class="section bootstrap-section" id="github-integration">
+          <div class="section-heading compact">
+            <p class="eyebrow">GitHub Integration</p>
+            <h2>Wire your repository to Selflify preview deploys</h2>
+            <p>
+              Add one small site map file and one preview workflow to your repository. The
+              workflow prepares the deploy matrix, uploads preview builds to your Selflify server,
+              writes pull request comments and can feed the resolved preview URL into e2e tests.
+            </p>
+          </div>
+
+          <div class="bootstrap-notes">
+            <article class="note-card">
+              <h3>What your repository needs</h3>
+              <ul class="detail-list">
+                <li>Create <code>.github/preview-sites.json</code> in the application repository.</li>
+                <li>Add a preview workflow under <code>.github/workflows/preview.yml</code>.</li>
+                <li>
+                  Store <code>PREVIEW_BASE_DOMAIN</code>, <code>PREVIEW_SERVER_HOST</code> and
+                  <code>PREVIEW_SSH_PRIVATE_KEY</code> in GitHub Actions secrets.
+                </li>
+              </ul>
+            </article>
+
+            <article class="note-card">
+              <h3>Public action repositories</h3>
+              <ul class="detail-list">
+                <li>
+                  <a href="https://github.com/Selflify/preview-prepare-action" target="_blank" rel="noreferrer"><code>Selflify/preview-prepare-action</code></a>
+                </li>
+                <li>
+                  <a href="https://github.com/Selflify/deploy-preview-action" target="_blank" rel="noreferrer"><code>Selflify/deploy-preview-action</code></a>
+                </li>
+                <li>
+                  <a href="https://github.com/Selflify/preview-comment-placeholder-action" target="_blank" rel="noreferrer"><code>Selflify/preview-comment-placeholder-action</code></a>
+                </li>
+                <li>
+                  <a href="https://github.com/Selflify/preview-comment-action" target="_blank" rel="noreferrer"><code>Selflify/preview-comment-action</code></a>
+                </li>
+                <li>
+                  <a href="https://github.com/Selflify/preview-url-action" target="_blank" rel="noreferrer"><code>Selflify/preview-url-action</code></a>
+                </li>
+              </ul>
+            </article>
+
+            <article class="note-card">
+              <h3>How the flow behaves</h3>
+              <ul class="detail-list">
+                <li>Every configured site gets its own matrix job and upload step.</li>
+                <li>PRs receive a placeholder comment first and the final table after deploys finish.</li>
+                <li>
+                  Tests can ask <code>preview-url</code> for the final hostname and wait until the
+                  exact deployed commit becomes reachable.
+                </li>
+              </ul>
+            </article>
+          </div>
+
+          <div class="integration-code-stack">
+            <div class="code-block">
+              <button class="copy-button" type="button" data-copy-target="github-preview-sites">
+                Copy
+              </button>
+              <pre><code id="github-preview-sites">{
+  "include": [
+    {
+      "site": "marketing",
+      "node_version": "20",
+      "setup_cmd": "",
+      "install_cmd": "yarn install --immutable",
+      "build_cmd": "yarn build",
+      "output": "dist"
+    },
+    {
+      "site": "docs",
+      "node_version": "20",
+      "setup_cmd": "",
+      "install_cmd": "pnpm install --frozen-lockfile",
+      "build_cmd": "pnpm build:docs",
+      "output": "apps/docs/dist"
+    }
+  ]
+}</code></pre>
+            </div>
+
+            <div class="code-block">
+              <button class="copy-button" type="button" data-copy-target="github-preview-workflow">
+                Copy
+              </button>
+              <pre><code id="github-preview-workflow">name: Preview
+
+on:
+  pull_request:
+  push:
+    branches:
+      - stable
+
+permissions:
+  actions: read
+  contents: read
+  issues: write
+  pull-requests: write
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.preview.outputs.matrix }}
+      site_names: ${{ steps.preview.outputs.site_names }}
+      path_name: ${{ steps.preview.outputs.path_name }}
+      pr_number: ${{ steps.preview.outputs.pr_number }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: preview
+        uses: Selflify/preview-prepare-action@v1
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+  comment_placeholder:
+    if: ${{ needs.prepare.outputs.pr_number != '' }}
+    needs: prepare
+    runs-on: ubuntu-latest
+    steps:
+      - uses: Selflify/preview-comment-placeholder-action@v1
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          pr-number: ${{ needs.prepare.outputs.pr_number }}
+          path-name: ${{ needs.prepare.outputs.path_name }}
+          site-names-json: ${{ needs.prepare.outputs.site_names }}
+
+  deploy:
+    needs: prepare
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.prepare.outputs.matrix) }}
+    name: Deploy ${{ matrix.site }}
+    steps:
+      - id: deploy
+        uses: Selflify/deploy-preview-action@v1
+        with:
+          node-version: ${{ matrix.node_version }}
+          setup-cmd: ${{ matrix.setup_cmd }}
+          install-cmd: ${{ matrix.install_cmd }}
+          build-cmd: ${{ matrix.build_cmd }}
+          site: ${{ matrix.site }}
+          path-name: ${{ needs.prepare.outputs.path_name }}
+          output: ${{ matrix.output }}
+          preview-base-domain: ${{ secrets.PREVIEW_BASE_DOMAIN }}
+          preview-server-host: ${{ secrets.PREVIEW_SERVER_HOST }}
+          preview-ssh-private-key: ${{ secrets.PREVIEW_SSH_PRIVATE_KEY }}
+          pr-number: ${{ needs.prepare.outputs.pr_number }}
+
+      - if: ${{ steps.deploy.outputs.metadata-file != '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: preview-metadata-${{ matrix.site }}
+          path: ${{ steps.deploy.outputs.metadata-file }}
+          if-no-files-found: error
+
+  comment:
+    if: ${{ needs.prepare.outputs.pr_number != '' }}
+    needs: [prepare, deploy]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: preview-metadata-*
+          path: preview-metadata
+          merge-multiple: true
+
+      - uses: Selflify/preview-comment-action@v1
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          pr-number: ${{ needs.prepare.outputs.pr_number }}
+          path-name: ${{ needs.prepare.outputs.path_name }}
+          preview-base-domain: ${{ secrets.PREVIEW_BASE_DOMAIN }}
+          metadata-dir: preview-metadata</code></pre>
+            </div>
+
+            <div class="code-block">
+              <button class="copy-button" type="button" data-copy-target="github-preview-e2e">
+                Copy
+              </button>
+              <pre><code id="github-preview-e2e">jobs:
+  e2e:
+    needs: deploy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - run: yarn install --immutable
+
+      - id: preview
+        uses: Selflify/preview-url-action@v1
+        with:
+          site: marketing
+          preview-base-domain: ${{ secrets.PREVIEW_BASE_DOMAIN }}
+          wait-mode: exact-sha
+
+      - name: Run e2e suite against the preview
+        env:
+          PLAYWRIGHT_BASE_URL: ${{ steps.preview.outputs.link }}
+        run: yarn playwright test</code></pre>
+            </div>
           </div>
         </section>
       </main>
