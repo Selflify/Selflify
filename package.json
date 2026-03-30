@@ -26,9 +26,7 @@
     "e2e:headed": "playwright test --headed",
     "typecheck": "tsc --noEmit",
     "cleanup:run": "tsx ./src/bin/cleanup.ts",
-    "bootstrap:bundle": "node ./scripts/build-bootstrap-bundle.mjs",
-    "landing:dev": "node ./scripts/serve-static.mjs ./landing 4173",
-    "landing:build": "node ./scripts/build-landing.mjs"
+    "bootstrap:bundle": "node ./scripts/build-bootstrap-bundle.mjs"
   },
   "dependencies": {
     "@chakra-ui/react": "3.34.0",
