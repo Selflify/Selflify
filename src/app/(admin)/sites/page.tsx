@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Box, Button, Flex, Heading, Stack, Text } from "@chakra-ui/react";
+import { Box, Button, Flex, Grid, Heading, Stack, Text } from "@chakra-ui/react";
 
 import { ActionFeedbackToast } from "@/components/action-feedback-toast";
 import { CreateSiteDialog } from "@/components/create-site-dialog";
@@ -48,95 +48,109 @@ export default async function SitesPage({ searchParams }: SitesPageProps) {
         previewRootDir={config.server.previewRootDir}
       />
 
-      <RecentDeploysSection />
-
-      <Stack gap="4">
-        <Box>
-          <Heading size="lg">Site inventory</Heading>
-          <Text color="muted" mt="2">
-            Open the site page to manage settings and deploys.
-          </Text>
-        </Box>
-
-        {config.sites.length === 0 ? (
-          <Box rounded="xl" borderWidth="1px" borderColor="rgba(255,255,255,0.08)" px="4" py="4">
-            <Heading size="sm">No sites configured</Heading>
-            <Text color="muted" mt="2" fontSize="sm">
-              Create the first site to generate its stable directory, preview wildcard routing and
-              placeholder build.
+      <Grid
+        templateColumns={{ base: "1fr", xl: "minmax(0, 1.3fr) minmax(0, 1fr)" }}
+        gap="8"
+        alignItems="start"
+      >
+        <Stack gap="4" minW="0">
+          <Box>
+            <Heading size="lg">Site inventory</Heading>
+            <Text color="muted" mt="2">
+              Open the site page to manage settings and deploys.
             </Text>
           </Box>
-        ) : null}
 
-        {config.sites.map((site) => {
-          const stableUrl = getStableUrl(config, site);
-          const dir = getSiteDirectory(config, site);
-
-          return (
-            <Flex
-              key={site.slug}
-              justify="space-between"
-              align={{ base: "flex-start", md: "center" }}
-              gap="4"
-              wrap="wrap"
+          {config.sites.length === 0 ? (
+            <Box
               rounded="xl"
               borderWidth="1px"
               borderColor="rgba(255,255,255,0.08)"
-              bg="rgba(17,17,24,0.88)"
               px="4"
               py="4"
             >
-              <Box>
-                <Link href={`/sites/${site.slug}`}>
-                  <Heading
-                    as="span"
-                    size="md"
-                    display="inline-block"
-                    transition="color 0.2s ease"
-                    _hover={{ color: "brand.300" }}
-                  >
-                    {formatSiteName(site.name)}
-                  </Heading>
-                </Link>
-                <Flex mt="1" gap="2" wrap="wrap" align="center">
-                  <a href={stableUrl} target="_blank" rel="noreferrer">
-                    <Text
+              <Heading size="sm">No sites configured</Heading>
+              <Text color="muted" mt="2" fontSize="sm">
+                Create the first site to generate its stable directory, preview wildcard routing and
+                placeholder build.
+              </Text>
+            </Box>
+          ) : null}
+
+          {config.sites.map((site) => {
+            const stableUrl = getStableUrl(config, site);
+            const dir = getSiteDirectory(config, site);
+
+            return (
+              <Flex
+                key={site.slug}
+                justify="space-between"
+                align={{ base: "flex-start", md: "center" }}
+                gap="4"
+                wrap="wrap"
+                rounded="xl"
+                borderWidth="1px"
+                borderColor="rgba(255,255,255,0.08)"
+                bg="rgba(17,17,24,0.88)"
+                px="4"
+                py="4"
+              >
+                <Box>
+                  <Link href={`/sites/${site.slug}`}>
+                    <Heading
                       as="span"
-                      color="whiteAlpha.700"
-                      textDecoration="underline"
-                      textDecorationColor="rgba(255,255,255,0.18)"
-                      textUnderlineOffset="0.18em"
+                      size="md"
+                      display="inline-block"
                       transition="color 0.2s ease"
-                      _hover={{ color: "whiteAlpha.950" }}
+                      _hover={{ color: "brand.300" }}
                     >
-                      {formatHost(stableUrl)}
+                      {formatSiteName(site.name)}
+                    </Heading>
+                  </Link>
+                  <Flex mt="1" gap="2" wrap="wrap" align="center">
+                    <a href={stableUrl} target="_blank" rel="noreferrer">
+                      <Text
+                        as="span"
+                        color="whiteAlpha.700"
+                        textDecoration="underline"
+                        textDecorationColor="rgba(255,255,255,0.18)"
+                        textUnderlineOffset="0.18em"
+                        transition="color 0.2s ease"
+                        _hover={{ color: "whiteAlpha.950" }}
+                      >
+                        {formatHost(stableUrl)}
+                      </Text>
+                    </a>
+                    <Text color="muted" fontSize="sm">
+                      · {site.mainBranch}
                     </Text>
-                  </a>
-                  <Text color="muted" fontSize="sm">
-                    · {site.mainBranch}
+                  </Flex>
+                  <Text color="whiteAlpha.700" mt="2" fontSize="sm" fontFamily="mono">
+                    {dir}
                   </Text>
+                  <SiteInventoryCardMetrics siteSlug={site.slug} />
+                </Box>
+                <Flex gap="2" wrap="wrap">
+                  <a href={stableUrl} target="_blank" rel="noreferrer">
+                    <Button as="span" variant="outline">
+                      Open
+                    </Button>
+                  </a>
+                  <Link href={`/sites/${site.slug}`}>
+                    <Button as="span" bg="action.500" color="white" _hover={{ bg: "action.600" }}>
+                      Manage site
+                    </Button>
+                  </Link>
                 </Flex>
-                <Text color="whiteAlpha.700" mt="2" fontSize="sm" fontFamily="mono">
-                  {dir}
-                </Text>
-                <SiteInventoryCardMetrics siteSlug={site.slug} />
-              </Box>
-              <Flex gap="2" wrap="wrap">
-                <a href={stableUrl} target="_blank" rel="noreferrer">
-                  <Button as="span" variant="outline">
-                    Open
-                  </Button>
-                </a>
-                <Link href={`/sites/${site.slug}`}>
-                  <Button as="span" bg="action.500" color="white" _hover={{ bg: "action.600" }}>
-                    Manage site
-                  </Button>
-                </Link>
               </Flex>
-            </Flex>
-          );
-        })}
-      </Stack>
+            );
+          })}
+        </Stack>
+
+        <Box minW="0">
+          <RecentDeploysSection />
+        </Box>
+      </Grid>
     </Stack>
   );
 }
