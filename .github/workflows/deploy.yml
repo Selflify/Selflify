@@ -226,6 +226,35 @@ jobs:
 
           ssh -p "${DEPLOY_PORT:-22}" "${DEPLOY_USER}@${DEPLOY_HOST}" "mkdir -p '${DEPLOY_PATH}'"
 
+      - name: Remove non-runtime files from remote checkout
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          ssh -p "${DEPLOY_PORT:-22}" "${DEPLOY_USER}@${DEPLOY_HOST}" <<EOF
+          set -euo pipefail
+          cd "${DEPLOY_PATH}"
+
+          rm -rf \
+            AGENTS.md \
+            APP.md \
+            PLAN.md \
+            README.md \
+            docker-compose.dev.yml \
+            docs \
+            e2e \
+            landing \
+            output \
+            dist \
+            scripts \
+            eslint.config.mjs \
+            playwright.config.ts \
+            playwright.bootstrap.config.ts \
+            vitest.config.ts \
+            .env.example \
+            .nvmrc
+          EOF
+
       - name: Sync repository to server
         shell: bash
         run: |
@@ -239,8 +268,25 @@ jobs:
             --exclude 'coverage/' \
             --exclude '.dev/' \
             --exclude '.selflify/' \
+            --exclude 'dist/' \
+            --exclude 'output/' \
             --exclude '.env' \
             --exclude 'runtime/' \
+            --exclude 'AGENTS.md' \
+            --exclude 'APP.md' \
+            --exclude 'PLAN.md' \
+            --exclude 'README.md' \
+            --exclude 'docker-compose.dev.yml' \
+            --exclude 'docs/' \
+            --exclude 'e2e/' \
+            --exclude 'landing/' \
+            --exclude 'scripts/' \
+            --exclude 'eslint.config.mjs' \
+            --exclude 'playwright.config.ts' \
+            --exclude 'playwright.bootstrap.config.ts' \
+            --exclude 'vitest.config.ts' \
+            --exclude '.env.example' \
+            --exclude '.nvmrc' \
             -e "ssh -p ${DEPLOY_PORT:-22}" \
             ./ "${DEPLOY_USER}@${DEPLOY_HOST}:${DEPLOY_PATH}/"
 

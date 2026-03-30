@@ -35,7 +35,6 @@ ENV NODE_ENV=production
 ENV PORT=3000
 
 COPY --from=caddy-builder /usr/bin/caddy /usr/bin/caddy
-COPY cleanup-previews.sh ./cleanup-previews.sh
 COPY --from=builder /workspace/.next/standalone ./
 COPY --from=builder /workspace/.next/static ./.next/static
 COPY --from=builder /workspace/public ./public
