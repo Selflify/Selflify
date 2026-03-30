@@ -1,5 +1,7 @@
 # Selflify
 
+Website: https://selflify.github.io/
+
 Filesystem-backed admin panel for managing static SPA preview environments.
 Free and open source under the MIT license.
 
