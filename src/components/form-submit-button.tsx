@@ -13,6 +13,24 @@ import {
 } from "@chakra-ui/react";
 import { useFormStatus } from "react-dom";
 
+const dangerButtonStyles: ButtonProps = {
+  borderColor: "rgba(214,58,99,0.34)",
+  bg: "rgba(161,33,65,0.18)",
+  color: "#ffe5ec",
+  _hover: {
+    bg: "rgba(161,33,65,0.26)",
+    borderColor: "rgba(214,58,99,0.48)",
+  },
+  _active: {
+    bg: "rgba(161,33,65,0.3)",
+  },
+  _disabled: {
+    bg: "rgba(161,33,65,0.1)",
+    borderColor: "rgba(214,58,99,0.18)",
+    color: "rgba(255,229,236,0.46)",
+  },
+};
+
 type FormSubmitButtonProps = ButtonProps & {
   children: React.ReactNode;
   pendingText?: string;
@@ -21,6 +39,7 @@ type FormSubmitButtonProps = ButtonProps & {
   confirmInputLabel?: string;
   confirmInputPlaceholder?: string;
   confirmInputValue?: string;
+  danger?: boolean;
 };
 
 export function FormSubmitButton({
@@ -31,6 +50,7 @@ export function FormSubmitButton({
   confirmInputLabel,
   confirmInputPlaceholder,
   confirmInputValue,
+  danger,
   onClick,
   form,
   name,
@@ -47,8 +67,7 @@ export function FormSubmitButton({
   const [confirmValue, setConfirmValue] = useState("");
   const hiddenSubmitRef = useRef<HTMLButtonElement>(null);
   const buttonProps = { ...props };
-  const dialogActionProps =
-    buttonProps.colorPalette === "red" ? { ...buttonProps, variant: "solid" as const } : buttonProps;
+  const actionButtonProps = danger ? { ...buttonProps, ...dangerButtonStyles } : buttonProps;
   const requiresTypedConfirmation = Boolean(confirmInputValue);
   const typedConfirmationMatches =
     !requiresTypedConfirmation || confirmValue.trim() === confirmInputValue;
@@ -58,7 +77,7 @@ export function FormSubmitButton({
   if (!confirmMessage) {
     return (
       <Button
-        {...buttonProps}
+        {...actionButtonProps}
         type="submit"
         loading={pending}
         onClick={onClick}
@@ -101,7 +120,7 @@ export function FormSubmitButton({
         role="alertdialog"
       >
         <Dialog.Trigger asChild>
-          <Button {...buttonProps} type="button" loading={pending}>
+          <Button {...actionButtonProps} type="button" loading={pending}>
             {pending ? (pendingText ?? children) : children}
           </Button>
         </Dialog.Trigger>
@@ -158,10 +177,10 @@ export function FormSubmitButton({
                   Cancel
                 </Button>
                 <Button
-                  {...dialogActionProps}
+                  {...actionButtonProps}
                   type="button"
                   loading={pending}
-                  disabled={Boolean(buttonProps.disabled) || !typedConfirmationMatches}
+                  disabled={Boolean(actionButtonProps.disabled) || !typedConfirmationMatches}
                   form={form}
                   name={name}
                   value={value}

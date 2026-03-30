@@ -88,8 +88,7 @@ export function SiteDeployCard({
           <form action={deleteDeployAction.bind(null, siteSlug, deploy.name)}>
             <input type="hidden" name="configRevision" value={String(configRevision)} />
             <FormSubmitButton
-              colorPalette="red"
-              variant="outline"
+              danger
               pendingText="Deleting deploy"
               confirmMessage={`Delete deploy ${deploy.name} for ${siteSlug}? This action is irreversible.`}
             >

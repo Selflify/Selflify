@@ -198,8 +198,7 @@ export default async function SiteDetailsPage({ params, searchParams }: SiteDeta
               </FormSubmitButton>
               <FormSubmitButton
                 form="site-preview-access-reset-form"
-                colorPalette="red"
-                variant="outline"
+                danger
                 pendingText="Resetting preview access"
                 confirmMessage={`Reset preview login and password for ${site.slug}?`}
                 disabled={!site.previewAuth.enabled}
@@ -226,8 +225,7 @@ export default async function SiteDetailsPage({ params, searchParams }: SiteDeta
               <input type="hidden" name="configRevision" value={String(config.configRevision)} />
               <FormSubmitButton
                 mt="5"
-                colorPalette="red"
-                variant="outline"
+                danger
                 pendingText="Deleting site"
                 confirmMessage={`Delete ${site.slug} from config and move its files to orphan storage?`}
                 confirmTitle="Delete site"
