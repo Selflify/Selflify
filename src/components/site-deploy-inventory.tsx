@@ -5,6 +5,7 @@ import {
   useDeferredValue,
   useEffect,
   useEffectEvent,
+  useId,
   useRef,
   useState,
 } from "react";
@@ -65,6 +66,7 @@ export function SiteDeployInventory({
   initialTotalCount,
   initialNextOffset,
 }: SiteDeployInventoryProps) {
+  const inputId = useId();
   const [query, setQuery] = useState("");
   const deferredQuery = useDeferredValue(query);
   const [items, setItems] = useState(initialItems);
@@ -76,6 +78,7 @@ export function SiteDeployInventory({
   const requestIdRef = useRef(0);
   const didMountRef = useRef(false);
   const sentinelRef = useRef<HTMLDivElement | null>(null);
+  const inputRef = useRef<HTMLInputElement | null>(null);
 
   const loadPage = useEffectEvent(async (options: { query: string; offset: number; replace: boolean }) => {
     const requestId = ++requestIdRef.current;
@@ -186,6 +189,9 @@ export function SiteDeployInventory({
                   startTransition(() => {
                     setQuery("");
                   });
+                  requestAnimationFrame(() => {
+                    inputRef.current?.focus();
+                  });
                 }}
               >
                 <X />
@@ -195,6 +201,8 @@ export function SiteDeployInventory({
           endElementProps={{ width: "2.5rem", display: "flex", justifyContent: "center" }}
         >
           <Input
+            id={inputId}
+            ref={inputRef}
             value={query}
             onChange={(event) => {
               startTransition(() => {
