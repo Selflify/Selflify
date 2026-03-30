@@ -170,7 +170,8 @@ jobs:
     needs: bootstrap-e2e
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    environment: production
+    environment:
+      name: production
     env:
       DEPLOY_HOST: ${{ vars.DEPLOY_HOST }}
       DEPLOY_PORT: ${{ vars.DEPLOY_PORT }}
