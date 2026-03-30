@@ -11,7 +11,7 @@ type AppShellProps = {
 
 export function AppShell({ domain, children }: AppShellProps) {
   return (
-    <Flex minH="100vh">
+    <Flex minH="100vh" direction={{ base: "column", lg: "row" }}>
       <Flex
         as="aside"
         direction="column"
@@ -24,7 +24,7 @@ export function AppShell({ domain, children }: AppShellProps) {
         py={{ base: "5", lg: "8" }}
         position={{ base: "static", lg: "sticky" }}
         top="0"
-        alignSelf="flex-start"
+        alignSelf={{ base: "stretch", lg: "flex-start" }}
       >
         <Box mb="8">
           <Box>
@@ -56,7 +56,7 @@ export function AppShell({ domain, children }: AppShellProps) {
         </Flex>
       </Flex>
 
-      <Box flex="1" px={{ base: "5", md: "8", xl: "10" }} py={{ base: "6", md: "8" }}>
+      <Box flex="1" minW="0" px={{ base: "5", md: "8", xl: "10" }} py={{ base: "6", md: "8" }}>
         {children}
       </Box>
     </Flex>
