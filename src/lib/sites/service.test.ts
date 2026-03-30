@@ -10,6 +10,7 @@ import {
   deleteDeploy,
   ensureSiteDirectories,
   getSiteDirectory,
+  listRecentDeploys,
   listPreviewDeployPage,
   listDeploys,
 } from "@/lib/sites/service";
@@ -117,5 +118,45 @@ describe("site service", () => {
     expect(page.items).toHaveLength(1);
     expect(page.items[0]?.name).toBe("pr-200");
     expect(page.items[0]?.isMainBranch).toBe(false);
+  });
+
+  it("lists the most recently modified deploys across all sites", async () => {
+    const previewRootDir = await makeTempDir();
+    const config = createConfig(previewRootDir);
+    const appSite = createSite();
+    const transportSite: SiteConfig = {
+      ...createSite(),
+      slug: "transport",
+      name: "Transport",
+    };
+
+    config.sites = [appSite, transportSite];
+
+    await ensureSiteDirectories(config, appSite);
+    await ensureSiteDirectories(config, transportSite);
+
+    const appStableDir = path.join(getSiteDirectory(config, appSite), appSite.mainBranch);
+    const transportStableDir = path.join(getSiteDirectory(config, transportSite), transportSite.mainBranch);
+    const appPreviewDir = path.join(getSiteDirectory(config, appSite), "pr-200");
+    const transportPreviewDir = path.join(getSiteDirectory(config, transportSite), "release-9");
+
+    await fs.mkdir(appPreviewDir);
+    await fs.mkdir(transportPreviewDir);
+
+    await fs.utimes(appStableDir, new Date("2026-03-27T09:00:00.000Z"), new Date("2026-03-27T09:00:00.000Z"));
+    await fs.utimes(appPreviewDir, new Date("2026-03-27T09:30:00.000Z"), new Date("2026-03-27T09:30:00.000Z"));
+    await fs.utimes(transportStableDir, new Date("2026-03-27T09:10:00.000Z"), new Date("2026-03-27T09:10:00.000Z"));
+    await fs.utimes(transportPreviewDir, new Date("2026-03-27T09:40:00.000Z"), new Date("2026-03-27T09:40:00.000Z"));
+
+    const recentDeploys = await listRecentDeploys(config, 3);
+
+    expect(recentDeploys).toHaveLength(3);
+    expect(
+      recentDeploys.map((entry) => [entry.siteSlug, entry.deploy.name]),
+    ).toEqual([
+      ["transport", "release-9"],
+      ["app", "pr-200"],
+      ["transport", "stable"],
+    ]);
   });
 });

@@ -8,7 +8,8 @@ import {
   useRef,
   useState,
 } from "react";
-import { Box, Input, Spinner, Stack, Text } from "@chakra-ui/react";
+import { Box, IconButton, Input, InputGroup, Spinner, Stack, Text } from "@chakra-ui/react";
+import { X } from "lucide-react";
 
 import { SiteDeployCard } from "@/components/site-deploy-card";
 
@@ -174,16 +175,36 @@ export function SiteDeployInventory({
       </Box>
 
       <Stack gap="2" maxW="26rem">
-        <Input
-          value={query}
-          onChange={(event) => {
-            startTransition(() => {
-              setQuery(event.target.value);
-            });
-          }}
-          placeholder="Search deploys by name or hostname"
-          bg="rgba(255,255,255,0.04)"
-        />
+        <InputGroup
+          endElement={
+            query.trim().length > 0 ? (
+              <IconButton
+                aria-label="Clear deploy search"
+                variant="ghost"
+                size="xs"
+                onClick={() => {
+                  startTransition(() => {
+                    setQuery("");
+                  });
+                }}
+              >
+                <X />
+              </IconButton>
+            ) : null
+          }
+          endElementProps={{ width: "2.5rem", display: "flex", justifyContent: "center" }}
+        >
+          <Input
+            value={query}
+            onChange={(event) => {
+              startTransition(() => {
+                setQuery(event.target.value);
+              });
+            }}
+            placeholder="Search deploys by name or hostname"
+            bg="rgba(255,255,255,0.04)"
+          />
+        </InputGroup>
         <Text color="muted" fontSize="sm">
           {loadingSearch
             ? "Searching deploys..."

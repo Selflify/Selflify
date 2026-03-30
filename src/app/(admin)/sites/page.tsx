@@ -3,6 +3,7 @@ import { Box, Button, Flex, Heading, Stack, Text } from "@chakra-ui/react";
 
 import { ActionFeedbackToast } from "@/components/action-feedback-toast";
 import { CreateSiteDialog } from "@/components/create-site-dialog";
+import { RecentDeploysSection } from "@/components/recent-deploys-section";
 import { SiteInventoryCardMetrics } from "@/components/site-inventory-card-metrics";
 import { SitesOverviewMetrics } from "@/components/sites-overview-metrics";
 import { requireAdminSession } from "@/lib/auth/guards";
@@ -46,6 +47,8 @@ export default async function SitesPage({ searchParams }: SitesPageProps) {
         siteCount={config.sites.length}
         previewRootDir={config.server.previewRootDir}
       />
+
+      <RecentDeploysSection />
 
       <Stack gap="4">
         <Box>

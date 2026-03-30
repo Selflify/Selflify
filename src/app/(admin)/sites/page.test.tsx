@@ -15,6 +15,10 @@ vi.mock("@/components/action-feedback-toast", () => ({
   ActionFeedbackToast: () => null,
 }));
 
+vi.mock("@/components/recent-deploys-section", () => ({
+  RecentDeploysSection: () => <div>RECENT_DEPLOYS</div>,
+}));
+
 vi.mock("@/components/site-inventory-card-metrics", () => ({
   SiteInventoryCardMetrics: ({ siteSlug }: { siteSlug: string }) => <div>{`SITE_METRICS:${siteSlug}`}</div>,
 }));
@@ -68,6 +72,7 @@ describe("sites page", () => {
     expect(html).toContain("Site inventory");
     expect(html).toContain("App");
     expect(html).not.toContain(">app<");
+    expect(html).toContain("RECENT_DEPLOYS");
     expect(html).toContain(`OVERVIEW:1:${config.server.previewRootDir}`);
     expect(html).toContain("SITE_METRICS:app");
     expect(html).toContain("app.preview.example.com");

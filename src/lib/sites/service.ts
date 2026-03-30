@@ -25,11 +25,23 @@ export type DeploySummary = {
 };
 
 type DeployRecord = Omit<DeploySummary, "sizeBytes" | "sizeLabel">;
+type RecentDeployRecord = DeployRecord & {
+  siteSlug: string;
+  siteName: string;
+  mainBranch: string;
+};
 
 export type DeployPage = {
   items: DeploySummary[];
   totalCount: number;
   nextOffset: number | null;
+};
+
+export type RecentDeploySummary = {
+  siteSlug: string;
+  siteName: string;
+  mainBranch: string;
+  deploy: DeploySummary;
 };
 
 export const DEFAULT_DEPLOY_PAGE_SIZE = 20;
@@ -400,6 +412,47 @@ export async function listDeploys(
 ): Promise<DeploySummary[]> {
   const deploys = await readDeployRecords(config, site);
   return Promise.all(deploys.map((deploy) => toDeploySummary(deploy)));
+}
+
+export async function listRecentDeploys(
+  config: SelflifyConfig,
+  limit = 5,
+): Promise<RecentDeploySummary[]> {
+  const pageSize = Math.max(0, Math.floor(limit));
+
+  if (pageSize === 0) {
+    return [];
+  }
+
+  const records = (
+    await Promise.all(
+      config.sites.map(async (site) => {
+        const deploys = await readDeployRecords(config, site);
+
+        return deploys.map(
+          (deploy) =>
+            ({
+              ...deploy,
+              siteSlug: site.slug,
+              siteName: site.name,
+              mainBranch: site.mainBranch,
+            }) satisfies RecentDeployRecord,
+        );
+      }),
+    )
+  )
+    .flat()
+    .sort((left, right) => right.modifiedAt.localeCompare(left.modifiedAt))
+    .slice(0, pageSize);
+
+  return Promise.all(
+    records.map(async (record) => ({
+      siteSlug: record.siteSlug,
+      siteName: record.siteName,
+      mainBranch: record.mainBranch,
+      deploy: await toDeploySummary(record),
+    })),
+  );
 }
 
 export async function getSiteSummary(
