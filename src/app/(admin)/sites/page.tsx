@@ -49,13 +49,15 @@ export default async function SitesPage({ searchParams }: SitesPageProps) {
       />
 
       <Grid
-        templateColumns={{ base: "1fr", xl: "minmax(0, 1.3fr) minmax(0, 1fr)" }}
+        templateColumns={{ base: "1fr", xl: "repeat(2, minmax(0, 1fr))" }}
         gap="8"
         alignItems="start"
       >
         <Stack gap="4" minW="0">
           <Box>
-            <Heading size="lg">Site inventory</Heading>
+            <Text fontWeight="700" fontSize="2xl">
+              Site inventory
+            </Text>
             <Text color="muted" mt="2">
               Open the site page to manage settings and deploys.
             </Text>
