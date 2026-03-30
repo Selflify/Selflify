@@ -1,14 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Badge, Box, Skeleton, Stack, Text } from "@chakra-ui/react";
+import { Box, Skeleton, Stack, Text } from "@chakra-ui/react";
 
 import type { SettingsDnsRecordsPayload } from "@/app/api/settings/dns-records/route";
 
 function DnsRecordsTable({ records }: { records: SettingsDnsRecordsPayload["records"] }) {
   return (
     <Box rounded="xl" borderWidth="1px" borderColor="rgba(255,255,255,0.08)" overflowX="auto">
-      <Box as="table" width="full" minW="720px" borderCollapse="collapse">
+      <Box as="table" width="full" minW="640px" borderCollapse="collapse">
         <Box as="thead" bg="rgba(255,255,255,0.02)">
           <Box as="tr">
             <Box
@@ -23,19 +23,6 @@ function DnsRecordsTable({ records }: { records: SettingsDnsRecordsPayload["reco
               fontWeight="600"
             >
               Host
-            </Box>
-            <Box
-              as="th"
-              px="4"
-              py="3"
-              textAlign="left"
-              fontSize="xs"
-              letterSpacing="0.08em"
-              textTransform="uppercase"
-              color="whiteAlpha.600"
-              fontWeight="600"
-            >
-              Type
             </Box>
             <Box
               as="th"
@@ -88,9 +75,6 @@ function DnsRecordsTable({ records }: { records: SettingsDnsRecordsPayload["reco
             >
               <Box as="td" px="4" py="3.5" fontWeight="700">
                 {record.name}
-              </Box>
-              <Box as="td" px="4" py="3.5" verticalAlign="middle">
-                <Badge variant="outline">{record.type}</Badge>
               </Box>
               <Box
                 as="td"
