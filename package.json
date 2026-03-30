@@ -22,6 +22,7 @@
     "test:run": "vitest run",
     "test:coverage": "vitest run --coverage",
     "e2e": "playwright test",
+    "e2e:bootstrap-install": "playwright test --config=playwright.bootstrap.config.ts",
     "e2e:headed": "playwright test --headed",
     "typecheck": "tsc --noEmit",
     "cleanup:run": "tsx ./src/bin/cleanup.ts",

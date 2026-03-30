@@ -51,8 +51,123 @@ jobs:
       - name: Validate production compose
         run: docker compose config
 
-  deploy:
+  publish-bootstrap:
     needs: repo-checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+
+      - name: Enable Corepack
+        run: |
+          corepack enable
+          corepack prepare yarn@4.13.0 --activate
+          yarn --version
+
+      - name: Install dependencies
+        run: yarn install --immutable
+
+      - name: Build bootstrap bundle
+        run: yarn bootstrap:bundle
+
+      - name: Publish latest bootstrap release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: bootstrap-latest
+          name: Bootstrap latest
+          body: Latest Selflify bootstrap assets built from the stable branch.
+          make_latest: true
+          files: |
+            dist/bootstrap/install-selflify.sh
+            dist/bootstrap/selflify-bootstrap.tar.gz
+
+  bootstrap-e2e:
+    needs: publish-bootstrap
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+
+      - name: Enable Corepack
+        run: |
+          corepack enable
+          corepack prepare yarn@4.13.0 --activate
+          yarn --version
+
+      - name: Install dependencies
+        run: yarn install --immutable
+
+      - name: Install Playwright browser
+        run: yarn exec playwright install --with-deps chromium
+
+      - name: Bootstrap Selflify from the latest release
+        env:
+          SELFLIFY_MOCK_CLOUDFLARE: "1"
+        run: curl -fsSL https://github.com/Selflify/Selflify/releases/latest/download/install-selflify.sh | bash
+
+      - name: Wait for /setup
+        run: |
+          set -euo pipefail
+
+          for attempt in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1/setup >/dev/null; then
+              exit 0
+            fi
+
+            sleep 2
+          done
+
+          echo "Selflify /setup did not become reachable in time." >&2
+          docker ps >&2 || true
+          exit 1
+
+      - name: Run bootstrap e2e
+        env:
+          PLAYWRIGHT_BASE_URL: http://127.0.0.1
+          E2E_SETUP_LOGIN: owner
+          E2E_SETUP_PASSWORD: supersecret123
+          E2E_PRIMARY_DOMAIN: example.dev
+          E2E_SERVER_IP: 127.0.0.1
+          E2E_CADDY_CONTACT_EMAIL: ops@example.dev
+          E2E_CLOUDFLARE_API_TOKEN: cf-token-for-e2e
+        run: yarn e2e:bootstrap-install
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bootstrap-e2e-playwright
+          path: output/playwright
+          if-no-files-found: ignore
+
+      - name: Stop bootstrap stack
+        if: always()
+        run: |
+          set -euo pipefail
+
+          if [ -d /opt/selflify ]; then
+            cd /opt/selflify
+            docker compose down -v --remove-orphans || true
+          fi
+
+  deploy:
+    needs: bootstrap-e2e
     runs-on: ubuntu-latest
     timeout-minutes: 30
     environment: production

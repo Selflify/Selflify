@@ -114,6 +114,18 @@ describe("generateCaddyfile", () => {
     expect(rendered).toContain("import static_cache");
   });
 
+  it("omits managed tls imports when cloudflare is mocked even if a token is present", () => {
+    vi.stubEnv("SELFLIFY_MOCK_CLOUDFLARE", "1");
+
+    const config = createConfig(createSite());
+    const rendered = generateCaddyfile(config);
+
+    expect(rendered).not.toContain("dns cloudflare");
+    expect(rendered).not.toContain("import tls_cf");
+    expect(rendered).toContain("import common_headers");
+    expect(rendered).toContain("import static_cache");
+  });
+
   it("uses host.docker.internal for the default dev upstream when Next.js runs on the host", () => {
     vi.stubEnv("NODE_ENV", "development");
 

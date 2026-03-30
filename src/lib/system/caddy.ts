@@ -12,7 +12,11 @@ import {
 } from "@/lib/config/paths";
 import { runCommand } from "@/lib/system/commands";
 import type { CaddyGateway, CommandRunner } from "@/lib/system/ports";
-import { isDevelopmentRuntime, shouldSkipCaddyReload } from "@/lib/system/runtime";
+import {
+  isDevelopmentRuntime,
+  shouldMockCloudflare,
+  shouldSkipCaddyReload,
+} from "@/lib/system/runtime";
 
 function escapeCaddyLiteral(value: string): string {
   return value.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
@@ -258,7 +262,7 @@ function renderSelflifyPanelBlocks(config: SelflifyConfig): string {
 }
 
 export function generateCaddyfile(config: SelflifyConfig): string {
-  const hasToken = Boolean(config.server.cloudflareApiToken);
+  const usesManagedTls = Boolean(config.server.cloudflareApiToken) && !shouldMockCloudflare();
   const autoHttps = isDevelopmentRuntime() ? "    auto_https off\n" : "";
   const siteBlocks = config.sites
     .slice()
@@ -270,7 +274,7 @@ export function generateCaddyfile(config: SelflifyConfig): string {
 ${renderAdminBlock(config)}
     email ${config.server.caddyContactEmail}
 ${autoHttps}}
-${renderTlsBlock(config.server.cloudflareApiToken)}
+${renderTlsBlock(usesManagedTls ? config.server.cloudflareApiToken : "")}
 (common_headers) {
     header {
         X-Robots-Tag "noindex, nofollow, noarchive, nosnippet, noimageindex"
@@ -292,7 +296,7 @@ ${renderTlsBlock(config.server.cloudflareApiToken)}
 }
 
 (common_site) {
-${renderCommonSiteImports(hasToken)}
+${renderCommonSiteImports(usesManagedTls)}
 
     encode gzip zstd
 

@@ -166,6 +166,14 @@ SELFLIFY_CLEANUP_INTERVAL_SECONDS=86400
 SELFLIFY_BACKUP_KEEP=20
 EOF
 
+  if [ -n "${SELFLIFY_MOCK_CLOUDFLARE:-}" ]; then
+    printf 'SELFLIFY_MOCK_CLOUDFLARE=%s\n' "${SELFLIFY_MOCK_CLOUDFLARE}" >> "${install_dir}/.env"
+  fi
+
+  if [ -n "${SELFLIFY_SKIP_CADDY_RELOAD:-}" ]; then
+    printf 'SELFLIFY_SKIP_CADDY_RELOAD=%s\n' "${SELFLIFY_SKIP_CADDY_RELOAD}" >> "${install_dir}/.env"
+  fi
+
   log "Created ${install_dir}/.env"
 }
 
