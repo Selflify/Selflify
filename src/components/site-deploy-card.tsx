@@ -4,7 +4,7 @@ import { Box, Button, Flex, Heading, Text } from "@chakra-ui/react";
 
 import { deleteDeployAction } from "@/app/actions";
 import { FormSubmitButton } from "@/components/form-submit-button";
-import { formatDateTime } from "@/lib/utils/format";
+import { formatDateTime, formatRelativeTime } from "@/lib/utils/format";
 
 type SiteDeployCardProps = {
   siteSlug: string;
@@ -74,7 +74,7 @@ export function SiteDeployCard({
           {deploy.dir}
         </Text>
         <Text color="muted" mt="2" fontSize="sm">
-          {deploy.sizeLabel} · updated {formatDateTime(deploy.modifiedAt)}
+          {deploy.sizeLabel} · updated {formatDateTime(deploy.modifiedAt)} · {formatRelativeTime(deploy.modifiedAt)}
         </Text>
       </Box>
       <Flex gap="2" wrap="wrap">

@@ -23,6 +23,55 @@ export function formatDateTime(value: string | number | Date | null): string {
   }).format(date);
 }
 
+export function formatRelativeTime(
+  value: string | number | Date | null,
+  referenceTime = Date.now(),
+): string {
+  if (!value) {
+    return "Not available";
+  }
+
+  const timestamp = value instanceof Date ? value.getTime() : new Date(value).getTime();
+
+  if (!Number.isFinite(timestamp)) {
+    return "Not available";
+  }
+
+  const diffSeconds = Math.max(0, Math.floor((referenceTime - timestamp) / 1000));
+
+  if (diffSeconds < 60) {
+    return "just now";
+  }
+
+  const diffMinutes = Math.floor(diffSeconds / 60);
+
+  if (diffMinutes < 60) {
+    return `${diffMinutes}m ago`;
+  }
+
+  const diffHours = Math.floor(diffMinutes / 60);
+
+  if (diffHours < 24) {
+    return `${diffHours}h ago`;
+  }
+
+  const diffDays = Math.floor(diffHours / 24);
+
+  if (diffDays < 7) {
+    return `${diffDays}d ago`;
+  }
+
+  if (diffDays < 30) {
+    return `${Math.floor(diffDays / 7)}w ago`;
+  }
+
+  if (diffDays < 365) {
+    return `${Math.floor(diffDays / 30)}mo ago`;
+  }
+
+  return `${Math.floor(diffDays / 365)}y ago`;
+}
+
 export function slugToLabel(slug: string): string {
   return slug
     .split("-")

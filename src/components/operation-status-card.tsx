@@ -6,7 +6,7 @@ import {
   shouldMockCloudflare,
   shouldSkipCaddyReload,
 } from "@/lib/system/runtime";
-import { formatDateTime } from "@/lib/utils/format";
+import { formatDateTime, formatRelativeTime } from "@/lib/utils/format";
 
 type OperationStatusCardProps = {
   config: SelflifyConfig;
@@ -126,7 +126,7 @@ export function OperationStatusCard({ config }: OperationStatusCardProps) {
             {humanizeOperationLabel(config.operations.lastOperationLabel)}
           </Heading>
           <Text color="muted" fontSize="sm">
-            Last attempt: {formatDateTime(config.operations.lastAppliedAt)}
+            Last attempt: {formatDateTime(config.operations.lastAppliedAt)} · {formatRelativeTime(config.operations.lastAppliedAt)}
           </Text>
         </Stack>
 

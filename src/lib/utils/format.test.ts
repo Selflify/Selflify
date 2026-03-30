@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 
-import { formatBytes, formatDateTime, formatSiteName, slugToLabel } from "@/lib/utils/format";
+import {
+  formatBytes,
+  formatDateTime,
+  formatRelativeTime,
+  formatSiteName,
+  slugToLabel,
+} from "@/lib/utils/format";
 
 describe("format helpers", () => {
   it("formats byte counts across units", () => {
@@ -13,6 +19,14 @@ describe("format helpers", () => {
   it("formats dates and falls back for empty values", () => {
     expect(formatDateTime(null)).toBe("Not available");
     expect(formatDateTime("2026-03-27T09:20:00.000Z")).not.toBe("Not available");
+  });
+
+  it("formats relative time with compact labels", () => {
+    const reference = new Date("2026-03-30T12:00:00.000Z").getTime();
+
+    expect(formatRelativeTime("2026-03-30T11:24:00.000Z", reference)).toBe("36m ago");
+    expect(formatRelativeTime("2026-03-30T10:00:00.000Z", reference)).toBe("2h ago");
+    expect(formatRelativeTime("2026-03-28T12:00:00.000Z", reference)).toBe("2d ago");
   });
 
   it("turns slugs into labels", () => {
