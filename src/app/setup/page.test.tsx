@@ -53,6 +53,7 @@ describe("setup page", () => {
 
   it("renders the setup form when setup is pending", async () => {
     const config = createDefaultConfig();
+    config.server.cloudflareApiToken = "top-secret-token";
 
     vi.mocked(readSelflifyConfig).mockResolvedValue(config);
     vi.mocked(isAdminConfigured).mockReturnValue(false);
@@ -68,5 +69,6 @@ describe("setup page", () => {
     expect(html).toContain("Create account");
     expect(html).toContain("Confirm password");
     expect(html).toContain("Continue");
+    expect(html).not.toContain("top-secret-token");
   });
 });

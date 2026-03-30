@@ -229,7 +229,11 @@ export async function runConfigOperation<T>({
       }
 
       if (previousCaddyContents !== null) {
-        await fs.writeFile(previousCaddyPath, previousCaddyContents, "utf8");
+        await fs.writeFile(previousCaddyPath, previousCaddyContents, {
+          encoding: "utf8",
+          mode: 0o600,
+        });
+        await fs.chmod(previousCaddyPath, 0o600);
       } else {
         await fs.rm(previousCaddyPath, { force: true });
       }

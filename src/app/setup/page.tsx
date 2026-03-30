@@ -56,7 +56,6 @@ export default async function SetupPage({ searchParams }: SetupPageProps) {
           defaultDomain={defaultDomain}
           defaultServerIp={config.server.serverIp}
           defaultCaddyContactEmail={defaultCaddyContactEmail}
-          defaultCloudflareToken={config.server.cloudflareApiToken}
         />
       </Box>
     </Box>

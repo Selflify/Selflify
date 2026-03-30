@@ -23,6 +23,7 @@ def write_if_missing(output_path: Path, content: str) -> bool:
         return False
 
     output_path.write_text(content, encoding="utf-8")
+    output_path.chmod(0o600)
     return True
 
 

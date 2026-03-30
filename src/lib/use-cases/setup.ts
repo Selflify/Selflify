@@ -23,6 +23,10 @@ export async function runInitialSetup(payload: SetupInput): Promise<void> {
   await runConfigOperation({
     label: "setup-admin",
     mutate: async (draft) => {
+      if (isAdminConfigured(draft)) {
+        throw new Error("Admin account is already configured.");
+      }
+
       draft.admin.login = payload.login;
       draft.admin.passwordHash = passwordHash;
       draft.admin.configuredAt = new Date().toISOString();

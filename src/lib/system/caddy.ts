@@ -325,7 +325,11 @@ export function createCaddyGateway(
       const rendered = generateCaddyfile(config);
 
       await fs.mkdir(path.dirname(target), { recursive: true });
-      await fs.writeFile(target, `${rendered}\n`, "utf8");
+      await fs.writeFile(target, `${rendered}\n`, {
+        encoding: "utf8",
+        mode: 0o600,
+      });
+      await fs.chmod(target, 0o600);
 
       return target;
     },

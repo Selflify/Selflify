@@ -10,7 +10,6 @@ type SetupWizardProps = {
   defaultDomain: string;
   defaultServerIp: string;
   defaultCaddyContactEmail: string;
-  defaultCloudflareToken: string;
 };
 
 type SetupStep = 1 | 2;
@@ -19,7 +18,6 @@ export function SetupWizard({
   defaultDomain,
   defaultServerIp,
   defaultCaddyContactEmail,
-  defaultCloudflareToken,
 }: SetupWizardProps) {
   const [step, setStep] = useState<SetupStep>(1);
   const [login, setLogin] = useState("");
@@ -28,7 +26,7 @@ export function SetupWizard({
   const [domain, setDomain] = useState(defaultDomain);
   const [serverIp, setServerIp] = useState(defaultServerIp);
   const [caddyContactEmail, setCaddyContactEmail] = useState(defaultCaddyContactEmail);
-  const [cloudflareApiToken, setCloudflareApiToken] = useState(defaultCloudflareToken);
+  const [cloudflareApiToken, setCloudflareApiToken] = useState("");
   const loginRef = useRef<HTMLInputElement>(null);
   const passwordRef = useRef<HTMLInputElement>(null);
   const passwordConfirmRef = useRef<HTMLInputElement>(null);

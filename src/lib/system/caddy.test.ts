@@ -214,4 +214,28 @@ describe("generateCaddyfile", () => {
 
     await fs.rm(tempDir, { recursive: true, force: true });
   });
+
+  it("writes the generated Caddyfile with 0600 permissions", async () => {
+    const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "selflify-caddy-perms-"));
+    const target = path.join(tempDir, "Caddyfile");
+    const gateway = createCaddyGateway();
+    const config = createConfig(createSite(), {
+      server: {
+        ...createDefaultConfig().server,
+        domain: "example.dev",
+        previewRootDir: "/var/www",
+        selflifyUpstream: "selflify:3000",
+        caddyContactEmail: "dev@example.dev",
+        cloudflareApiToken: "cf-token",
+        caddyConfigPath: target,
+      },
+    });
+
+    await gateway.writeGeneratedConfig(config);
+
+    const stats = await fs.stat(target);
+    expect(stats.mode & 0o777).toBe(0o600);
+
+    await fs.rm(tempDir, { recursive: true, force: true });
+  });
 });
