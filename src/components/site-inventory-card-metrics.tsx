@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Skeleton, Text } from "@chakra-ui/react";
+import { Box, Skeleton, Text } from "@chakra-ui/react";
 
 type SiteInventoryCardMetricsData = {
   deployCount: number;
@@ -48,13 +48,28 @@ export function SiteInventoryCardMetrics({ siteSlug }: SiteInventoryCardMetricsP
     };
   }, [siteSlug]);
 
+  const content = data ? `${data.deployCount} deploys · ${data.totalSizeLabel}` : "Metrics unavailable";
+
+  const lineProps = {
+    mt: "2",
+    minH: "1.25rem",
+    display: "flex",
+    alignItems: "center",
+  } as const;
+
   if (!data && !error) {
-    return <Skeleton mt="2" height="1rem" width="10rem" opacity="0.18" />;
+    return (
+      <Box {...lineProps}>
+        <Skeleton height="1rem" width="10rem" opacity="0.18" />
+      </Box>
+    );
   }
 
   return (
-    <Text color="muted" mt="2" fontSize="sm">
-      {data ? `${data.deployCount} deploys · ${data.totalSizeLabel}` : "Metrics unavailable"}
-    </Text>
+    <Box {...lineProps}>
+      <Text color="muted" fontSize="sm">
+        {content}
+      </Text>
+    </Box>
   );
 }

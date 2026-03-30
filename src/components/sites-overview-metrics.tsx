@@ -29,10 +29,15 @@ function MetricCardSkeleton() {
       px="5"
       py="5"
       boxShadow="panel"
+      minH="11.5rem"
     >
       <Skeleton height="0.75rem" width="4rem" opacity="0.18" />
-      <Skeleton height="2.75rem" width="6rem" mt="4" opacity="0.18" />
-      <Skeleton height="1rem" width="8rem" mt="4" opacity="0.14" />
+      <Box mt="3" minH="3.5rem" display="flex" alignItems="flex-end">
+        <Skeleton height="2.75rem" width="6rem" opacity="0.18" />
+      </Box>
+      <Box mt="2" minH="2.75rem">
+        <Skeleton height="1rem" width="9rem" opacity="0.14" />
+      </Box>
     </Box>
   );
 }
