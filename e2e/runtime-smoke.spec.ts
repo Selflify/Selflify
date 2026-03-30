@@ -34,6 +34,8 @@ test("setup, login and key admin pages render without runtime errors", async ({ 
   await expect(page).toHaveURL(/\/sites(?:\?|$)/);
   await expect(page.getByRole("heading", { name: "Dashboard" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Create site" })).toBeVisible();
+  await expect(page.getByText("Stable + preview directories detected")).toBeVisible();
+  await expect(page.getByText("Last deploys")).toBeVisible();
   await runtimeErrors.assertClean();
 
   await page.getByRole("button", { name: "Create site" }).click();
@@ -46,6 +48,7 @@ test("setup, login and key admin pages render without runtime errors", async ({ 
   await expect(page).toHaveURL(/\/sites(?:\?|$)/);
   const siteLink = page.locator('a[href="/sites/app"]').first();
   await expect(siteLink).toBeVisible();
+  await expect(page.getByText("app.example.dev")).toBeVisible();
   await runtimeErrors.assertClean();
 
   await siteLink.click();
@@ -56,5 +59,6 @@ test("setup, login and key admin pages render without runtime errors", async ({ 
   await page.goto("/settings");
   await expect(page.getByRole("heading", { name: "Global settings" })).toBeVisible();
   await expect(page.getByText("Cloudflare DNS records")).toBeVisible();
+  await expect(page.getByRole("cell", { name: "app.example.dev", exact: true })).toBeVisible();
   await runtimeErrors.assertClean();
 });

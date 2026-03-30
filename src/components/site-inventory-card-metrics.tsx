@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Box, Skeleton, Text } from "@chakra-ui/react";
+import { Box, Text } from "@chakra-ui/react";
 
 type SiteInventoryCardMetricsData = {
   deployCount: number;
@@ -60,7 +60,7 @@ export function SiteInventoryCardMetrics({ siteSlug }: SiteInventoryCardMetricsP
   if (!data && !error) {
     return (
       <Box {...lineProps}>
-        <Skeleton height="1rem" width="10rem" opacity="0.18" />
+        <Box h="1rem" w="10rem" rounded="md" bg="whiteAlpha.100" />
       </Box>
     );
   }

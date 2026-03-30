@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Box, Skeleton, Stack, Text } from "@chakra-ui/react";
+import { Box, Stack, Text } from "@chakra-ui/react";
 
 import type { SettingsDnsRecordsPayload } from "@/app/api/settings/dns-records/route";
 
@@ -104,12 +104,18 @@ function DnsRecordsSkeleton() {
   return (
     <Box rounded="xl" borderWidth="1px" borderColor="rgba(255,255,255,0.08)" overflow="hidden">
       <Box px="4" py="3" bg="rgba(255,255,255,0.02)">
-        <Skeleton height="0.9rem" width="14rem" opacity="0.18" />
+        <Box h="0.9rem" w="14rem" rounded="md" bg="whiteAlpha.100" />
       </Box>
       <Stack gap="0" p="0">
         {[0, 1, 2].map((row) => (
-          <Box key={row} px="4" py="3.5" borderTopWidth={row === 0 ? "0" : "1px"} borderColor="rgba(255,255,255,0.08)">
-            <Skeleton height="1rem" width={`${10 + row * 3}rem`} opacity="0.16" />
+          <Box
+            key={row}
+            px="4"
+            py="3.5"
+            borderTopWidth={row === 0 ? "0" : "1px"}
+            borderColor="rgba(255,255,255,0.08)"
+          >
+            <Box h="1rem" w={`${10 + row * 3}rem`} rounded="md" bg="whiteAlpha.100" />
           </Box>
         ))}
       </Stack>

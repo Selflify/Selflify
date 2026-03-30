@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Box, SimpleGrid, Skeleton } from "@chakra-ui/react";
+import { Box, SimpleGrid } from "@chakra-ui/react";
 
 import { MetricCard } from "@/components/metric-card";
 import { formatBytes } from "@/lib/utils/format";
@@ -31,12 +31,12 @@ function MetricCardSkeleton() {
       boxShadow="panel"
       minH="11.5rem"
     >
-      <Skeleton height="0.75rem" width="4rem" opacity="0.18" />
+      <Box h="0.75rem" w="4rem" rounded="md" bg="whiteAlpha.100" />
       <Box mt="3" minH="3.5rem" display="flex" alignItems="flex-end">
-        <Skeleton height="2.75rem" width="6rem" opacity="0.18" />
+        <Box h="2.75rem" w="6rem" rounded="lg" bg="whiteAlpha.100" />
       </Box>
       <Box mt="2" minH="2.75rem">
-        <Skeleton height="1rem" width="9rem" opacity="0.14" />
+        <Box h="1rem" w="9rem" rounded="md" bg="whiteAlpha.50" />
       </Box>
     </Box>
   );

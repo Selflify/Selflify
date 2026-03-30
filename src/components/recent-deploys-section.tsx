@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { Box, Skeleton, Stack, Text } from "@chakra-ui/react";
+import { Box, Stack, Text } from "@chakra-ui/react";
 
 import { SiteDeployCard } from "@/components/site-deploy-card";
 import { formatSiteName } from "@/lib/utils/format";
@@ -37,10 +37,10 @@ function RecentDeploysSkeleton() {
           px="4"
           py="4"
         >
-          <Skeleton height="1.5rem" width={`${8 + index}rem`} opacity="0.18" />
-          <Skeleton height="1rem" width={`${12 + index * 2}rem`} mt="3" opacity="0.14" />
-          <Skeleton height="1rem" width={`${11 + index}rem`} mt="3" opacity="0.14" />
-          <Skeleton height="1rem" width={`${10 + index}rem`} mt="3" opacity="0.12" />
+          <Box h="1.5rem" w={`${8 + index}rem`} rounded="md" bg="whiteAlpha.100" />
+          <Box h="1rem" w={`${12 + index * 2}rem`} mt="3" rounded="md" bg="whiteAlpha.50" />
+          <Box h="1rem" w={`${11 + index}rem`} mt="3" rounded="md" bg="whiteAlpha.50" />
+          <Box h="1rem" w={`${10 + index}rem`} mt="3" rounded="md" bg="whiteAlpha.50" />
         </Box>
       ))}
     </Stack>
