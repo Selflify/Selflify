@@ -53,6 +53,7 @@ describe("GET /api/settings/dns-records", () => {
         slug: "app",
         name: "App",
         mainBranch: "stable",
+        stableAlias: null,
         previewAuth: {
           enabled: false,
           login: null,

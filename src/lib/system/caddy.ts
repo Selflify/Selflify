@@ -204,6 +204,31 @@ function withDevScheme(host: string): string {
   return isDevelopmentRuntime() ? `http://${host}` : host;
 }
 
+function getSiteStableHosts(config: SelflifyConfig, site: SiteConfig): string[] {
+  return [
+    `${site.slug}.${config.server.domain}`,
+    ...(site.stableAlias ? [site.stableAlias] : []),
+  ];
+}
+
+function getSitePreviewWildcardHost(config: SelflifyConfig, site: SiteConfig): string {
+  return `*.${site.slug}.${config.server.domain}`;
+}
+
+function renderStableBlock(config: SelflifyConfig, site: SiteConfig): string {
+  const previewRoot = path.join(getEffectivePreviewRoot(config), site.slug).replace(/\\/g, "/");
+  const stableHosts = getSiteStableHosts(config, site).map(withDevScheme).join(", ");
+
+  return `${stableHosts} {
+    import common_site
+
+    root * ${previewRoot}/${site.mainBranch}
+    try_files {path} {path}/ /index.html
+    file_server
+}
+`;
+}
+
 function renderPreviewBlock(config: SelflifyConfig, site: SiteConfig): string {
   const previewRoot = path.join(getEffectivePreviewRoot(config), site.slug).replace(/\\/g, "/");
   const authBlock =
@@ -214,27 +239,20 @@ function renderPreviewBlock(config: SelflifyConfig, site: SiteConfig): string {
         }
 `
       : "";
-  const stableHost = `${site.slug}.${config.server.domain}`;
-  const previewHost = `*.${site.slug}.${config.server.domain}`;
+  const previewHost = getSitePreviewWildcardHost(config, site);
 
-  return `${withDevScheme(stableHost)}, ${withDevScheme(previewHost)} {
+  return `${withDevScheme(previewHost)} {
     import common_site
 
-    @preview expression \`{host} != "${site.slug}.${config.server.domain}"\`
-
-    handle @preview {${authBlock}
-        root * ${previewRoot}/{labels.3}
-        try_files {path} {path}/ /index.html
-        file_server
-    }
-
-    handle {
-        root * ${previewRoot}/${site.mainBranch}
-        try_files {path} {path}/ /index.html
-        file_server
-    }
+${authBlock}    root * ${previewRoot}/{labels.3}
+    try_files {path} {path}/ /index.html
+    file_server
 }
 `;
+}
+
+function renderSiteBlocks(config: SelflifyConfig, site: SiteConfig): string {
+  return `${renderStableBlock(config, site)}\n${renderPreviewBlock(config, site)}`;
 }
 
 function renderSelflifyPanelBlocks(config: SelflifyConfig): string {
@@ -263,7 +281,7 @@ export function generateCaddyfile(config: SelflifyConfig): string {
   const siteBlocks = config.sites
     .slice()
     .sort((left, right) => left.slug.localeCompare(right.slug))
-    .map((site) => renderPreviewBlock(config, site))
+    .map((site) => renderSiteBlocks(config, site))
     .join("\n");
 
   return `{

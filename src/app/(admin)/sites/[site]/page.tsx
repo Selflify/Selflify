@@ -5,6 +5,7 @@ import {
   deleteSiteAction,
   resetSitePreviewAccessAction,
   updateSiteAction,
+  updateSiteStableAliasAction,
   updateSitePreviewAccessAction,
 } from "@/app/actions";
 import { ActionFeedbackToast } from "@/components/action-feedback-toast";
@@ -115,6 +116,49 @@ export default async function SiteDetailsPage({ params, searchParams }: SiteDeta
                   color="white"
                   _hover={{ bg: "action.600" }}
                   pendingText="Saving site"
+                >
+                  Save
+                </FormSubmitButton>
+              </Stack>
+            </form>
+          </Box>
+
+          <Box
+            rounded="2xl"
+            borderWidth="1px"
+            borderColor="rgba(255,255,255,0.08)"
+            bg="rgba(17,17,24,0.88)"
+            p={{ base: "5", md: "6" }}
+            boxShadow="panel"
+          >
+            <Heading size="lg">Stable alias (optional)</Heading>
+            <Text color="muted" mt="2">
+              Add one extra hostname that should serve the main branch only. Preview deploys stay
+              on the canonical subdomain and wildcard hosts.
+            </Text>
+
+            <form action={updateSiteStableAliasAction.bind(null, site.slug)}>
+              <input type="hidden" name="configRevision" value={String(config.configRevision)} />
+              <Stack gap="4" mt="6">
+                <FormField
+                  label="Alias hostname"
+                  htmlFor="site-settings-stable-alias"
+                  hint="Leave this empty and save to remove the alias."
+                >
+                  <Input
+                    id="site-settings-stable-alias"
+                    name="stableAlias"
+                    defaultValue={site.stableAlias ?? ""}
+                    placeholder="www.example.com"
+                    bg="rgba(255,255,255,0.04)"
+                  />
+                </FormField>
+                <FormSubmitButton
+                  alignSelf="flex-start"
+                  bg="action.500"
+                  color="white"
+                  _hover={{ bg: "action.600" }}
+                  pendingText="Saving alias"
                 >
                   Save
                 </FormSubmitButton>

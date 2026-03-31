@@ -11,6 +11,7 @@ vi.mock("@/app/actions", () => ({
   deleteSiteAction: vi.fn(),
   resetSitePreviewAccessAction: vi.fn(),
   updateSiteAction: vi.fn(),
+  updateSiteStableAliasAction: vi.fn(),
   updateSitePreviewAccessAction: vi.fn(),
 }));
 
@@ -48,6 +49,7 @@ describe("site details page", () => {
         slug: "app",
         name: "app",
         mainBranch: "stable",
+        stableAlias: null,
         previewAuth: {
           enabled: false,
           login: null,
@@ -114,6 +116,7 @@ describe("site details page", () => {
         slug: "app",
         name: "app",
         mainBranch: "stable",
+        stableAlias: "www.example.com",
         previewAuth: {
           enabled: true,
           login: "preview-user",
@@ -147,6 +150,8 @@ describe("site details page", () => {
     expect(html).toContain("App");
     expect(html).toContain('value="App"');
     expect(html).toContain("Configuration");
+    expect(html).toContain("Stable alias");
+    expect(html).toContain('value="www.example.com"');
     expect(html).toContain("Preview access");
     expect(html).toContain("Login");
     expect(html).toContain("Confirm password");

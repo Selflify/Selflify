@@ -215,6 +215,7 @@ describe.sequential("runConfigOperation", () => {
       slug: "app",
       name: "App",
       mainBranch: "stable",
+      stableAlias: null,
       previewAuth: {
         enabled: false,
         login: null,

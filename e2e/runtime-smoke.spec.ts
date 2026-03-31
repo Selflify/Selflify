@@ -59,6 +59,18 @@ test("setup, login and key admin pages render without runtime errors", async ({ 
   await expect(page.getByText("Deploy inventory")).toBeVisible();
   await runtimeErrors.assertClean();
 
+  await page.goto("/sites/app?view=configuration");
+  await expect(page.getByRole("heading", { name: "Stable alias (optional)" })).toBeVisible();
+  await page.locator("#site-settings-stable-alias").fill("www.example.com");
+  await page
+    .locator("#site-settings-stable-alias")
+    .locator("xpath=ancestor::form")
+    .getByRole("button", { name: "Save" })
+    .click();
+  await expect(page).toHaveURL(/\/sites\/app\?view=configuration(?:&|$)/);
+  await expect(page.locator("#site-settings-stable-alias")).toHaveValue("www.example.com");
+  await runtimeErrors.assertClean();
+
   await page.goto("/settings");
   await expect(page.getByRole("heading", { name: "Global settings" })).toBeVisible();
   await expect(page.getByText("Cloudflare DNS records")).toBeVisible();

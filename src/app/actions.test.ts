@@ -9,6 +9,7 @@ import {
   saveServerSettingsAction,
   setupAction,
   updateSiteAction,
+  updateSiteStableAliasAction,
   updateSitePreviewAccessAction,
 } from "@/app/actions";
 import { requireAdminSession } from "@/lib/auth/guards";
@@ -379,6 +380,7 @@ describe("server actions", () => {
           slug: "app",
           name: "app",
           mainBranch: "stable",
+          stableAlias: null,
           previewAuth: {
             enabled: false,
             login: null,
@@ -404,6 +406,64 @@ describe("server actions", () => {
 
     expect(redirectMock).toHaveBeenCalledWith(
       "/sites/app?view=configuration&notice=Updated+app.",
+    );
+  });
+
+  it("saves a stable alias and keeps the configuration tab selected", async () => {
+    vi.mocked(requireAdminSession).mockResolvedValue({
+      config: { configRevision: 2 },
+      session: { user: { name: "owner" } },
+    } as never);
+    vi.mocked(runConfigOperation).mockImplementation(async ({ mutate }) => {
+      const config = createDefaultConfig();
+      config.sites = [
+        {
+          slug: "app",
+          name: "app",
+          mainBranch: "stable",
+          stableAlias: null,
+          previewAuth: {
+            enabled: false,
+            login: null,
+            passwordHash: null,
+          },
+          createdAt: "2026-03-27T09:00:00.000Z",
+          updatedAt: "2026-03-27T09:00:00.000Z",
+        },
+      ];
+
+      const outcome = await mutate(config);
+      expect(outcome.config.sites[0]?.stableAlias).toBe("www.example.com");
+
+      return undefined as never;
+    });
+
+    const formData = new FormData();
+    formData.set("configRevision", "2");
+    formData.set("stableAlias", "WWW.EXAMPLE.COM");
+
+    await updateSiteStableAliasAction("app", formData);
+
+    expect(redirectMock).toHaveBeenCalledWith(
+      "/sites/app?view=configuration&notice=Stable+alias+saved+for+app.",
+    );
+  });
+
+  it("removes a stable alias when the value is saved empty", async () => {
+    vi.mocked(requireAdminSession).mockResolvedValue({
+      config: { configRevision: 2 },
+      session: { user: { name: "owner" } },
+    } as never);
+    vi.mocked(runConfigOperation).mockResolvedValue(undefined as never);
+
+    const formData = new FormData();
+    formData.set("configRevision", "2");
+    formData.set("stableAlias", "");
+
+    await updateSiteStableAliasAction("app", formData);
+
+    expect(redirectMock).toHaveBeenCalledWith(
+      "/sites/app?view=configuration&notice=Stable+alias+removed+for+app.",
     );
   });
 

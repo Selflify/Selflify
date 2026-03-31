@@ -67,6 +67,7 @@ describe("saveServerSettings", () => {
           slug: "app",
           name: "App",
           mainBranch: "stable",
+          stableAlias: null,
           previewAuth: {
             enabled: false,
             login: null,
@@ -79,6 +80,7 @@ describe("saveServerSettings", () => {
           slug: "forms",
           name: "Forms",
           mainBranch: "stable",
+          stableAlias: null,
           previewAuth: {
             enabled: false,
             login: null,

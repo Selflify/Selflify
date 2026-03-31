@@ -51,6 +51,7 @@ describe("sites page", () => {
         slug: "app",
         name: "app",
         mainBranch: "stable",
+        stableAlias: null,
         previewAuth: {
           enabled: true,
           login: "preview-user",

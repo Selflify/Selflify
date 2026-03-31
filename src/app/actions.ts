@@ -14,9 +14,11 @@ import {
   deleteSiteDeploy,
   resetSitePreviewAccess,
   updateSite,
+  updateSiteStableAlias,
   updateSitePreviewAccess,
 } from "@/lib/use-cases/sites";
 import { runInitialSetup } from "@/lib/use-cases/setup";
+import { isValidHostname, normalizeHostname } from "@/lib/utils/hostname";
 
 function asString(value: FormDataEntryValue | null): string {
   return typeof value === "string" ? value.trim() : "";
@@ -148,6 +150,22 @@ const updateSiteSchema = z.object({
   mainBranch: z.string().trim().regex(deployNamePattern),
 });
 
+const updateSiteStableAliasSchema = z.object({
+  stableAlias: z
+    .string()
+    .trim()
+    .transform((value) => normalizeHostname(value))
+    .superRefine((value, context) => {
+      if (value && !isValidHostname(value)) {
+        context.addIssue({
+          code: "custom",
+          message: "Stable alias must be a valid hostname.",
+          path: ["stableAlias"],
+        });
+      }
+    }),
+});
+
 const updateSitePreviewAccessSchema = z
   .object({
     previewLogin: z.string().trim().max(128).default(""),
@@ -187,6 +205,38 @@ export async function updateSiteAction(siteSlug: string, formData: FormData) {
         : error instanceof Error
           ? error.message
           : "Could not update site.";
+
+    redirectWith(`/sites/${siteSlug}?view=configuration`, "error", message);
+  }
+}
+
+export async function updateSiteStableAliasAction(siteSlug: string, formData: FormData) {
+  await requireAdminSession();
+  const expectedRevision = toRevision(formData);
+
+  try {
+    const payload = updateSiteStableAliasSchema.parse({
+      stableAlias: getQueryValue(formData, "stableAlias"),
+    });
+
+    await updateSiteStableAlias(siteSlug, payload, expectedRevision);
+
+    redirectWith(
+      `/sites/${siteSlug}?view=configuration`,
+      "notice",
+      payload.stableAlias
+        ? `Stable alias saved for ${siteSlug}.`
+        : `Stable alias removed for ${siteSlug}.`,
+    );
+  } catch (error) {
+    rethrowIfRedirectError(error);
+
+    const message =
+      error instanceof ConfigConflictError
+        ? error.message
+        : error instanceof Error
+          ? error.message
+          : "Could not update stable alias.";
 
     redirectWith(`/sites/${siteSlug}?view=configuration`, "error", message);
   }

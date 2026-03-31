@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { isValidHostname, normalizeHostname } from "@/lib/utils/hostname";
+
 export const siteSlugPattern = /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/;
 export const deployNamePattern = /^[a-z0-9](?:[a-z0-9-]{0,62})$/;
 
@@ -28,6 +30,20 @@ export const siteConfigSchema = z.object({
     .string()
     .trim()
     .regex(deployNamePattern, "Main branch must use normalized deploy naming."),
+  stableAlias: z
+    .string()
+    .trim()
+    .transform((value) => normalizeHostname(value))
+    .nullable()
+    .default(null)
+    .superRefine((value, ctx) => {
+      if (value && !isValidHostname(value)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Stable alias must be a valid hostname.",
+        });
+      }
+    }),
   previewAuth: previewAuthSchema.default({
     enabled: false,
     login: null,

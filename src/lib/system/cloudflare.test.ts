@@ -86,6 +86,7 @@ describe("createDnsGateway", () => {
         slug: "app",
         name: "App",
         mainBranch: "stable",
+        stableAlias: null,
         previewAuth: { enabled: false, login: null, passwordHash: null },
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),

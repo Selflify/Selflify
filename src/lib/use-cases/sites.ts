@@ -16,6 +16,7 @@ import {
 import { dnsGateway } from "@/lib/system/cloudflare";
 import { caddyGateway } from "@/lib/system/caddy";
 import { formatSiteName } from "@/lib/utils/format";
+import { isValidHostname, normalizeHostname } from "@/lib/utils/hostname";
 
 export { ConfigConflictError };
 
@@ -28,6 +29,10 @@ export type CreateSiteInput = {
 export type UpdateSiteInput = {
   name: string;
   mainBranch: string;
+};
+
+export type UpdateSiteStableAliasInput = {
+  stableAlias: string;
 };
 
 export type UpdateSitePreviewAccessInput = {
@@ -60,6 +65,49 @@ function createPreviewAuth(
   };
 }
 
+function assertStableAliasAvailable(
+  sites: SiteConfig[],
+  siteSlug: string,
+  alias: string,
+  domain: string,
+) {
+  if (!alias) {
+    return;
+  }
+
+  if (!isValidHostname(alias)) {
+    throw new Error("Stable alias must be a valid hostname.");
+  }
+
+  if (alias === domain) {
+    throw new Error("Stable alias cannot match the Selflify panel domain.");
+  }
+
+  for (const site of sites) {
+    const canonicalHost = `${site.slug}.${domain}`;
+
+    if (site.slug === siteSlug) {
+      if (alias === canonicalHost) {
+        throw new Error("Stable alias already matches the canonical site hostname.");
+      }
+
+      continue;
+    }
+
+    if (alias === canonicalHost) {
+      throw new Error("Stable alias conflicts with another site's canonical hostname.");
+    }
+
+    if (site.stableAlias && alias === site.stableAlias) {
+      throw new Error("Stable alias is already used by another site.");
+    }
+
+    if (alias.endsWith(`.${canonicalHost}`)) {
+      throw new Error("Stable alias conflicts with another site's preview hostname space.");
+    }
+  }
+}
+
 export async function createSite(
   payload: CreateSiteInput,
   expectedRevision?: number,
@@ -82,6 +130,7 @@ export async function createSite(
         slug: payload.slug,
         name: formatSiteName(payload.name),
         mainBranch: payload.mainBranch,
+        stableAlias: null,
         previewAuth: {
           enabled: false,
           login: null,
@@ -110,6 +159,36 @@ export async function createSite(
     afterApply: async (config) => {
       if (!createdSite) return;
       await dnsGateway.syncSiteRecords(config, createdSite);
+    },
+  });
+}
+
+export async function updateSiteStableAlias(
+  siteSlug: string,
+  payload: UpdateSiteStableAliasInput,
+  expectedRevision?: number,
+): Promise<string> {
+  return runConfigOperation({
+    label: `update-site-stable-alias:${siteSlug}`,
+    expectedRevision,
+    mutate: async (draft) => {
+      const site = draft.sites.find((entry) => entry.slug === siteSlug);
+
+      if (!site) {
+        throw new Error("Site not found.");
+      }
+
+      const stableAlias = normalizeHostname(payload.stableAlias);
+
+      assertStableAliasAvailable(draft.sites, siteSlug, stableAlias, draft.server.domain);
+
+      site.stableAlias = stableAlias || null;
+      site.updatedAt = new Date().toISOString();
+
+      return {
+        config: draft,
+        result: site.slug,
+      };
     },
   });
 }

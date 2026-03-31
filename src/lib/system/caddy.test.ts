@@ -19,6 +19,7 @@ function createSite(partial?: Partial<SiteConfig>): SiteConfig {
     slug: "app",
     name: "App",
     mainBranch: "stable",
+    stableAlias: null,
     previewAuth: {
       enabled: true,
       login: "preview-user",
@@ -66,6 +67,8 @@ describe("generateCaddyfile", () => {
     expect(rendered).toContain("output file /var/log/caddy/access.log");
     expect(rendered).toContain("roll_keep 10");
     expect(rendered).toContain("origins http://0.0.0.0:2019 http://127.0.0.1:2019 http://localhost:2019 http://caddy:2019");
+    expect(rendered).toContain("app.example.dev {");
+    expect(rendered).toContain("*.app.example.dev {");
   });
 
   it("keeps the panel reachable over the configured server ip", () => {
@@ -134,8 +137,23 @@ describe("generateCaddyfile", () => {
 
     expect(rendered).toContain("auto_https off");
     expect(rendered).toContain("http://example.dev");
-    expect(rendered).toContain("http://app.example.dev, http://*.app.example.dev");
+    expect(rendered).toContain("http://app.example.dev {");
+    expect(rendered).toContain("http://*.app.example.dev {");
     expect(rendered).toContain("reverse_proxy host.docker.internal:3000");
+  });
+
+  it("serves the stable branch from an optional alias without exposing preview hosts there", () => {
+    const config = createConfig(
+      createSite({
+        stableAlias: "www.example.com",
+      }),
+    );
+    const rendered = generateCaddyfile(config);
+
+    expect(rendered).toContain("app.example.dev, www.example.com {");
+    expect(rendered).toContain("*.app.example.dev {");
+    expect(rendered).toContain("root * /var/www/app/stable");
+    expect(rendered).not.toContain("www.example.com, *.app.example.dev");
   });
 
   it("uses docker exec for caddy commands in development when no explicit local binary is configured", () => {

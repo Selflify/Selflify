@@ -8,8 +8,6 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const rootDir = path.resolve(__dirname, "..");
 const e2eRoot = path.join(rootDir, ".tmp", "playwright-runtime");
 const fakeCaddyPath = path.join(e2eRoot, "fake-caddy.sh");
-const mockCloudflarePort = 4010;
-const mockCloudflareBaseUrl = `http://127.0.0.1:${mockCloudflarePort}/client/v4`;
 
 function createMockCloudflareServer() {
   const zoneId = "zone-e2e";
@@ -197,13 +195,16 @@ async function main() {
   await prepareRuntime();
   const cloudflareServer = createMockCloudflareServer();
 
-  await new Promise((resolve, reject) => {
+  const cloudflareAddress = await new Promise((resolve, reject) => {
     cloudflareServer.once("error", reject);
-    cloudflareServer.listen(mockCloudflarePort, "127.0.0.1", () => {
+    cloudflareServer.listen(0, "127.0.0.1", () => {
       cloudflareServer.off("error", reject);
-      resolve();
+      resolve(cloudflareServer.address());
     });
   });
+  const cloudflarePort =
+    typeof cloudflareAddress === "object" && cloudflareAddress ? cloudflareAddress.port : 4010;
+  const mockCloudflareBaseUrl = `http://127.0.0.1:${cloudflarePort}/client/v4`;
 
   const child = spawn("yarn", ["dev", "--hostname", "127.0.0.1", "--port", "3201"], {
     cwd: rootDir,
