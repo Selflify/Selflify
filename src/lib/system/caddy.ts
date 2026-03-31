@@ -18,10 +18,6 @@ import {
   shouldSkipCaddyReload,
 } from "@/lib/system/runtime";
 
-function escapeCaddyLiteral(value: string): string {
-  return value.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
-}
-
 function renderTlsBlock(token: string): string {
   if (!token) {
     return "";
@@ -30,7 +26,7 @@ function renderTlsBlock(token: string): string {
   return `
 (tls_cf) {
     tls {
-        dns cloudflare "${escapeCaddyLiteral(token)}"
+        dns cloudflare ${token}
     }
 }
 `;

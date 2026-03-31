@@ -59,7 +59,7 @@ describe("generateCaddyfile", () => {
     const rendered = generateCaddyfile(config);
 
     expect(rendered).toContain("reverse_proxy selflify:3000");
-    expect(rendered).toContain('dns cloudflare "cf-token"');
+    expect(rendered).toContain("dns cloudflare cf-token");
     expect(rendered).toContain("root * /var/www/app/{labels.3}");
     expect(rendered).toContain("root * /var/www/app/stable");
     expect(rendered).toContain("preview-user hashed-secret");
