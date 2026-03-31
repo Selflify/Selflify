@@ -9,11 +9,13 @@ type CloudflareResult = {
   result?: unknown;
 };
 
-const CLOUDFLARE_API = "https://api.cloudflare.com/client/v4";
+function getCloudflareApiBaseUrl(): string {
+  return process.env.SELFLIFY_CLOUDFLARE_API_BASE_URL?.trim() || "https://api.cloudflare.com/client/v4";
+}
 
 export function createDnsGateway(fetchImpl: typeof fetch = fetch): DnsGateway {
   async function callCloudflare<T>(token: string, pathname: string, init?: RequestInit): Promise<T> {
-    const response = await fetchImpl(`${CLOUDFLARE_API}${pathname}`, {
+    const response = await fetchImpl(`${getCloudflareApiBaseUrl()}${pathname}`, {
       ...init,
       headers: {
         Authorization: `Bearer ${token}`,

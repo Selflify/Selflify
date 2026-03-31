@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { createDefaultConfig } from "@/lib/config/service";
 import { runConfigOperation } from "@/lib/operations";
-import { saveServerSettings } from "@/lib/use-cases/settings";
+import { saveCloudflareToken, saveServerSettings } from "@/lib/use-cases/settings";
 
 const { dnsGatewayMock } = vi.hoisted(() => ({
   dnsGatewayMock: {
@@ -123,5 +123,27 @@ describe("saveServerSettings", () => {
       }),
       expect.objectContaining({ slug: "forms" }),
     );
+  });
+});
+
+describe("saveCloudflareToken", () => {
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("updates the token without syncing site DNS records", async () => {
+    vi.mocked(runConfigOperation).mockImplementation(async ({ mutate, afterApply }) => {
+      const config = createDefaultConfig();
+      const outcome = await mutate(config);
+
+      await afterApply?.(outcome.config);
+      expect(outcome.config.server.cloudflareApiToken).toBe("cfut_updatedToken123456789012345678901234567890");
+      return undefined as never;
+    });
+
+    await saveCloudflareToken("cfut_updatedToken123456789012345678901234567890", 8);
+
+    expect(dnsGatewayMock.syncAllSiteRecords).not.toHaveBeenCalled();
+    expect(dnsGatewayMock.deleteSiteRecords).not.toHaveBeenCalled();
   });
 });

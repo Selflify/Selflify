@@ -291,7 +291,7 @@ describe("server actions", () => {
     expect(error).toContain("Enter the server IP address.");
   });
 
-  it("saves a cloudflare token and syncs DNS", async () => {
+  it("saves a cloudflare token without syncing DNS records", async () => {
     vi.mocked(requireAdminSession).mockResolvedValue({
       config: { configRevision: 5 },
       session: { user: { name: "owner" } },
@@ -310,7 +310,7 @@ describe("server actions", () => {
 
     await saveCloudflareTokenAction(formData);
 
-    expect(syncAllSiteDnsRecords).toHaveBeenCalledTimes(1);
+    expect(syncAllSiteDnsRecords).not.toHaveBeenCalled();
     expect(redirectMock).toHaveBeenCalledWith("/settings?notice=Cloudflare+token+saved.");
   });
 

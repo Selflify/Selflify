@@ -95,8 +95,5 @@ export async function saveCloudflareToken(
         result: undefined,
       };
     },
-    afterApply: async (config) => {
-      await dnsGateway.syncAllSiteRecords(config);
-    },
   });
 }

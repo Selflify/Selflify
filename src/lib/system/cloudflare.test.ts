@@ -4,6 +4,38 @@ import { createDefaultConfig } from "@/lib/config/service";
 import { createDnsGateway } from "@/lib/system/cloudflare";
 
 describe("createDnsGateway", () => {
+  it("uses the configured Cloudflare API base URL override", async () => {
+    vi.stubEnv("SELFLIFY_CLOUDFLARE_API_BASE_URL", "http://127.0.0.1:4010/client/v4");
+    const fetchMock = vi
+      .fn<typeof fetch>()
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ success: true, result: [{ id: "zone-1" }] }), { status: 200 }),
+      )
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            success: true,
+            result: [],
+          }),
+          { status: 200 },
+        ),
+      );
+
+    const config = createDefaultConfig();
+    config.server.domain = "example.dev";
+    config.server.cloudflareApiToken = "cf-token";
+
+    const gateway = createDnsGateway(fetchMock);
+    await gateway.listManagedRecords(config);
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      "http://127.0.0.1:4010/client/v4/zones?name=example.dev",
+      expect.any(Object),
+    );
+
+    vi.unstubAllEnvs();
+  });
+
   it("reads managed records from successful Cloudflare API responses", async () => {
     const fetchMock = vi
       .fn<typeof fetch>()
