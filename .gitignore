@@ -97,6 +97,7 @@ runtime/**
 !runtime/
 !runtime/.gitkeep
 output/playwright/
+.playwright-cli/
 .dev/Caddyfile
 .dev/selflify.config.json
 .dev/var-www/**
