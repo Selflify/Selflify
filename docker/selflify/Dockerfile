@@ -1,7 +1,7 @@
 FROM caddy:builder AS caddy-builder
 
 RUN xcaddy build \
-    --with github.com/caddy-dns/cloudflare
+    --with github.com/caddy-dns/cloudflare@v0.2.4
 
 FROM node:20-alpine AS base
 
