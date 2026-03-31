@@ -339,7 +339,6 @@ describe("server actions", () => {
       config: { configRevision: 2 },
       session: { user: { name: "owner" } },
     } as never);
-    vi.mocked(caddyGatewayMock.hashPassword).mockResolvedValue("preview-hash");
     vi.mocked(runConfigOperation).mockImplementation(
       async ({ mutate, beforePersist, afterApply, expectedRevision }) => {
         expect(expectedRevision).toBe(2);
@@ -359,42 +358,13 @@ describe("server actions", () => {
     formData.set("slug", "app");
     formData.set("name", "app");
     formData.set("mainBranch", "stable");
-    formData.set("previewLogin", "preview-user");
-    formData.set("previewPassword", "preview-secret");
 
     await createSiteAction(formData);
 
-    expect(caddyGatewayMock.hashPassword).toHaveBeenCalled();
+    expect(caddyGatewayMock.hashPassword).not.toHaveBeenCalled();
     expect(ensureSiteDirectories).toHaveBeenCalledTimes(1);
     expect(syncSiteDnsRecords).toHaveBeenCalledTimes(1);
     expect(redirectMock).toHaveBeenCalledWith("/sites?notice=Site+app+created.");
-  });
-
-  it("rejects preview passwords without a login during site creation", async () => {
-    vi.mocked(requireAdminSession).mockResolvedValue({
-      config: { configRevision: 4 },
-      session: { user: { name: "owner" } },
-    } as never);
-    vi.mocked(runConfigOperation).mockImplementation(async ({ mutate }) => {
-      await mutate(createDefaultConfig());
-      return undefined as never;
-    });
-
-    const formData = new FormData();
-    formData.set("configRevision", "4");
-    formData.set("slug", "app");
-    formData.set("name", "App");
-    formData.set("mainBranch", "stable");
-    formData.set("previewLogin", "");
-    formData.set("previewPassword", "preview-secret");
-
-    await createSiteAction(formData);
-
-    const target = redirectMock.mock.calls.at(-1)?.[0] as string;
-    const error = new URL(target, "http://selflify.test").searchParams.get("error");
-
-    expect(target).toContain("/sites?error=");
-    expect(error).toContain("Preview password requires a preview login.");
   });
 
   it("keeps the configuration tab on successful site updates", async () => {

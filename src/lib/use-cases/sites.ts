@@ -19,23 +19,21 @@ import { formatSiteName } from "@/lib/utils/format";
 
 export { ConfigConflictError };
 
-type PreviewAuthInput = {
-  previewLogin: string;
-  previewPassword: string;
-};
-
 export type CreateSiteInput = {
   slug: string;
   name: string;
   mainBranch: string;
-} & PreviewAuthInput;
+};
 
 export type UpdateSiteInput = {
   name: string;
   mainBranch: string;
 };
 
-export type UpdateSitePreviewAccessInput = PreviewAuthInput;
+export type UpdateSitePreviewAccessInput = {
+  previewLogin: string;
+  previewPassword: string;
+};
 
 function createPreviewAuth(
   site: SiteConfig | null,
@@ -80,24 +78,15 @@ export async function createSite(
         throw new Error("A site with this subdomain already exists.");
       }
 
-      if (!payload.previewLogin && payload.previewPassword) {
-        throw new Error("Preview password requires a preview login.");
-      }
-
-      const previewHash =
-        payload.previewLogin && payload.previewPassword
-          ? await caddyGateway.hashPassword(draft, payload.previewPassword)
-          : null;
       const site: SiteConfig = {
         slug: payload.slug,
         name: formatSiteName(payload.name),
         mainBranch: payload.mainBranch,
-        previewAuth: createPreviewAuth(
-          null,
-          payload.previewLogin,
-          payload.previewPassword,
-          previewHash,
-        ),
+        previewAuth: {
+          enabled: false,
+          login: null,
+          passwordHash: null,
+        },
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };

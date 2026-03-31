@@ -91,27 +91,6 @@ export function CreateSiteDialog({ configRevision, domain }: CreateSiteDialogPro
                       bg="rgba(255,255,255,0.04)"
                     />
                   </FormField>
-                  <FormField label="Login" htmlFor="create-site-preview-login">
-                    <Input
-                      id="create-site-preview-login"
-                      name="previewLogin"
-                      placeholder="Optional"
-                      bg="rgba(255,255,255,0.04)"
-                    />
-                  </FormField>
-                  <FormField
-                    label="Preview password"
-                    htmlFor="create-site-preview-password"
-                    hint="If login is set, Selflify will hash this password through Caddy."
-                  >
-                    <Input
-                      id="create-site-preview-password"
-                      name="previewPassword"
-                      type="password"
-                      placeholder="Optional"
-                      bg="rgba(255,255,255,0.04)"
-                    />
-                  </FormField>
                 </Stack>
               </Dialog.Body>
 

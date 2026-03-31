@@ -112,8 +112,6 @@ const createSiteSchema = z.object({
   slug: z.string().trim().regex(siteSlugPattern),
   name: z.string().trim().min(2).max(120),
   mainBranch: z.string().trim().regex(deployNamePattern),
-  previewLogin: z.string().trim().max(128).default(""),
-  previewPassword: z.string().max(128).default(""),
 });
 
 export async function createSiteAction(formData: FormData) {
@@ -125,8 +123,6 @@ export async function createSiteAction(formData: FormData) {
       slug: getQueryValue(formData, "slug"),
       name: getQueryValue(formData, "name"),
       mainBranch: getQueryValue(formData, "mainBranch"),
-      previewLogin: getQueryValue(formData, "previewLogin"),
-      previewPassword: getQueryValue(formData, "previewPassword"),
     });
 
     await createSite(payload, expectedRevision);
