@@ -6,6 +6,9 @@ tmp_scaffold
 .gitignore
 coverage
 *.log
+.env
+.env.*
+!.env.example
 README.md
 runtime
 .dev
