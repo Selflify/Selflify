@@ -209,13 +209,14 @@ write_env_file "${INSTALL_DIR}" "${AUTH_SECRET_VALUE}"
 rm -rf "${TMP_DIR}"
 
 if [ "${SKIP_START}" = "1" ]; then
-  log "Bootstrap files are ready in ${INSTALL_DIR}. Start manually with: docker compose up -d --build"
+  log "Bootstrap files are ready in ${INSTALL_DIR}. Start manually with: docker compose pull && docker compose up -d"
   exit 0
 fi
 
 log "Starting Selflify stack"
 cd "${INSTALL_DIR}"
-docker_compose up -d --build
+docker_compose pull
+docker_compose up -d
 
 log "Bootstrap complete"
 printf '\n'

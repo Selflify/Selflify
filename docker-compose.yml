@@ -1,8 +1,6 @@
 services:
   selflify:
-    build:
-      context: .
-      dockerfile: docker/selflify/Dockerfile
+    image: ghcr.io/selflify/selflify:${SELFLIFY_IMAGE_TAG:-stable}
     restart: unless-stopped
     environment:
       AUTH_SECRET: ${AUTH_SECRET}
@@ -17,10 +15,7 @@ services:
       - "3000"
 
   cleanup:
-    build:
-      context: .
-      dockerfile: docker/selflify/Dockerfile
-      target: cleanup
+    image: ghcr.io/selflify/selflify-cleanup:${SELFLIFY_IMAGE_TAG:-stable}
     restart: unless-stopped
     depends_on:
       - selflify
@@ -38,9 +33,7 @@ services:
       - /var/www:/var/www
 
   caddy:
-    build:
-      context: .
-      dockerfile: docker/caddy/Dockerfile
+    image: ghcr.io/selflify/selflify-caddy:${SELFLIFY_IMAGE_TAG:-stable}
     restart: unless-stopped
     depends_on:
       - selflify

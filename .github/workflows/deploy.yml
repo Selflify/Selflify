@@ -54,8 +54,80 @@ jobs:
       - name: Validate production compose
         run: docker compose config
 
-  publish-bootstrap:
+  build-images:
     needs: repo-checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push selflify image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/selflify/Dockerfile
+          target: runner
+          push: true
+          provenance: false
+          tags: |
+            ghcr.io/selflify/selflify:stable
+            ghcr.io/selflify/selflify:sha-${{ github.sha }}
+          labels: |
+            org.opencontainers.image.source=https://github.com/Selflify/Selflify
+            org.opencontainers.image.description=Selflify admin panel runtime image
+          cache-from: type=gha,scope=selflify-runner
+          cache-to: type=gha,mode=max,scope=selflify-runner
+
+      - name: Build and push cleanup image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/selflify/Dockerfile
+          target: cleanup
+          push: true
+          provenance: false
+          tags: |
+            ghcr.io/selflify/selflify-cleanup:stable
+            ghcr.io/selflify/selflify-cleanup:sha-${{ github.sha }}
+          labels: |
+            org.opencontainers.image.source=https://github.com/Selflify/Selflify
+            org.opencontainers.image.description=Selflify cleanup worker image
+          cache-from: type=gha,scope=selflify-cleanup
+          cache-to: type=gha,mode=max,scope=selflify-cleanup
+
+      - name: Build and push caddy image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/caddy/Dockerfile
+          push: true
+          provenance: false
+          tags: |
+            ghcr.io/selflify/selflify-caddy:stable
+            ghcr.io/selflify/selflify-caddy:sha-${{ github.sha }}
+          labels: |
+            org.opencontainers.image.source=https://github.com/Selflify/Selflify
+            org.opencontainers.image.description=Selflify Caddy runtime image
+          cache-from: type=gha,scope=selflify-caddy
+          cache-to: type=gha,mode=max,scope=selflify-caddy
+
+  publish-bootstrap:
+    needs: build-images
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
@@ -97,6 +169,9 @@ jobs:
     needs: publish-bootstrap
     runs-on: ubuntu-latest
     timeout-minutes: 45
+    permissions:
+      contents: read
+      packages: read
 
     steps:
       - name: Checkout
@@ -118,6 +193,13 @@ jobs:
 
       - name: Install Playwright browser
         run: yarn exec playwright install --with-deps chromium
+
+      - name: Log in to GHCR for bootstrap smoke
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Bootstrap Selflify from the latest release
         env:
@@ -335,6 +417,7 @@ jobs:
             exit 1
           fi
 
-          docker compose up -d --build --remove-orphans
+          docker compose pull
+          docker compose up -d --remove-orphans
           docker compose ps
           EOF

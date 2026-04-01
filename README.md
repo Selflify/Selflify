@@ -206,9 +206,15 @@ What the installer does:
 - downloads and extracts the bootstrap bundle into `/opt/selflify` by default
 - creates `.env` with a generated `AUTH_SECRET` if it does not exist yet
 - creates initial `runtime/selflify.config.json` and `runtime/Caddyfile` from templates if they do not exist yet
-- starts the production stack with `docker compose up -d --build`
+- pulls public runtime images from `ghcr.io/selflify/*`
+- starts the production stack with `docker compose pull && docker compose up -d`
 - brings the panel up on `http://<server-ip>/setup` so the first session can collect runtime settings
 - downloads `selflify-bootstrap.tar.gz` from the latest GitHub release by default
+
+Production images are published to GitHub Container Registry. After the first successful image publish,
+make the `ghcr.io/selflify/selflify`, `ghcr.io/selflify/selflify-cleanup` and
+`ghcr.io/selflify/selflify-caddy` packages public once in the GitHub UI. After that, fresh servers can
+pull them without `docker login`.
 
 The GitHub deploy workflow does not seed runtime config anymore. It expects the server to be bootstrapped
 already, with `runtime/selflify.config.json` and `runtime/Caddyfile` persisted on disk.
