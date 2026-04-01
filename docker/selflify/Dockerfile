@@ -7,23 +7,23 @@ FROM node:20-alpine AS base
 
 WORKDIR /workspace
 ENV NEXT_TELEMETRY_DISABLED=1
-RUN corepack enable
 RUN apk add --no-cache bash jq
 
 FROM base AS deps
 
 COPY package.json yarn.lock .yarnrc.yml ./
-RUN yarn install --immutable
+COPY .yarn/releases ./.yarn/releases
+RUN node .yarn/releases/yarn-4.13.0.cjs install --immutable
 
 FROM deps AS dev
 
 COPY --from=caddy-builder /usr/bin/caddy /usr/bin/caddy
-CMD ["yarn", "dev", "--hostname", "0.0.0.0", "--port", "3000"]
+CMD ["node", ".yarn/releases/yarn-4.13.0.cjs", "dev", "--hostname", "0.0.0.0", "--port", "3000"]
 
 FROM deps AS builder
 
 COPY . .
-RUN yarn build
+RUN node .yarn/releases/yarn-4.13.0.cjs build
 
 FROM deps AS cleanup
 

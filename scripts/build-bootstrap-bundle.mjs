@@ -12,6 +12,7 @@ const archivePath = path.join(distDir, `${bundleName}.tar.gz`);
 
 const bundleEntries = [
   ".dockerignore",
+  ".yarn/releases",
   ".yarnrc.yml",
   "bootstrap",
   "docker",
