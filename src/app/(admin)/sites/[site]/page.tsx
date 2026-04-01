@@ -9,6 +9,7 @@ import {
   updateSitePreviewAccessAction,
 } from "@/app/actions";
 import { ActionFeedbackToast } from "@/components/action-feedback-toast";
+import { DeleteSiteDialog } from "@/components/delete-site-dialog";
 import { FormField } from "@/components/form-field";
 import { FormSubmitButton } from "@/components/form-submit-button";
 import { SiteDeployCard } from "@/components/site-deploy-card";
@@ -262,23 +263,13 @@ export default async function SiteDetailsPage({ params, searchParams }: SiteDeta
           >
             <Heading size="md">Danger zone</Heading>
             <Text color="whiteAlpha.800" mt="2">
-              Deleting the site removes it from config and moves its files into orphan storage.
+              Deleting the site always removes it from configuration. You can optionally remove
+              server files and managed DNS records at the same time.
             </Text>
 
             <form action={deleteSiteAction.bind(null, site.slug)}>
               <input type="hidden" name="configRevision" value={String(config.configRevision)} />
-              <FormSubmitButton
-                mt="5"
-                danger
-                pendingText="Deleting site"
-                confirmMessage={`Delete ${site.slug} from config and move its files to orphan storage?`}
-                confirmTitle="Delete site"
-                confirmInputLabel={`Type "${siteDisplayName}" to confirm deletion`}
-                confirmInputPlaceholder={siteDisplayName}
-                confirmInputValue={siteDisplayName}
-              >
-                Delete site
-              </FormSubmitButton>
+              <DeleteSiteDialog siteSlug={site.slug} siteDisplayName={siteDisplayName} />
             </form>
           </Box>
         </Stack>

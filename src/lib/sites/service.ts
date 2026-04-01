@@ -281,6 +281,10 @@ export async function restoreSiteFromOrphanStorage(
   await fs.rename(orphanPath, siteDir);
 }
 
+export async function removeOrphanedSiteDirectory(orphanPath: string): Promise<void> {
+  await fs.rm(orphanPath, { recursive: true, force: true });
+}
+
 async function getDirectorySizeBytes(dir: string): Promise<number> {
   const key = cacheKey(dir);
   const cached = sizeCache.get(key);

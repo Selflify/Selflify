@@ -66,6 +66,7 @@ const cloudflareTokenFieldSchema = z
   .string()
   .trim()
   .min(1, "Paste a Cloudflare API token.");
+const booleanCheckboxFieldSchema = z.enum(["0", "1"]).catch("0");
 
 const setupSchema = z
   .object({
@@ -114,6 +115,11 @@ const createSiteSchema = z.object({
   slug: z.string().trim().regex(siteSlugPattern),
   name: z.string().trim().min(2).max(120),
   mainBranch: z.string().trim().regex(deployNamePattern),
+});
+
+const deleteSiteSchema = z.object({
+  removeFilesFromServer: booleanCheckboxFieldSchema,
+  removeDnsRecords: booleanCheckboxFieldSchema,
 });
 
 export async function createSiteAction(formData: FormData) {
@@ -305,9 +311,21 @@ export async function deleteSiteAction(siteSlug: string, formData: FormData) {
   const expectedRevision = toRevision(formData);
 
   try {
-    await deleteSite(siteSlug, expectedRevision);
+    const payload = deleteSiteSchema.parse({
+      removeFilesFromServer: getQueryValue(formData, "removeFilesFromServer"),
+      removeDnsRecords: getQueryValue(formData, "removeDnsRecords"),
+    });
 
-    redirectWith("/sites", "notice", `Site ${siteSlug} moved to orphan storage.`);
+    await deleteSite(
+      siteSlug,
+      {
+        removeFilesFromServer: payload.removeFilesFromServer === "1",
+        removeDnsRecords: payload.removeDnsRecords === "1",
+      },
+      expectedRevision,
+    );
+
+    redirectWith("/sites", "notice", `Site ${siteSlug} removed from configuration.`);
   } catch (error) {
     rethrowIfRedirectError(error);
 

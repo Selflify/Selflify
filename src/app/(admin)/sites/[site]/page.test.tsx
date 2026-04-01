@@ -19,6 +19,10 @@ vi.mock("@/components/action-feedback-toast", () => ({
   ActionFeedbackToast: () => null,
 }));
 
+vi.mock("@/components/delete-site-dialog", () => ({
+  DeleteSiteDialog: () => <button>Delete site</button>,
+}));
+
 vi.mock("@/components/form-submit-button", () => ({
   FormSubmitButton: ({ children }: { children: React.ReactNode }) => <button>{children}</button>,
 }));

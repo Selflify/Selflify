@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
   createSiteAction,
+  deleteSiteAction,
   deleteDeployAction,
   resetSitePreviewAccessAction,
   saveAdminAccessAction,
@@ -19,6 +20,7 @@ import { ensureConfigOnDisk, isAdminConfigured } from "@/lib/config/service";
 import { createDefaultConfig } from "@/lib/config/service";
 import { ensureSiteDirectories } from "@/lib/sites/service";
 import { syncAllSiteDnsRecords, syncSiteDnsRecords } from "@/lib/system/cloudflare";
+import * as sitesUseCases from "@/lib/use-cases/sites";
 
 const { redirectMock, dnsGatewayMock, caddyGatewayMock } = vi.hoisted(() => ({
   redirectMock: vi.fn(),
@@ -406,6 +408,33 @@ describe("server actions", () => {
 
     expect(redirectMock).toHaveBeenCalledWith(
       "/sites/app?view=configuration&notice=Updated+app.",
+    );
+  });
+
+  it("deletes a site with optional cleanup flags", async () => {
+    vi.mocked(requireAdminSession).mockResolvedValue({
+      config: { configRevision: 7 },
+      session: { user: { name: "owner" } },
+    } as never);
+    const deleteSiteSpy = vi.spyOn(sitesUseCases, "deleteSite").mockResolvedValue();
+
+    const formData = new FormData();
+    formData.set("configRevision", "7");
+    formData.set("removeFilesFromServer", "1");
+    formData.set("removeDnsRecords", "0");
+
+    await deleteSiteAction("app", formData);
+
+    expect(deleteSiteSpy).toHaveBeenCalledWith(
+      "app",
+      {
+        removeFilesFromServer: true,
+        removeDnsRecords: false,
+      },
+      7,
+    );
+    expect(redirectMock).toHaveBeenCalledWith(
+      "/sites?notice=Site+app+removed+from+configuration.",
     );
   });
 

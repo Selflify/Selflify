@@ -9,6 +9,7 @@ import {
   deployDirectoryExists,
   ensureSiteDirectories,
   moveSiteToOrphanStorage,
+  removeOrphanedSiteDirectory,
   removeDeployDirectory,
   removeSiteDirectory,
   restoreSiteFromOrphanStorage,
@@ -38,6 +39,11 @@ export type UpdateSiteStableAliasInput = {
 export type UpdateSitePreviewAccessInput = {
   previewLogin: string;
   previewPassword: string;
+};
+
+export type DeleteSiteInput = {
+  removeFilesFromServer: boolean;
+  removeDnsRecords: boolean;
 };
 
 function createPreviewAuth(
@@ -321,7 +327,11 @@ export async function resetSitePreviewAccess(
   });
 }
 
-export async function deleteSite(siteSlug: string, expectedRevision?: number): Promise<void> {
+export async function deleteSite(
+  siteSlug: string,
+  payload: DeleteSiteInput,
+  expectedRevision?: number,
+): Promise<void> {
   let removedSite: SiteConfig | null = null;
   let orphanPath: string | null = null;
 
@@ -353,7 +363,30 @@ export async function deleteSite(siteSlug: string, expectedRevision?: number): P
     },
     afterApply: async (config) => {
       if (!removedSite) return;
-      await dnsGateway.deleteSiteRecords(config, removedSite);
+
+      const errors: string[] = [];
+
+      if (payload.removeDnsRecords) {
+        try {
+          await dnsGateway.deleteSiteRecords(config, removedSite);
+        } catch (error) {
+          errors.push(
+            error instanceof Error ? error.message : "Could not remove managed DNS records.",
+          );
+        }
+      }
+
+      if (payload.removeFilesFromServer && orphanPath) {
+        try {
+          await removeOrphanedSiteDirectory(orphanPath);
+        } catch (error) {
+          errors.push(error instanceof Error ? error.message : "Could not remove site files.");
+        }
+      }
+
+      if (errors.length > 0) {
+        throw new Error(errors.join(" "));
+      }
     },
   });
 }
