@@ -8,6 +8,9 @@ services:
       SELFLIFY_CADDY_CONFIG_PATH: /workspace/runtime/Caddyfile
       SELFLIFY_CADDY_BIN: /usr/bin/caddy
       SELFLIFY_CADDY_ADMIN_ADDRESS: http://caddy:2019
+      SELFLIFY_MOCK_CLOUDFLARE: ${SELFLIFY_MOCK_CLOUDFLARE:-0}
+      SELFLIFY_SKIP_CADDY_RELOAD: ${SELFLIFY_SKIP_CADDY_RELOAD:-0}
+      SELFLIFY_CLOUDFLARE_API_BASE_URL: ${SELFLIFY_CLOUDFLARE_API_BASE_URL:-}
     volumes:
       - ./runtime:/workspace/runtime
       - /var/www:/var/www
