@@ -3,7 +3,7 @@ FROM caddy:builder AS caddy-builder
 RUN xcaddy build \
     --with github.com/caddy-dns/cloudflare@v0.2.4
 
-FROM node:20-alpine AS base
+FROM node:25-alpine AS base
 
 WORKDIR /workspace
 ENV NEXT_TELEMETRY_DISABLED=1
