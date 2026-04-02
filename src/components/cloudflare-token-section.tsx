@@ -6,6 +6,10 @@ import { PencilLine } from "lucide-react";
 
 import { saveCloudflareTokenAction } from "@/app/actions";
 import { FormSubmitButton } from "@/components/form-submit-button";
+import {
+  CLOUDFLARE_API_TOKEN_HTML_PATTERN,
+  CLOUDFLARE_API_TOKEN_MESSAGE,
+} from "@/lib/system/cloudflare-token";
 
 type CloudflareTokenSectionProps = {
   configRevision: number;
@@ -41,11 +45,18 @@ export function CloudflareTokenSection({
               id="settings-cloudflare-api-token"
               name="cloudflareApiToken"
               type="password"
+              minLength={20}
+              pattern={CLOUDFLARE_API_TOKEN_HTML_PATTERN}
               placeholder={
                 hasToken ? "Paste a new token to replace the current one" : "Paste a Cloudflare API token"
               }
               autoComplete="off"
               aria-label="Cloudflare API token"
+              title={CLOUDFLARE_API_TOKEN_MESSAGE}
+              onInput={(event) => event.currentTarget.setCustomValidity("")}
+              onInvalid={(event) =>
+                event.currentTarget.setCustomValidity(CLOUDFLARE_API_TOKEN_MESSAGE)
+              }
               required
               bg="rgba(255,255,255,0.04)"
             />

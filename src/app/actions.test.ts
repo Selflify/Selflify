@@ -22,6 +22,8 @@ import { ensureSiteDirectories } from "@/lib/sites/service";
 import { syncAllSiteDnsRecords, syncSiteDnsRecords } from "@/lib/system/cloudflare";
 import * as sitesUseCases from "@/lib/use-cases/sites";
 
+const validCloudflareToken = "cfut_12345678901234567890123456789012";
+
 const { redirectMock, dnsGatewayMock, caddyGatewayMock } = vi.hoisted(() => ({
   redirectMock: vi.fn(),
   dnsGatewayMock: {
@@ -138,7 +140,7 @@ describe("server actions", () => {
     formData.set("domain", "example.com");
     formData.set("serverIp", "203.0.113.10");
     formData.set("caddyContactEmail", "ops@example.com");
-    formData.set("cloudflareApiToken", "cf-secret");
+    formData.set("cloudflareApiToken", validCloudflareToken);
 
     await setupAction(formData);
 
@@ -164,7 +166,7 @@ describe("server actions", () => {
     formData.set("domain", "example.com");
     formData.set("serverIp", "203.0.113.10");
     formData.set("caddyContactEmail", "ops@example.com");
-    formData.set("cloudflareApiToken", "cf-secret");
+    formData.set("cloudflareApiToken", validCloudflareToken);
 
     await setupAction(formData);
 
@@ -184,7 +186,7 @@ describe("server actions", () => {
     formData.set("domain", "example.com");
     formData.set("serverIp", "203.0.113.10");
     formData.set("caddyContactEmail", "ops@example.com");
-    formData.set("cloudflareApiToken", "cf-secret");
+    formData.set("cloudflareApiToken", validCloudflareToken);
 
     await setupAction(formData);
 
@@ -193,6 +195,29 @@ describe("server actions", () => {
 
     expect(target).toContain("/setup?error=");
     expect(error).toContain("Password confirmation does not match the new password.");
+  });
+
+  it("rejects invalid cloudflare token formats during setup before runtime apply", async () => {
+    vi.mocked(ensureConfigOnDisk).mockResolvedValue(createDefaultConfig());
+    vi.mocked(isAdminConfigured).mockReturnValue(false);
+
+    const formData = new FormData();
+    formData.set("login", "owner");
+    formData.set("password", "super-secret");
+    formData.set("passwordConfirm", "super-secret");
+    formData.set("domain", "example.com");
+    formData.set("serverIp", "203.0.113.10");
+    formData.set("caddyContactEmail", "ops@example.com");
+    formData.set("cloudflareApiToken", "123123");
+
+    await setupAction(formData);
+
+    const target = redirectMock.mock.calls.at(-1)?.[0] as string;
+    const error = new URL(target, "http://selflify.test").searchParams.get("error");
+
+    expect(runConfigOperation).not.toHaveBeenCalled();
+    expect(target).toContain("/setup?error=");
+    expect(error).toContain("Cloudflare API token looks invalid.");
   });
 
   it("rejects mismatched admin password confirmation", async () => {
@@ -309,7 +334,7 @@ describe("server actions", () => {
 
     const formData = new FormData();
     formData.set("configRevision", "5");
-    formData.set("cloudflareApiToken", "cf-secret");
+    formData.set("cloudflareApiToken", validCloudflareToken);
 
     await saveCloudflareTokenAction(formData);
 
@@ -335,6 +360,26 @@ describe("server actions", () => {
     expect(runConfigOperation).not.toHaveBeenCalled();
     expect(target).toContain("/settings?error=");
     expect(error).toContain("Paste a Cloudflare API token.");
+  });
+
+  it("rejects invalid cloudflare token formats before caddy validation runs", async () => {
+    vi.mocked(requireAdminSession).mockResolvedValue({
+      config: { configRevision: 5 },
+      session: { user: { name: "owner" } },
+    } as never);
+
+    const formData = new FormData();
+    formData.set("configRevision", "5");
+    formData.set("cloudflareApiToken", "123123");
+
+    await saveCloudflareTokenAction(formData);
+
+    const target = redirectMock.mock.calls.at(-1)?.[0] as string;
+    const error = new URL(target, "http://selflify.test").searchParams.get("error");
+
+    expect(runConfigOperation).not.toHaveBeenCalled();
+    expect(target).toContain("/settings?error=");
+    expect(error).toContain("Cloudflare API token looks invalid.");
   });
 
   it("creates a site and keeps side effects in the success path", async () => {

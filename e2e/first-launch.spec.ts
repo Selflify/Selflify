@@ -6,6 +6,7 @@ import { expect, test } from "@playwright/test";
 const e2eRoot = path.join(process.cwd(), ".tmp", "playwright-runtime");
 const configPath = path.join(e2eRoot, "selflify.config.json");
 const caddyfilePath = path.join(e2eRoot, "Caddyfile");
+const cloudflareApiToken = "cfut_12345678901234567890123456789012";
 
 test("completes first launch and signs in with the created account", async ({ page }) => {
   await page.goto("/setup");
@@ -26,7 +27,7 @@ test("completes first launch and signs in with the created account", async ({ pa
   await page.locator("#setup-domain").fill("example.dev");
   await page.locator("#setup-server-ip").fill("203.0.113.10");
   await page.locator("#setup-caddy-contact-email").fill("ops@example.dev");
-  await page.locator("#setup-cloudflare-api-token").fill("cf-token-for-e2e");
+  await page.locator("#setup-cloudflare-api-token").fill(cloudflareApiToken);
   await page.getByRole("button", { name: "Finish setup" }).click();
 
   await expect(page).toHaveURL(/\/login/);
@@ -62,7 +63,7 @@ test("completes first launch and signs in with the created account", async ({ pa
       domain: "example.dev",
       serverIp: "203.0.113.10",
       caddyContactEmail: "ops@example.dev",
-      cloudflareApiToken: "cf-token-for-e2e",
+      cloudflareApiToken,
     });
 
   await expect
@@ -71,7 +72,7 @@ test("completes first launch and signs in with the created account", async ({ pa
 
       return (
         caddyfile.includes("example.dev") &&
-        caddyfile.includes('dns cloudflare "cf-token-for-e2e"') &&
+        caddyfile.includes(`dns cloudflare ${cloudflareApiToken}`) &&
         caddyfile.includes("email ops@example.dev")
       );
     })

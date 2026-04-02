@@ -5,7 +5,8 @@ const setupPassword = process.env.E2E_SETUP_PASSWORD ?? "supersecret123";
 const primaryDomain = process.env.E2E_PRIMARY_DOMAIN ?? "example.dev";
 const serverIp = process.env.E2E_SERVER_IP ?? "127.0.0.1";
 const caddyContactEmail = process.env.E2E_CADDY_CONTACT_EMAIL ?? "ops@example.dev";
-const cloudflareApiToken = process.env.E2E_CLOUDFLARE_API_TOKEN ?? "cf-token-for-e2e";
+const cloudflareApiToken =
+  process.env.E2E_CLOUDFLARE_API_TOKEN ?? "cfut_12345678901234567890123456789012";
 
 test("bootstraps the latest release and reaches the authenticated app", async ({ page }) => {
   await page.goto("/setup");

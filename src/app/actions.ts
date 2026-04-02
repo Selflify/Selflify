@@ -6,6 +6,11 @@ import { z } from "zod";
 
 import { requireAdminSession } from "@/lib/auth/guards";
 import { deployNamePattern, siteSlugPattern } from "@/lib/config/schema";
+import {
+  CLOUDFLARE_API_TOKEN_MESSAGE,
+  looksLikeCloudflareApiToken,
+  normalizeCloudflareTokenErrorMessage,
+} from "@/lib/system/cloudflare-token";
 import { saveAdminAccess, saveCloudflareToken, saveServerSettings } from "@/lib/use-cases/settings";
 import {
   ConfigConflictError,
@@ -46,6 +51,18 @@ function redirectWith(pathname: string, kind: "notice" | "error", message: strin
   redirect(`${basePath}?${params.toString()}`);
 }
 
+function getUserFacingActionErrorMessage(error: unknown, fallbackMessage: string): string {
+  if (error instanceof ConfigConflictError) {
+    return error.message;
+  }
+
+  if (error instanceof Error) {
+    return normalizeCloudflareTokenErrorMessage(error.message);
+  }
+
+  return fallbackMessage;
+}
+
 function rethrowIfRedirectError(error: unknown): void | never {
   if (isRedirectError(error)) {
     throw error;
@@ -65,7 +82,8 @@ const caddyContactEmailFieldSchema = z
 const cloudflareTokenFieldSchema = z
   .string()
   .trim()
-  .min(1, "Paste a Cloudflare API token.");
+  .min(1, "Paste a Cloudflare API token.")
+  .refine(looksLikeCloudflareApiToken, CLOUDFLARE_API_TOKEN_MESSAGE);
 const booleanCheckboxFieldSchema = z.enum(["0", "1"]).catch("0");
 
 const setupSchema = z
@@ -106,7 +124,7 @@ export async function setupAction(formData: FormData) {
   } catch (error) {
     rethrowIfRedirectError(error);
 
-    const message = error instanceof Error ? error.message : "Setup failed.";
+    const message = getUserFacingActionErrorMessage(error, "Setup failed.");
     redirectWith("/setup", "error", message);
   }
 }
@@ -365,12 +383,7 @@ const adminSettingsSchema = z
 async function handleSettingsFailure(error: unknown, fallbackMessage: string): Promise<never> {
   rethrowIfRedirectError(error);
 
-  const message =
-    error instanceof ConfigConflictError
-      ? error.message
-      : error instanceof Error
-        ? error.message
-        : fallbackMessage;
+  const message = getUserFacingActionErrorMessage(error, fallbackMessage);
 
   redirectWith("/settings", "error", message);
 }
