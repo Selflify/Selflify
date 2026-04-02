@@ -38,7 +38,7 @@ describe("runInitialSetup", () => {
   });
 
   it("rechecks admin configuration inside the serialized mutate step", async () => {
-    const { ensureConfigOnDisk } = await import("@/lib/config/service");
+const { ensureConfigOnDisk } = await import("@/lib/config/service");
     const { hashAdminPassword } = await import("@/lib/auth/passwords");
     const { runConfigOperation } = await import("@/lib/operations");
     const existing = createDefaultConfig();
@@ -61,7 +61,7 @@ describe("runInitialSetup", () => {
         domain: "example.dev",
         serverIp: "203.0.113.10",
         caddyContactEmail: "ops@example.dev",
-        cloudflareApiToken: "cf-secret",
+        cloudflareApiToken: "cfut_12345678901234567890123456789012",
       }),
     ).rejects.toThrow("Admin account is already configured.");
   });

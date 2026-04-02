@@ -5,6 +5,10 @@ import { Button, Flex, Input, Stack, Text } from "@chakra-ui/react";
 
 import { setupAction } from "@/app/actions";
 import { FormField } from "@/components/form-field";
+import {
+  CLOUDFLARE_API_TOKEN_HTML_PATTERN,
+  CLOUDFLARE_API_TOKEN_MESSAGE,
+} from "@/lib/system/cloudflare-token";
 
 type SetupWizardProps = {
   defaultDomain: string;
@@ -188,9 +192,16 @@ export function SetupWizard({
                   type="password"
                   value={cloudflareApiToken}
                   onChange={(event) => setCloudflareApiToken(event.target.value)}
+                  onInput={(event) => event.currentTarget.setCustomValidity("")}
+                  onInvalid={(event) =>
+                    event.currentTarget.setCustomValidity(CLOUDFLARE_API_TOKEN_MESSAGE)
+                  }
                   placeholder="Paste a Cloudflare API token"
                   autoComplete="off"
                   required
+                  minLength={20}
+                  pattern={CLOUDFLARE_API_TOKEN_HTML_PATTERN}
+                  title={CLOUDFLARE_API_TOKEN_MESSAGE}
                   bg="rgba(255,255,255,0.04)"
                   borderColor="rgba(255,255,255,0.08)"
                 />
