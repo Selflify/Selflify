@@ -4,6 +4,7 @@ services:
     restart: unless-stopped
     environment:
       AUTH_SECRET: ${AUTH_SECRET}
+      SELFLIFY_SETUP_TOKEN: ${SELFLIFY_SETUP_TOKEN:-}
       SELFLIFY_CONFIG_PATH: /workspace/runtime/selflify.config.json
       SELFLIFY_CADDY_CONFIG_PATH: /workspace/runtime/Caddyfile
       SELFLIFY_CADDY_BIN: /usr/bin/caddy

@@ -6,6 +6,7 @@ INSTALL_DIR="/opt/selflify"
 DEFAULT_ARCHIVE_URL="https://github.com/Selflify/Selflify/releases/latest/download/selflify-bootstrap.tar.gz"
 ARCHIVE_URL="${SELFLIFY_ARCHIVE_URL:-${DEFAULT_ARCHIVE_URL}}"
 AUTH_SECRET_VALUE="${AUTH_SECRET:-}"
+SETUP_TOKEN_VALUE="${SELFLIFY_SETUP_TOKEN:-}"
 SKIP_START="0"
 SERVER_IP=""
 
@@ -43,6 +44,10 @@ while [ $# -gt 0 ]; do
       ;;
     --auth-secret)
       AUTH_SECRET_VALUE="${2:-}"
+      shift 2
+      ;;
+    --setup-token)
+      SETUP_TOKEN_VALUE="${2:-}"
       shift 2
       ;;
     --skip-start)
@@ -153,6 +158,7 @@ write_runtime_templates() {
 write_env_file() {
   local install_dir="$1"
   local auth_secret="$2"
+  local setup_token="$3"
 
   if [ -f "${install_dir}/.env" ]; then
     return
@@ -160,11 +166,13 @@ write_env_file() {
 
   cat > "${install_dir}/.env" <<EOF
 AUTH_SECRET=${auth_secret}
+SELFLIFY_SETUP_TOKEN=${setup_token}
 SELFLIFY_PREVIEW_TTL_DAYS=30
 SELFLIFY_ORPHAN_TTL_DAYS=30
 SELFLIFY_CLEANUP_INTERVAL_SECONDS=86400
 SELFLIFY_BACKUP_KEEP=20
 EOF
+  chmod 600 "${install_dir}/.env"
 
   if [ -n "${SELFLIFY_MOCK_CLOUDFLARE:-}" ]; then
     printf 'SELFLIFY_MOCK_CLOUDFLARE=%s\n' "${SELFLIFY_MOCK_CLOUDFLARE}" >> "${install_dir}/.env"
@@ -186,6 +194,10 @@ if [ -z "${AUTH_SECRET_VALUE}" ]; then
   AUTH_SECRET_VALUE="$(generate_secret)"
 fi
 
+if [ -z "${SETUP_TOKEN_VALUE}" ]; then
+  SETUP_TOKEN_VALUE="$(generate_secret)"
+fi
+
 TMP_DIR="$(mktemp -d)"
 ARCHIVE_PATH="${TMP_DIR}/selflify-bootstrap.tar.gz"
 
@@ -204,7 +216,7 @@ mkdir -p \
   "${INSTALL_DIR}/runtime/logs"
 
 write_runtime_templates "${INSTALL_DIR}" "${SERVER_IP}" "${AUTH_SECRET_VALUE}"
-write_env_file "${INSTALL_DIR}" "${AUTH_SECRET_VALUE}"
+write_env_file "${INSTALL_DIR}" "${AUTH_SECRET_VALUE}" "${SETUP_TOKEN_VALUE}"
 
 rm -rf "${TMP_DIR}"
 
@@ -225,4 +237,4 @@ if [ -n "${SERVER_IP}" ]; then
 else
   printf 'Open http://<server-ip>/setup to finish first launch.\n'
 fi
-printf 'Next step in UI: create the first account, enter the domain, server IP, Caddy email and paste your Cloudflare API token.\n'
+printf 'Use the SELFLIFY_SETUP_TOKEN value from %s/.env to unlock setup, then create the first account and enter the infrastructure settings.\n' "${INSTALL_DIR}"

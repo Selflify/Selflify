@@ -204,11 +204,11 @@ What the installer does:
 
 - installs Docker and the Docker Compose plugin
 - downloads and extracts the bootstrap bundle into `/opt/selflify` by default
-- creates `.env` with a generated `AUTH_SECRET` if it does not exist yet
+- creates `.env` with generated `AUTH_SECRET` and `SELFLIFY_SETUP_TOKEN` values if it does not exist yet
 - creates initial `runtime/selflify.config.json` and `runtime/Caddyfile` from templates if they do not exist yet
 - pulls public runtime images from `ghcr.io/selflify/*`
 - starts the production stack with `docker compose pull && docker compose up -d`
-- brings the panel up on `http://<server-ip>/setup` so the first session can collect runtime settings
+- brings the panel up on `http://<server-ip>/setup`, locked behind `SELFLIFY_SETUP_TOKEN`, so the first session can collect runtime settings
 - downloads `selflify-bootstrap.tar.gz` from the latest GitHub release by default
 
 Production images are published to GitHub Container Registry. After the first successful image publish,
@@ -222,9 +222,11 @@ already, with `runtime/selflify.config.json` and `runtime/Caddyfile` persisted o
 What still happens in the UI after bootstrap:
 
 - open `http://<server-ip>/setup`
+- unlock setup with `SELFLIFY_SETUP_TOKEN` from `/opt/selflify/.env`
 - create the first account
 - enter the main domain, public server IP and Caddy contact email
 - paste the Cloudflare API token during first-start setup
+- after setup, plain HTTP access on the server IP stops serving the panel directly; use the primary domain instead
 
 ## Cleanup job
 

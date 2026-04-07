@@ -84,6 +84,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           id: "selflify-admin",
           name: config.admin.login,
           email: null,
+          adminConfiguredAt: config.admin.configuredAt,
         };
       },
     }),
@@ -94,11 +95,17 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         token.name = user.name;
       }
 
+      if (user && "adminConfiguredAt" in user) {
+        token.adminConfiguredAt = user.adminConfiguredAt ?? null;
+      }
+
       return token;
     },
     async session({ session, token }) {
       if (session.user) {
         session.user.name = token.name;
+        session.user.adminConfiguredAt =
+          typeof token.adminConfiguredAt === "string" ? token.adminConfiguredAt : null;
       }
 
       return session;

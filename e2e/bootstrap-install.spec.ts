@@ -1,15 +1,41 @@
+import { readFile } from "node:fs/promises";
+
 import { expect, test } from "@playwright/test";
 
 const setupLogin = process.env.E2E_SETUP_LOGIN ?? "owner";
 const setupPassword = process.env.E2E_SETUP_PASSWORD ?? "supersecret123";
+const installDir = process.env.E2E_INSTALL_DIR ?? "/opt/selflify";
 const primaryDomain = process.env.E2E_PRIMARY_DOMAIN ?? "example.dev";
 const serverIp = process.env.E2E_SERVER_IP ?? "127.0.0.1";
 const caddyContactEmail = process.env.E2E_CADDY_CONTACT_EMAIL ?? "ops@example.dev";
 const cloudflareApiToken =
   process.env.E2E_CLOUDFLARE_API_TOKEN ?? "cfut_12345678901234567890123456789012";
 
+async function resolveSetupToken(): Promise<string | null> {
+  if (process.env.E2E_SETUP_TOKEN) {
+    return process.env.E2E_SETUP_TOKEN;
+  }
+
+  try {
+    const envFile = await readFile(`${installDir}/.env`, "utf8");
+    const match = envFile.match(/^SELFLIFY_SETUP_TOKEN=(.+)$/m);
+
+    return match?.[1]?.trim() ?? null;
+  } catch {
+    return null;
+  }
+}
+
 test("bootstraps the latest release and reaches the authenticated app", async ({ page }) => {
   await page.goto("/setup");
+
+  if (await page.getByRole("heading", { name: "Unlock setup" }).isVisible()) {
+    const setupToken = await resolveSetupToken();
+
+    expect(setupToken).toBeTruthy();
+    await page.locator("#setup-access-token").fill(setupToken ?? "");
+    await page.getByRole("button", { name: "Continue to setup" }).click();
+  }
 
   await expect(page.getByRole("heading", { name: "Create account" })).toBeVisible();
   await expect(page.getByText("Step 1 of 2")).toBeVisible();

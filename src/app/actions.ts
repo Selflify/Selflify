@@ -5,6 +5,11 @@ import { isRedirectError } from "next/dist/client/components/redirect-error";
 import { z } from "zod";
 
 import { requireAdminSession } from "@/lib/auth/guards";
+import {
+  assertSetupAccessGranted,
+  clearSetupAccess,
+  grantSetupAccess,
+} from "@/lib/auth/setup-access";
 import { deployNamePattern, siteSlugPattern } from "@/lib/config/schema";
 import {
   CLOUDFLARE_API_TOKEN_MESSAGE,
@@ -85,6 +90,9 @@ const cloudflareTokenFieldSchema = z
   .min(1, "Paste a Cloudflare API token.")
   .refine(looksLikeCloudflareApiToken, CLOUDFLARE_API_TOKEN_MESSAGE);
 const booleanCheckboxFieldSchema = z.enum(["0", "1"]).catch("0");
+const setupAccessSchema = z.object({
+  setupToken: z.string().trim().min(1, "Enter the setup token."),
+});
 
 const setupSchema = z
   .object({
@@ -108,6 +116,8 @@ const setupSchema = z
 
 export async function setupAction(formData: FormData) {
   try {
+    await assertSetupAccessGranted();
+
     const payload = setupSchema.parse({
       login: getQueryValue(formData, "login"),
       password: getQueryValue(formData, "password"),
@@ -119,12 +129,30 @@ export async function setupAction(formData: FormData) {
     });
 
     await runInitialSetup(payload);
+    await clearSetupAccess();
 
     redirectWith("/login", "notice", "Admin account created. Sign in to continue.");
   } catch (error) {
     rethrowIfRedirectError(error);
 
     const message = getUserFacingActionErrorMessage(error, "Setup failed.");
+    redirectWith("/setup", "error", message);
+  }
+}
+
+export async function unlockSetupAccessAction(formData: FormData) {
+  try {
+    const payload = setupAccessSchema.parse({
+      setupToken: getQueryValue(formData, "setupToken"),
+    });
+
+    await grantSetupAccess(payload.setupToken);
+
+    redirect("/setup");
+  } catch (error) {
+    rethrowIfRedirectError(error);
+
+    const message = error instanceof Error ? error.message : "Could not unlock setup.";
     redirectWith("/setup", "error", message);
   }
 }

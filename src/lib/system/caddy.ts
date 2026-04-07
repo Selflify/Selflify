@@ -10,6 +10,7 @@ import {
   getEffectivePreviewRoot,
   getEffectiveSelflifyUpstream,
 } from "@/lib/config/paths";
+import { isAdminConfigured } from "@/lib/config/service";
 import { runCommand } from "@/lib/system/commands";
 import type { CaddyGateway, CommandRunner } from "@/lib/system/ports";
 import {
@@ -265,11 +266,22 @@ function renderSelflifyPanelBlocks(config: SelflifyConfig): string {
   ];
 
   if (config.server.serverIp.trim()) {
-    blocks.push(`http://${config.server.serverIp.trim()} {
+    const shouldRedirectIpToDomain =
+      isAdminConfigured(config) && !isDevelopmentRuntime() && !shouldMockCloudflare();
+
+    blocks.push(
+      shouldRedirectIpToDomain
+        ? `http://${config.server.serverIp.trim()} {
+    import common_site
+
+    redir https://${config.server.domain}{uri} 308
+}`
+        : `http://${config.server.serverIp.trim()} {
     import common_site
 
     reverse_proxy ${getEffectiveSelflifyUpstream(config)}
-}`);
+}`,
+    );
   }
 
   return blocks.join("\n\n");
@@ -294,6 +306,8 @@ ${renderTlsBlock(usesManagedTls ? config.server.cloudflareApiToken : "")}
         X-Robots-Tag "noindex, nofollow, noarchive, nosnippet, noimageindex"
         Referrer-Policy "strict-origin-when-cross-origin"
         X-Content-Type-Options "nosniff"
+        X-Frame-Options "DENY"
+        Content-Security-Policy "frame-ancestors 'none'"
     }
 }
 

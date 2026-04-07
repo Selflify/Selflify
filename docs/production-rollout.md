@@ -28,6 +28,7 @@ Create `.env` with at least:
 
 ```env
 AUTH_SECRET=replace-with-a-long-random-secret
+SELFLIFY_SETUP_TOKEN=replace-with-a-long-random-setup-token
 ```
 
 Optional overrides:
@@ -54,10 +55,13 @@ The production stack includes:
 ## 5. First-launch flow
 
 1. Open `http://<server-ip>/setup`
-2. Create the single admin account
-3. Enter the main domain, public server IP, Caddy contact email and Cloudflare token
-4. Sign in through `http://<server-ip>/login` or `https://<domain>/login` once DNS is ready
-5. Open Settings and verify domain, server IP and Cloudflare token
+2. Unlock setup with `SELFLIFY_SETUP_TOKEN` from `.env`
+3. Create the single admin account
+4. Enter the main domain, public server IP, Caddy contact email and Cloudflare token
+5. Sign in through `https://<domain>/login` once DNS is ready
+6. Open Settings and verify domain, server IP and Cloudflare token
+
+After the first-launch setup completes, plain HTTP requests to `http://<server-ip>` no longer serve the panel directly and are redirected to the configured primary domain.
 
 ## 6. Smoke checklist
 

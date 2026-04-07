@@ -62,6 +62,7 @@ describe("auth guards", () => {
     const config = createDefaultConfig();
     config.admin.login = "owner";
     config.admin.passwordHash = "hashed";
+    config.admin.configuredAt = "2026-03-28T00:00:00.000Z";
 
     vi.mocked(readSelflifyConfig).mockResolvedValue(config);
     vi.mocked(isAdminConfigured).mockReturnValue(true);
@@ -73,9 +74,13 @@ describe("auth guards", () => {
 
   it("returns config and session for authenticated admins", async () => {
     const config = createDefaultConfig();
-    const session = { user: { name: "owner" }, expires: "2026-03-28T00:00:00.000Z" };
+    const session = {
+      user: { name: "owner", adminConfiguredAt: "2026-03-28T00:00:00.000Z" },
+      expires: "2026-03-28T00:00:00.000Z",
+    };
     config.admin.login = "owner";
     config.admin.passwordHash = "hashed";
+    config.admin.configuredAt = "2026-03-28T00:00:00.000Z";
 
     vi.mocked(readSelflifyConfig).mockResolvedValue(config);
     vi.mocked(isAdminConfigured).mockReturnValue(true);
@@ -88,11 +93,12 @@ describe("auth guards", () => {
     const config = createDefaultConfig();
     config.admin.login = "owner";
     config.admin.passwordHash = "hashed";
+    config.admin.configuredAt = "2026-03-28T00:00:00.000Z";
 
     vi.mocked(readSelflifyConfig).mockResolvedValue(config);
     vi.mocked(isAdminConfigured).mockReturnValue(true);
     vi.mocked(readOptionalSession).mockResolvedValue({
-      user: { name: "owner" },
+      user: { name: "owner", adminConfiguredAt: "2026-03-28T00:00:00.000Z" },
       expires: "2026-03-28T00:00:00.000Z",
     });
 
@@ -109,6 +115,23 @@ describe("auth guards", () => {
     vi.mocked(isAdminConfigured).mockReturnValue(true);
     vi.mocked(readOptionalSession).mockResolvedValue(null);
 
+    await expect(redirectIfAuthenticated()).resolves.toBe(config);
+  });
+
+  it("treats stale admin sessions as signed out", async () => {
+    const config = createDefaultConfig();
+    config.admin.login = "owner";
+    config.admin.passwordHash = "hashed";
+    config.admin.configuredAt = "2026-03-28T00:00:00.000Z";
+
+    vi.mocked(readSelflifyConfig).mockResolvedValue(config);
+    vi.mocked(isAdminConfigured).mockReturnValue(true);
+    vi.mocked(readOptionalSession).mockResolvedValue({
+      user: { name: "owner", adminConfiguredAt: "2026-03-27T00:00:00.000Z" },
+      expires: "2026-03-28T00:00:00.000Z",
+    });
+
+    await expect(requireAdminSession()).rejects.toThrow("REDIRECT:/login");
     await expect(redirectIfAuthenticated()).resolves.toBe(config);
   });
 });

@@ -3,6 +3,17 @@ import { redirect } from "next/navigation";
 import { readOptionalSession } from "@/lib/auth/session";
 import { isAdminConfigured, readSelflifyConfig } from "@/lib/config/service";
 
+function isActiveAdminSession(
+  session: Awaited<ReturnType<typeof readOptionalSession>>,
+  config: Awaited<ReturnType<typeof readSelflifyConfig>>,
+): boolean {
+  return Boolean(
+    session?.user &&
+      session.user.name === config.admin.login &&
+      session.user.adminConfiguredAt === config.admin.configuredAt,
+  );
+}
+
 export async function requireConfiguredAdmin() {
   const config = await readSelflifyConfig();
 
@@ -17,7 +28,7 @@ export async function requireAdminSession() {
   const config = await requireConfiguredAdmin();
   const session = await readOptionalSession();
 
-  if (!session?.user) {
+  if (!isActiveAdminSession(session, config)) {
     redirect("/login");
   }
 
@@ -32,7 +43,7 @@ export async function redirectIfAuthenticated() {
     redirect("/setup");
   }
 
-  if (session?.user) {
+  if (isActiveAdminSession(session, config)) {
     redirect("/sites");
   }
 

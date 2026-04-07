@@ -67,6 +67,8 @@ describe("generateCaddyfile", () => {
     expect(rendered).toContain("output file /var/log/caddy/access.log");
     expect(rendered).toContain("roll_keep 10");
     expect(rendered).toContain("origins http://0.0.0.0:2019 http://127.0.0.1:2019 http://localhost:2019 http://caddy:2019");
+    expect(rendered).toContain('X-Frame-Options "DENY"');
+    expect(rendered).toContain('Content-Security-Policy "frame-ancestors \'none\'"');
     expect(rendered).toContain("app.example.dev {");
     expect(rendered).toContain("*.app.example.dev {");
   });
@@ -87,6 +89,63 @@ describe("generateCaddyfile", () => {
 
     expect(rendered).toContain("http://203.0.113.10");
     expect(rendered).toContain("reverse_proxy selflify:3000");
+  });
+
+  it("redirects plain-http server ip traffic to the primary domain after setup in production", () => {
+    const configured = createConfig(createSite(), {
+      admin: {
+        login: "owner",
+        passwordHash: "hash",
+        configuredAt: "2026-04-07T12:00:00.000Z",
+      },
+      server: {
+        ...createDefaultConfig().server,
+        domain: "example.dev",
+        serverIp: "203.0.113.10",
+        previewRootDir: "/var/www",
+        selflifyUpstream: "selflify:3000",
+        caddyContactEmail: "dev@example.dev",
+        cloudflareApiToken: "cf-token",
+      },
+    });
+    const rendered = generateCaddyfile(configured);
+
+    expect(rendered).toContain("http://203.0.113.10");
+    expect(rendered).toContain("redir https://example.dev{uri} 308");
+    expect(rendered).not.toContain(`http://203.0.113.10 {
+    import common_site
+
+    reverse_proxy selflify:3000
+}`);
+  });
+
+  it("keeps the server ip route available in mocked runtimes even after setup", () => {
+    vi.stubEnv("SELFLIFY_MOCK_CLOUDFLARE", "1");
+
+    const configured = createConfig(createSite(), {
+      admin: {
+        login: "owner",
+        passwordHash: "hash",
+        configuredAt: "2026-04-07T12:00:00.000Z",
+      },
+      server: {
+        ...createDefaultConfig().server,
+        domain: "example.dev",
+        serverIp: "203.0.113.10",
+        previewRootDir: "/var/www",
+        selflifyUpstream: "selflify:3000",
+        caddyContactEmail: "dev@example.dev",
+        cloudflareApiToken: "cf-token",
+      },
+    });
+    const rendered = generateCaddyfile(configured);
+
+    expect(rendered).toContain(`http://203.0.113.10 {
+    import common_site
+
+    reverse_proxy selflify:3000
+}`);
+    expect(rendered).not.toContain("redir https://example.dev{uri} 308");
   });
 
   it("omits preview basic auth and tls_cf import when no token or auth is configured", () => {

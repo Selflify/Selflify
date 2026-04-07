@@ -9,11 +9,17 @@ import {
   saveCloudflareTokenAction,
   saveServerSettingsAction,
   setupAction,
+  unlockSetupAccessAction,
   updateSiteAction,
   updateSiteStableAliasAction,
   updateSitePreviewAccessAction,
 } from "@/app/actions";
 import { requireAdminSession } from "@/lib/auth/guards";
+import {
+  assertSetupAccessGranted,
+  clearSetupAccess,
+  grantSetupAccess,
+} from "@/lib/auth/setup-access";
 import { runConfigOperation, runTrackedSideEffectOperation } from "@/lib/operations";
 import { hashAdminPassword } from "@/lib/auth/passwords";
 import { ensureConfigOnDisk, isAdminConfigured } from "@/lib/config/service";
@@ -45,6 +51,12 @@ vi.mock("next/navigation", () => ({
 
 vi.mock("@/lib/auth/guards", () => ({
   requireAdminSession: vi.fn(),
+}));
+
+vi.mock("@/lib/auth/setup-access", () => ({
+  assertSetupAccessGranted: vi.fn(),
+  clearSetupAccess: vi.fn(),
+  grantSetupAccess: vi.fn(),
 }));
 
 vi.mock("@/lib/auth/passwords", async () => {
@@ -128,6 +140,8 @@ describe("server actions", () => {
     vi.mocked(ensureConfigOnDisk).mockResolvedValue(config);
     vi.mocked(isAdminConfigured).mockReturnValue(false);
     vi.mocked(hashAdminPassword).mockResolvedValue("hashed-admin-secret");
+    vi.mocked(assertSetupAccessGranted).mockResolvedValue(undefined);
+    vi.mocked(clearSetupAccess).mockResolvedValue(undefined);
     vi.mocked(runConfigOperation).mockImplementation(async ({ mutate }) => {
       await mutate(createDefaultConfig());
       return undefined as never;
@@ -145,6 +159,8 @@ describe("server actions", () => {
     await setupAction(formData);
 
     expect(hashAdminPassword).toHaveBeenCalledWith("super-secret");
+    expect(assertSetupAccessGranted).toHaveBeenCalledTimes(1);
+    expect(clearSetupAccess).toHaveBeenCalledTimes(1);
     expect(runConfigOperation).toHaveBeenCalledTimes(1);
     expect(redirectMock).toHaveBeenCalledWith(
       "/login?notice=Admin+account+created.+Sign+in+to+continue.",
@@ -158,6 +174,7 @@ describe("server actions", () => {
 
     vi.mocked(ensureConfigOnDisk).mockResolvedValue(config);
     vi.mocked(isAdminConfigured).mockReturnValue(true);
+    vi.mocked(assertSetupAccessGranted).mockResolvedValue(undefined);
 
     const formData = new FormData();
     formData.set("login", "owner");
@@ -178,6 +195,7 @@ describe("server actions", () => {
   it("rejects mismatched setup password confirmation", async () => {
     vi.mocked(ensureConfigOnDisk).mockResolvedValue(createDefaultConfig());
     vi.mocked(isAdminConfigured).mockReturnValue(false);
+    vi.mocked(assertSetupAccessGranted).mockResolvedValue(undefined);
 
     const formData = new FormData();
     formData.set("login", "owner");
@@ -200,6 +218,7 @@ describe("server actions", () => {
   it("rejects invalid cloudflare token formats during setup before runtime apply", async () => {
     vi.mocked(ensureConfigOnDisk).mockResolvedValue(createDefaultConfig());
     vi.mocked(isAdminConfigured).mockReturnValue(false);
+    vi.mocked(assertSetupAccessGranted).mockResolvedValue(undefined);
 
     const formData = new FormData();
     formData.set("login", "owner");
@@ -218,6 +237,51 @@ describe("server actions", () => {
     expect(runConfigOperation).not.toHaveBeenCalled();
     expect(target).toContain("/setup?error=");
     expect(error).toContain("Cloudflare API token looks invalid.");
+  });
+
+  it("blocks setup when first-launch access has not been unlocked", async () => {
+    vi.mocked(assertSetupAccessGranted).mockRejectedValue(
+      new Error("Enter the setup token from the server environment to continue."),
+    );
+
+    const formData = new FormData();
+    formData.set("login", "owner");
+    formData.set("password", "super-secret");
+    formData.set("passwordConfirm", "super-secret");
+    formData.set("domain", "example.com");
+    formData.set("serverIp", "203.0.113.10");
+    formData.set("caddyContactEmail", "ops@example.com");
+    formData.set("cloudflareApiToken", validCloudflareToken);
+
+    await setupAction(formData);
+
+    expect(runConfigOperation).not.toHaveBeenCalled();
+    expect(redirectMock).toHaveBeenCalledWith(
+      "/setup?error=Enter+the+setup+token+from+the+server+environment+to+continue.",
+    );
+  });
+
+  it("unlocks setup when the correct setup token is submitted", async () => {
+    vi.mocked(grantSetupAccess).mockResolvedValue(undefined);
+
+    const formData = new FormData();
+    formData.set("setupToken", "setup-token");
+
+    await unlockSetupAccessAction(formData);
+
+    expect(grantSetupAccess).toHaveBeenCalledWith("setup-token");
+    expect(redirectMock).toHaveBeenCalledWith("/setup");
+  });
+
+  it("redirects setup access unlock back with an error for invalid tokens", async () => {
+    vi.mocked(grantSetupAccess).mockRejectedValue(new Error("Setup token is invalid."));
+
+    const formData = new FormData();
+    formData.set("setupToken", "wrong-token");
+
+    await unlockSetupAccessAction(formData);
+
+    expect(redirectMock).toHaveBeenCalledWith("/setup?error=Setup+token+is+invalid.");
   });
 
   it("rejects mismatched admin password confirmation", async () => {

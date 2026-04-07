@@ -1,6 +1,12 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import SetupPage from "@/app/setup/page";
+import {
+  getSetupAccessMessage,
+  hasSetupAccess,
+  isSetupTokenEnforced,
+  readConfiguredSetupToken,
+} from "@/lib/auth/setup-access";
 import { createDefaultConfig, isAdminConfigured, readSelflifyConfig } from "@/lib/config/service";
 import { renderWithProviders } from "@/test/render-with-providers";
 
@@ -20,6 +26,14 @@ vi.mock("@/components/action-feedback-toast", () => ({
 
 vi.mock("@/app/actions", () => ({
   setupAction: vi.fn(),
+  unlockSetupAccessAction: vi.fn(),
+}));
+
+vi.mock("@/lib/auth/setup-access", () => ({
+  hasSetupAccess: vi.fn(),
+  isSetupTokenEnforced: vi.fn(),
+  readConfiguredSetupToken: vi.fn(),
+  getSetupAccessMessage: vi.fn(),
 }));
 
 vi.mock("@/lib/config/service", async () => {
@@ -57,6 +71,12 @@ describe("setup page", () => {
 
     vi.mocked(readSelflifyConfig).mockResolvedValue(config);
     vi.mocked(isAdminConfigured).mockReturnValue(false);
+    vi.mocked(hasSetupAccess).mockResolvedValue(true);
+    vi.mocked(isSetupTokenEnforced).mockReturnValue(false);
+    vi.mocked(readConfiguredSetupToken).mockReturnValue("");
+    vi.mocked(getSetupAccessMessage).mockReturnValue(
+      "Enter the setup token from the server environment to continue.",
+    );
 
     const page = await SetupPage({
       searchParams: Promise.resolve({
@@ -70,5 +90,27 @@ describe("setup page", () => {
     expect(html).toContain("Confirm password");
     expect(html).toContain("Continue");
     expect(html).not.toContain("top-secret-token");
+  });
+
+  it("renders the setup access gate when first-launch access is locked", async () => {
+    const config = createDefaultConfig();
+
+    vi.mocked(readSelflifyConfig).mockResolvedValue(config);
+    vi.mocked(isAdminConfigured).mockReturnValue(false);
+    vi.mocked(hasSetupAccess).mockResolvedValue(false);
+    vi.mocked(isSetupTokenEnforced).mockReturnValue(true);
+    vi.mocked(readConfiguredSetupToken).mockReturnValue("setup-token");
+    vi.mocked(getSetupAccessMessage).mockReturnValue(
+      "Enter the setup token from the server environment to continue.",
+    );
+
+    const page = await SetupPage({
+      searchParams: Promise.resolve({}),
+    });
+    const html = renderWithProviders(page);
+
+    expect(html).toContain("Unlock setup");
+    expect(html).toContain("Continue to setup");
+    expect(html).not.toContain("Create account");
   });
 });

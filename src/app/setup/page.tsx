@@ -2,7 +2,14 @@ import { Box } from "@chakra-ui/react";
 import { redirect } from "next/navigation";
 
 import { ActionFeedbackToast } from "@/components/action-feedback-toast";
+import { SetupAccessGate } from "@/components/setup-access-gate";
 import { SetupWizard } from "@/components/setup-wizard";
+import {
+  getSetupAccessMessage,
+  hasSetupAccess,
+  isSetupTokenEnforced,
+  readConfiguredSetupToken,
+} from "@/lib/auth/setup-access";
 import {
   DEFAULT_RUNTIME_CADDY_EMAIL,
   DEFAULT_RUNTIME_DOMAIN,
@@ -25,6 +32,8 @@ export default async function SetupPage({ searchParams }: SetupPageProps) {
 
   const params = await searchParams;
   const error = typeof params.error === "string" ? params.error : "";
+  const setupAccessGranted = await hasSetupAccess();
+  const canUnlock = !isSetupTokenEnforced() || Boolean(readConfiguredSetupToken());
   const defaultDomain =
     config.server.domain === DEFAULT_RUNTIME_DOMAIN ? "" : config.server.domain;
   const defaultCaddyContactEmail =
@@ -52,11 +61,15 @@ export default async function SetupPage({ searchParams }: SetupPageProps) {
         boxShadow="panel"
       >
         <ActionFeedbackToast error={error} />
-        <SetupWizard
-          defaultDomain={defaultDomain}
-          defaultServerIp={config.server.serverIp}
-          defaultCaddyContactEmail={defaultCaddyContactEmail}
-        />
+        {setupAccessGranted ? (
+          <SetupWizard
+            defaultDomain={defaultDomain}
+            defaultServerIp={config.server.serverIp}
+            defaultCaddyContactEmail={defaultCaddyContactEmail}
+          />
+        ) : (
+          <SetupAccessGate canUnlock={canUnlock} message={getSetupAccessMessage()} />
+        )}
       </Box>
     </Box>
   );

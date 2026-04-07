@@ -66,10 +66,17 @@ export async function saveAdminAccess(
     label: "save-settings:admin",
     expectedRevision,
     mutate: async (draft) => {
+      const credentialsChanged =
+        draft.admin.login !== payload.adminLogin || Boolean(payload.adminPassword);
+
       draft.admin.login = payload.adminLogin;
 
       if (payload.adminPassword) {
         draft.admin.passwordHash = await hashAdminPassword(payload.adminPassword);
+      }
+
+      if (credentialsChanged) {
+        draft.admin.configuredAt = new Date().toISOString();
       }
 
       return {
