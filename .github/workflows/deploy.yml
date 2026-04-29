@@ -230,7 +230,7 @@ jobs:
           E2E_PRIMARY_DOMAIN: example.dev
           E2E_SERVER_IP: 127.0.0.1
           E2E_CADDY_CONTACT_EMAIL: ops@example.dev
-          E2E_CLOUDFLARE_API_TOKEN: cf-token-for-e2e
+          E2E_CLOUDFLARE_API_TOKEN: cfut_12345678901234567890123456789012
         run: yarn e2e:bootstrap-install
 
       - name: Upload Playwright report
