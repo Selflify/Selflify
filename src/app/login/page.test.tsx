@@ -1,19 +1,9 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import LoginPage from "@/app/login/page";
-import { readOptionalSession } from "@/lib/auth/session";
-import { createDefaultConfig, isAdminConfigured, readSelflifyConfig } from "@/lib/config/service";
+import { redirectIfAuthenticated } from "@/lib/auth/guards";
+import { createDefaultConfig } from "@/lib/config/service";
 import { renderWithProviders } from "@/test/render-with-providers";
-
-const { redirectMock } = vi.hoisted(() => ({
-  redirectMock: vi.fn((target: string) => {
-    throw new Error(`REDIRECT:${target}`);
-  }),
-}));
-
-vi.mock("next/navigation", () => ({
-  redirect: redirectMock,
-}));
 
 vi.mock("@/components/action-feedback-toast", () => ({
   ActionFeedbackToast: () => null,
@@ -23,20 +13,9 @@ vi.mock("@/components/login-form", () => ({
   LoginForm: () => <div data-testid="login-form">LOGIN_FORM</div>,
 }));
 
-vi.mock("@/lib/auth/session", () => ({
-  readOptionalSession: vi.fn(),
+vi.mock("@/lib/auth/guards", () => ({
+  redirectIfAuthenticated: vi.fn(),
 }));
-
-vi.mock("@/lib/config/service", async () => {
-  const actual =
-    await vi.importActual<typeof import("@/lib/config/service")>("@/lib/config/service");
-
-  return {
-    ...actual,
-    readSelflifyConfig: vi.fn(),
-    isAdminConfigured: vi.fn(),
-  };
-});
 
 describe("login page", () => {
   afterEach(() => {
@@ -44,8 +23,7 @@ describe("login page", () => {
   });
 
   it("redirects to setup when admin is not configured", async () => {
-    vi.mocked(readSelflifyConfig).mockResolvedValue(createDefaultConfig());
-    vi.mocked(isAdminConfigured).mockReturnValue(false);
+    vi.mocked(redirectIfAuthenticated).mockRejectedValue(new Error("REDIRECT:/setup"));
 
     await expect(LoginPage({ searchParams: Promise.resolve({}) })).rejects.toThrow(
       "REDIRECT:/setup",
@@ -53,16 +31,7 @@ describe("login page", () => {
   });
 
   it("redirects authenticated users to sites", async () => {
-    const config = createDefaultConfig();
-    config.admin.login = "owner";
-    config.admin.passwordHash = "hash";
-
-    vi.mocked(readSelflifyConfig).mockResolvedValue(config);
-    vi.mocked(isAdminConfigured).mockReturnValue(true);
-    vi.mocked(readOptionalSession).mockResolvedValue({
-      user: { name: "owner" },
-      expires: "2026-03-28T00:00:00.000Z",
-    });
+    vi.mocked(redirectIfAuthenticated).mockRejectedValue(new Error("REDIRECT:/sites"));
 
     await expect(LoginPage({ searchParams: Promise.resolve({}) })).rejects.toThrow(
       "REDIRECT:/sites",
@@ -74,9 +43,7 @@ describe("login page", () => {
     config.admin.login = "owner";
     config.admin.passwordHash = "hash";
 
-    vi.mocked(readSelflifyConfig).mockResolvedValue(config);
-    vi.mocked(isAdminConfigured).mockReturnValue(true);
-    vi.mocked(readOptionalSession).mockResolvedValue(null);
+    vi.mocked(redirectIfAuthenticated).mockResolvedValue(config);
 
     const page = await LoginPage({
       searchParams: Promise.resolve({
@@ -88,6 +55,20 @@ describe("login page", () => {
 
     expect(html).toContain("Sign in");
     expect(html).toContain(`Access the deployment control panel for ${config.server.domain}.`);
+    expect(html).toContain("LOGIN_FORM");
+  });
+
+  it("renders the login form for stale sessions that should not pass admin auth", async () => {
+    const config = createDefaultConfig();
+    config.admin.login = "owner";
+    config.admin.passwordHash = "hash";
+
+    vi.mocked(redirectIfAuthenticated).mockResolvedValue(config);
+
+    const page = await LoginPage({ searchParams: Promise.resolve({}) });
+    const html = renderWithProviders(page);
+
+    expect(html).toContain("Sign in");
     expect(html).toContain("LOGIN_FORM");
   });
 });

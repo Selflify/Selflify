@@ -1,10 +1,8 @@
 import { Box, Heading, Stack, Text } from "@chakra-ui/react";
-import { redirect } from "next/navigation";
 
 import { ActionFeedbackToast } from "@/components/action-feedback-toast";
 import { LoginForm } from "@/components/login-form";
-import { readOptionalSession } from "@/lib/auth/session";
-import { isAdminConfigured, readSelflifyConfig } from "@/lib/config/service";
+import { redirectIfAuthenticated } from "@/lib/auth/guards";
 
 type LoginPageProps = {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
@@ -13,17 +11,7 @@ type LoginPageProps = {
 export const dynamic = "force-dynamic";
 
 export default async function LoginPage({ searchParams }: LoginPageProps) {
-  const config = await readSelflifyConfig();
-
-  if (!isAdminConfigured(config)) {
-    redirect("/setup");
-  }
-
-  const session = await readOptionalSession();
-
-  if (session?.user) {
-    redirect("/sites");
-  }
+  const config = await redirectIfAuthenticated();
 
   const params = await searchParams;
   const notice = typeof params.notice === "string" ? params.notice : "";
