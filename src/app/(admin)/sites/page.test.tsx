@@ -52,6 +52,7 @@ describe("sites page", () => {
         name: "app",
         mainBranch: "stable",
         stableAlias: null,
+        stableAliasAutoTls: false,
         previewAuth: {
           enabled: true,
           login: "preview-user",

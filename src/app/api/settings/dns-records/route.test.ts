@@ -54,6 +54,7 @@ describe("GET /api/settings/dns-records", () => {
         name: "App",
         mainBranch: "stable",
         stableAlias: null,
+        stableAliasAutoTls: false,
         previewAuth: {
           enabled: false,
           login: null,

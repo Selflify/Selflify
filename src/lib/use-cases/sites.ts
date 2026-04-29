@@ -34,6 +34,7 @@ export type UpdateSiteInput = {
 
 export type UpdateSiteStableAliasInput = {
   stableAlias: string;
+  stableAliasAutoTls: boolean;
 };
 
 export type UpdateSitePreviewAccessInput = {
@@ -137,6 +138,7 @@ export async function createSite(
         name: formatSiteName(payload.name),
         mainBranch: payload.mainBranch,
         stableAlias: null,
+        stableAliasAutoTls: false,
         previewAuth: {
           enabled: false,
           login: null,
@@ -189,6 +191,7 @@ export async function updateSiteStableAlias(
       assertStableAliasAvailable(draft.sites, siteSlug, stableAlias, draft.server.domain);
 
       site.stableAlias = stableAlias || null;
+      site.stableAliasAutoTls = stableAlias ? payload.stableAliasAutoTls : false;
       site.updatedAt = new Date().toISOString();
 
       return {

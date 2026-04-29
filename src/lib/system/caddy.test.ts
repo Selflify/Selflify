@@ -20,6 +20,7 @@ function createSite(partial?: Partial<SiteConfig>): SiteConfig {
     name: "App",
     mainBranch: "stable",
     stableAlias: null,
+    stableAliasAutoTls: false,
     previewAuth: {
       enabled: true,
       login: "preview-user",
@@ -205,14 +206,29 @@ describe("generateCaddyfile", () => {
     const config = createConfig(
       createSite({
         stableAlias: "www.example.com",
+        stableAliasAutoTls: true,
       }),
     );
     const rendered = generateCaddyfile(config);
 
-    expect(rendered).toContain("app.example.dev, www.example.com {");
+    expect(rendered).toContain("app.example.dev {");
+    expect(rendered).toContain("www.example.com {");
     expect(rendered).toContain("*.app.example.dev {");
     expect(rendered).toContain("root * /var/www/app/stable");
     expect(rendered).not.toContain("www.example.com, *.app.example.dev");
+  });
+
+  it("keeps the stable alias on plain http when alias tls is disabled", () => {
+    const config = createConfig(
+      createSite({
+        stableAlias: "www.example.com",
+        stableAliasAutoTls: false,
+      }),
+    );
+    const rendered = generateCaddyfile(config);
+
+    expect(rendered).toContain("http://www.example.com {");
+    expect(rendered).not.toContain("\nwww.example.com {\n");
   });
 
   it("uses docker exec for caddy commands in development when no explicit local binary is configured", () => {

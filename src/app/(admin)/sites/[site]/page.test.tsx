@@ -54,6 +54,7 @@ describe("site details page", () => {
         name: "app",
         mainBranch: "stable",
         stableAlias: null,
+        stableAliasAutoTls: false,
         previewAuth: {
           enabled: false,
           login: null,
@@ -121,6 +122,7 @@ describe("site details page", () => {
         name: "app",
         mainBranch: "stable",
         stableAlias: "www.example.com",
+        stableAliasAutoTls: true,
         previewAuth: {
           enabled: true,
           login: "preview-user",
@@ -156,10 +158,60 @@ describe("site details page", () => {
     expect(html).toContain("Configuration");
     expect(html).toContain("Stable alias");
     expect(html).toContain('value="www.example.com"');
+    expect(html).toContain("Issue SSL certificate for this hostname");
     expect(html).toContain("Preview access");
     expect(html).toContain("Login");
     expect(html).toContain("Confirm password");
     expect(html).toContain("Danger zone");
     expect(html).not.toContain("Deploy inventory");
+  });
+
+  it("shows the stable alias in the stable deploy card when configured", async () => {
+    const config = createDefaultConfig();
+    config.sites = [
+      {
+        slug: "app",
+        name: "app",
+        mainBranch: "stable",
+        stableAlias: "www.example.com",
+        stableAliasAutoTls: true,
+        previewAuth: {
+          enabled: false,
+          login: null,
+          passwordHash: null,
+        },
+        createdAt: "2026-03-27T09:00:00.000Z",
+        updatedAt: "2026-03-27T09:00:00.000Z",
+      },
+    ];
+
+    vi.mocked(requireAdminSession).mockResolvedValue({
+      config,
+      session: { user: { name: "owner" }, expires: "2026-03-28T00:00:00.000Z" },
+    });
+    vi.mocked(getDeploySummary).mockResolvedValue({
+      name: "stable",
+      dir: "/var/www/app/stable",
+      isMainBranch: true,
+      sizeBytes: 1024,
+      sizeLabel: "1.0 KB",
+      modifiedAt: "2026-03-27T09:20:00.000Z",
+      url: "https://app.example.dev",
+    });
+    vi.mocked(listPreviewDeployPage).mockResolvedValue({
+      items: [],
+      totalCount: 0,
+      nextOffset: null,
+    });
+
+    const page = await SiteDetailsPage({
+      params: Promise.resolve({ site: "app" }),
+      searchParams: Promise.resolve({}),
+    });
+    const html = renderWithProviders(page);
+
+    expect(html).toContain(">app.example.dev<");
+    expect(html).toContain(">www.example.com<");
+    expect(html).toContain('href="https://www.example.com"');
   });
 });

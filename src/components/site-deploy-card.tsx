@@ -19,6 +19,7 @@ type SiteDeployCardProps = {
   };
   title?: ReactNode;
   metaText?: string;
+  extraHosts?: string[];
   showDelete?: boolean;
 };
 
@@ -32,9 +33,11 @@ export function SiteDeployCard({
   deploy,
   title,
   metaText,
+  extraHosts,
   showDelete,
 }: SiteDeployCardProps) {
   const deployHost = formatDeployHost(deploy.url);
+  const visibleExtraHosts = extraHosts?.filter((host) => host && host !== deployHost) ?? [];
 
   return (
     <Flex
@@ -71,6 +74,25 @@ export function SiteDeployCard({
             </Text>
           ) : null}
         </Flex>
+        {visibleExtraHosts.length > 0 ? (
+          <Flex mt="1" gap="2" wrap="wrap" align="center">
+            {visibleExtraHosts.map((host) => (
+              <a key={host} href={`https://${host}`} target="_blank" rel="noreferrer">
+                <Text
+                  as="span"
+                  color="whiteAlpha.700"
+                  textDecoration="underline"
+                  textDecorationColor="rgba(255,255,255,0.18)"
+                  textUnderlineOffset="0.18em"
+                  transition="color 0.2s ease"
+                  _hover={{ color: "whiteAlpha.950" }}
+                >
+                  {host}
+                </Text>
+              </a>
+            ))}
+          </Flex>
+        ) : null}
         <Text color="whiteAlpha.700" mt="2" fontSize="sm" fontFamily="mono">
           {deploy.dir}
         </Text>

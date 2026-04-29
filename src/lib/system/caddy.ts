@@ -205,20 +205,13 @@ function withDevScheme(host: string): string {
   return isDevelopmentRuntime() ? `http://${host}` : host;
 }
 
-function getSiteStableHosts(config: SelflifyConfig, site: SiteConfig): string[] {
-  return [
-    `${site.slug}.${config.server.domain}`,
-    ...(site.stableAlias ? [site.stableAlias] : []),
-  ];
-}
-
 function getSitePreviewWildcardHost(config: SelflifyConfig, site: SiteConfig): string {
   return `*.${site.slug}.${config.server.domain}`;
 }
 
-function renderStableBlock(config: SelflifyConfig, site: SiteConfig): string {
+function renderStableHostBlock(hosts: string[], config: SelflifyConfig, site: SiteConfig): string {
   const previewRoot = path.join(getEffectivePreviewRoot(config), site.slug).replace(/\\/g, "/");
-  const stableHosts = getSiteStableHosts(config, site).map(withDevScheme).join(", ");
+  const stableHosts = hosts.map(withDevScheme).join(", ");
 
   return `${stableHosts} {
     import common_site
@@ -228,6 +221,20 @@ function renderStableBlock(config: SelflifyConfig, site: SiteConfig): string {
     file_server
 }
 `;
+}
+
+function renderStableBlock(config: SelflifyConfig, site: SiteConfig): string {
+  return renderStableHostBlock([`${site.slug}.${config.server.domain}`], config, site);
+}
+
+function renderStableAliasBlock(config: SelflifyConfig, site: SiteConfig): string {
+  if (!site.stableAlias) {
+    return "";
+  }
+
+  return site.stableAliasAutoTls
+    ? renderStableHostBlock([site.stableAlias], config, site)
+    : renderStableHostBlock([`http://${site.stableAlias}`], config, site);
 }
 
 function renderPreviewBlock(config: SelflifyConfig, site: SiteConfig): string {
@@ -253,7 +260,9 @@ ${authBlock}    root * ${previewRoot}/{labels.3}
 }
 
 function renderSiteBlocks(config: SelflifyConfig, site: SiteConfig): string {
-  return `${renderStableBlock(config, site)}\n${renderPreviewBlock(config, site)}`;
+  return [renderStableBlock(config, site), renderStableAliasBlock(config, site), renderPreviewBlock(config, site)]
+    .filter(Boolean)
+    .join("\n");
 }
 
 function renderSelflifyPanelBlocks(config: SelflifyConfig): string {

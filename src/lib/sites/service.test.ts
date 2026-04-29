@@ -42,6 +42,7 @@ function createSite(): SiteConfig {
     name: "App",
     mainBranch: "stable",
     stableAlias: null,
+    stableAliasAutoTls: false,
     previewAuth: {
       enabled: false,
       login: null,
@@ -130,6 +131,7 @@ describe("site service", () => {
       slug: "transport",
       name: "Transport",
       stableAlias: null,
+      stableAliasAutoTls: false,
     };
 
     config.sites = [appSite, transportSite];

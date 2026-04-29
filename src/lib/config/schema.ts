@@ -44,6 +44,7 @@ export const siteConfigSchema = z.object({
         });
       }
     }),
+  stableAliasAutoTls: z.boolean().default(false),
   previewAuth: previewAuthSchema.default({
     enabled: false,
     login: null,

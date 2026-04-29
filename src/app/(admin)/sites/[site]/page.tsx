@@ -49,6 +49,7 @@ export default async function SiteDetailsPage({ params, searchParams }: SiteDeta
             deploy={stableDeploy}
             title={siteDisplayName}
             metaText={site.mainBranch}
+            extraHosts={site.stableAlias ? [site.stableAlias] : undefined}
           />
         : null}
 
@@ -154,6 +155,29 @@ export default async function SiteDetailsPage({ params, searchParams }: SiteDeta
                     bg="rgba(255,255,255,0.04)"
                   />
                 </FormField>
+                <Stack gap="2">
+                  <label
+                    htmlFor="site-settings-stable-alias-auto-tls"
+                    style={{ display: "flex", alignItems: "flex-start", gap: "0.75rem" }}
+                  >
+                    <input
+                      id="site-settings-stable-alias-auto-tls"
+                      name="stableAliasAutoTls"
+                      type="checkbox"
+                      value="1"
+                      defaultChecked={site.stableAliasAutoTls}
+                      style={{ marginTop: "0.2rem" }}
+                    />
+                    <Stack gap="1">
+                      <Text fontSize="sm" fontWeight="700" color="whiteAlpha.900">
+                        Issue SSL certificate for this hostname
+                      </Text>
+                      <Text color="muted" fontSize="xs">
+                        When enabled, Caddy will request and renew HTTPS for the alias hostname.
+                      </Text>
+                    </Stack>
+                  </label>
+                </Stack>
                 <FormSubmitButton
                   alignSelf="flex-start"
                   bg="action.500"

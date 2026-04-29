@@ -216,6 +216,7 @@ const updateSiteStableAliasSchema = z.object({
         });
       }
     }),
+  stableAliasAutoTls: booleanCheckboxFieldSchema.transform((value) => value === "1"),
 });
 
 const updateSitePreviewAccessSchema = z
@@ -269,6 +270,7 @@ export async function updateSiteStableAliasAction(siteSlug: string, formData: Fo
   try {
     const payload = updateSiteStableAliasSchema.parse({
       stableAlias: getQueryValue(formData, "stableAlias"),
+      stableAliasAutoTls: getQueryValue(formData, "stableAliasAutoTls"),
     });
 
     await updateSiteStableAlias(siteSlug, payload, expectedRevision);
