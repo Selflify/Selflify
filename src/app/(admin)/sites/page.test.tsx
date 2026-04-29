@@ -53,6 +53,7 @@ describe("sites page", () => {
         mainBranch: "stable",
         stableAlias: null,
         stableAliasAutoTls: false,
+        stableAliasUseCloudflare: true,
         previewAuth: {
           enabled: true,
           login: "preview-user",

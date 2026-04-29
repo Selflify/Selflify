@@ -209,12 +209,17 @@ function getSitePreviewWildcardHost(config: SelflifyConfig, site: SiteConfig): s
   return `*.${site.slug}.${config.server.domain}`;
 }
 
-function renderStableHostBlock(hosts: string[], config: SelflifyConfig, site: SiteConfig): string {
+function renderStableHostBlock(
+  hosts: string[],
+  config: SelflifyConfig,
+  site: SiteConfig,
+  useManagedTls: boolean,
+): string {
   const previewRoot = path.join(getEffectivePreviewRoot(config), site.slug).replace(/\\/g, "/");
   const stableHosts = hosts.map(withDevScheme).join(", ");
 
   return `${stableHosts} {
-    import common_site
+${renderCommonSiteImports(useManagedTls)}
 
     root * ${previewRoot}/${site.mainBranch}
     try_files {path} {path}/ /index.html
@@ -224,7 +229,9 @@ function renderStableHostBlock(hosts: string[], config: SelflifyConfig, site: Si
 }
 
 function renderStableBlock(config: SelflifyConfig, site: SiteConfig): string {
-  return renderStableHostBlock([`${site.slug}.${config.server.domain}`], config, site);
+  const usesManagedTls = Boolean(config.server.cloudflareApiToken) && !shouldMockCloudflare();
+
+  return renderStableHostBlock([`${site.slug}.${config.server.domain}`], config, site, usesManagedTls);
 }
 
 function renderStableAliasBlock(config: SelflifyConfig, site: SiteConfig): string {
@@ -232,9 +239,14 @@ function renderStableAliasBlock(config: SelflifyConfig, site: SiteConfig): strin
     return "";
   }
 
+  const usesManagedTls =
+    Boolean(config.server.cloudflareApiToken) &&
+    !shouldMockCloudflare() &&
+    site.stableAliasUseCloudflare;
+
   return site.stableAliasAutoTls
-    ? renderStableHostBlock([site.stableAlias], config, site)
-    : renderStableHostBlock([`http://${site.stableAlias}`], config, site);
+    ? renderStableHostBlock([site.stableAlias], config, site, usesManagedTls)
+    : renderStableHostBlock([`http://${site.stableAlias}`], config, site, false);
 }
 
 function renderPreviewBlock(config: SelflifyConfig, site: SiteConfig): string {
@@ -269,6 +281,7 @@ function renderSelflifyPanelBlocks(config: SelflifyConfig): string {
   const blocks = [
     `${withDevScheme(config.server.domain)} {
     import common_site
+    import panel_security_headers
 
     reverse_proxy ${getEffectiveSelflifyUpstream(config)}
 }`,
@@ -282,11 +295,13 @@ function renderSelflifyPanelBlocks(config: SelflifyConfig): string {
       shouldRedirectIpToDomain
         ? `http://${config.server.serverIp.trim()} {
     import common_site
+    import panel_security_headers
 
     redir https://${config.server.domain}{uri} 308
 }`
         : `http://${config.server.serverIp.trim()} {
     import common_site
+    import panel_security_headers
 
     reverse_proxy ${getEffectiveSelflifyUpstream(config)}
 }`,
@@ -315,6 +330,11 @@ ${renderTlsBlock(usesManagedTls ? config.server.cloudflareApiToken : "")}
         X-Robots-Tag "noindex, nofollow, noarchive, nosnippet, noimageindex"
         Referrer-Policy "strict-origin-when-cross-origin"
         X-Content-Type-Options "nosniff"
+    }
+}
+
+(panel_security_headers) {
+    header {
         X-Frame-Options "DENY"
         Content-Security-Policy "frame-ancestors 'none'"
     }

@@ -493,6 +493,7 @@ describe("server actions", () => {
           mainBranch: "stable",
           stableAlias: null,
           stableAliasAutoTls: false,
+          stableAliasUseCloudflare: true,
           previewAuth: {
             enabled: false,
             login: null,
@@ -562,6 +563,7 @@ describe("server actions", () => {
           mainBranch: "stable",
           stableAlias: null,
           stableAliasAutoTls: false,
+          stableAliasUseCloudflare: true,
           previewAuth: {
             enabled: false,
             login: null,
@@ -575,6 +577,7 @@ describe("server actions", () => {
       const outcome = await mutate(config);
       expect(outcome.config.sites[0]?.stableAlias).toBe("www.example.com");
       expect(outcome.config.sites[0]?.stableAliasAutoTls).toBe(true);
+      expect(outcome.config.sites[0]?.stableAliasUseCloudflare).toBe(false);
 
       return undefined as never;
     });
@@ -583,6 +586,7 @@ describe("server actions", () => {
     formData.set("configRevision", "2");
     formData.set("stableAlias", "WWW.EXAMPLE.COM");
     formData.set("stableAliasAutoTls", "1");
+    formData.set("stableAliasUseCloudflare", "0");
 
     await updateSiteStableAliasAction("app", formData);
 
@@ -602,6 +606,7 @@ describe("server actions", () => {
     formData.set("configRevision", "2");
     formData.set("stableAlias", "");
     formData.set("stableAliasAutoTls", "1");
+    formData.set("stableAliasUseCloudflare", "1");
 
     await updateSiteStableAliasAction("app", formData);
 

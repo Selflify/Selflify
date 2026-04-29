@@ -11,6 +11,11 @@
         X-Robots-Tag "noindex, nofollow, noarchive, nosnippet, noimageindex"
         Referrer-Policy "strict-origin-when-cross-origin"
         X-Content-Type-Options "nosniff"
+    }
+}
+
+(panel_security_headers) {
+    header {
         X-Frame-Options "DENY"
         Content-Security-Policy "frame-ancestors 'none'"
     }

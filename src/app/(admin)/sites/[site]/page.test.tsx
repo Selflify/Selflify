@@ -55,6 +55,7 @@ describe("site details page", () => {
         mainBranch: "stable",
         stableAlias: null,
         stableAliasAutoTls: false,
+        stableAliasUseCloudflare: true,
         previewAuth: {
           enabled: false,
           login: null,
@@ -123,6 +124,7 @@ describe("site details page", () => {
         mainBranch: "stable",
         stableAlias: "www.example.com",
         stableAliasAutoTls: true,
+        stableAliasUseCloudflare: false,
         previewAuth: {
           enabled: true,
           login: "preview-user",
@@ -159,6 +161,7 @@ describe("site details page", () => {
     expect(html).toContain("Stable alias");
     expect(html).toContain('value="www.example.com"');
     expect(html).toContain("Issue SSL certificate for this hostname");
+    expect(html).toContain("Use Cloudflare for certificate issuance");
     expect(html).toContain("Preview access");
     expect(html).toContain("Login");
     expect(html).toContain("Confirm password");
@@ -175,6 +178,7 @@ describe("site details page", () => {
         mainBranch: "stable",
         stableAlias: "www.example.com",
         stableAliasAutoTls: true,
+        stableAliasUseCloudflare: true,
         previewAuth: {
           enabled: false,
           login: null,

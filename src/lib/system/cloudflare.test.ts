@@ -88,6 +88,7 @@ describe("createDnsGateway", () => {
         mainBranch: "stable",
         stableAlias: null,
         stableAliasAutoTls: false,
+        stableAliasUseCloudflare: true,
         previewAuth: { enabled: false, login: null, passwordHash: null },
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),

@@ -178,6 +178,31 @@ export default async function SiteDetailsPage({ params, searchParams }: SiteDeta
                     </Stack>
                   </label>
                 </Stack>
+                <Stack gap="2">
+                  <label
+                    htmlFor="site-settings-stable-alias-use-cloudflare"
+                    style={{ display: "flex", alignItems: "flex-start", gap: "0.75rem" }}
+                  >
+                    <input
+                      id="site-settings-stable-alias-use-cloudflare"
+                      name="stableAliasUseCloudflare"
+                      type="checkbox"
+                      value="1"
+                      defaultChecked={site.stableAliasUseCloudflare}
+                      style={{ marginTop: "0.2rem" }}
+                    />
+                    <Stack gap="1">
+                      <Text fontSize="sm" fontWeight="700" color="whiteAlpha.900">
+                        Use Cloudflare for certificate issuance
+                      </Text>
+                      <Text color="muted" fontSize="xs">
+                        Enable this when the alias domain is managed through Cloudflare. Disable
+                        it when the alias points directly to the server and Caddy should use direct
+                        ACME validation.
+                      </Text>
+                    </Stack>
+                  </label>
+                </Stack>
                 <FormSubmitButton
                   alignSelf="flex-start"
                   bg="action.500"

@@ -35,6 +35,7 @@ export type UpdateSiteInput = {
 export type UpdateSiteStableAliasInput = {
   stableAlias: string;
   stableAliasAutoTls: boolean;
+  stableAliasUseCloudflare: boolean;
 };
 
 export type UpdateSitePreviewAccessInput = {
@@ -139,6 +140,7 @@ export async function createSite(
         mainBranch: payload.mainBranch,
         stableAlias: null,
         stableAliasAutoTls: false,
+        stableAliasUseCloudflare: true,
         previewAuth: {
           enabled: false,
           login: null,
@@ -192,6 +194,7 @@ export async function updateSiteStableAlias(
 
       site.stableAlias = stableAlias || null;
       site.stableAliasAutoTls = stableAlias ? payload.stableAliasAutoTls : false;
+      site.stableAliasUseCloudflare = stableAlias ? payload.stableAliasUseCloudflare : true;
       site.updatedAt = new Date().toISOString();
 
       return {

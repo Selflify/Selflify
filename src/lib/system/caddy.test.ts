@@ -21,6 +21,7 @@ function createSite(partial?: Partial<SiteConfig>): SiteConfig {
     mainBranch: "stable",
     stableAlias: null,
     stableAliasAutoTls: false,
+    stableAliasUseCloudflare: true,
     previewAuth: {
       enabled: true,
       login: "preview-user",
@@ -59,6 +60,7 @@ describe("generateCaddyfile", () => {
   it("renders apex proxy, preview auth and stable root mapping", () => {
     const config = createConfig(createSite());
     const rendered = generateCaddyfile(config);
+    const commonHeadersBlock = rendered.match(/\(common_headers\) \{[\s\S]*?\n\}/)?.[0] ?? "";
 
     expect(rendered).toContain("reverse_proxy selflify:3000");
     expect(rendered).toContain("dns cloudflare cf-token");
@@ -68,8 +70,14 @@ describe("generateCaddyfile", () => {
     expect(rendered).toContain("output file /var/log/caddy/access.log");
     expect(rendered).toContain("roll_keep 10");
     expect(rendered).toContain("origins http://0.0.0.0:2019 http://127.0.0.1:2019 http://localhost:2019 http://caddy:2019");
+    expect(rendered).toContain("(panel_security_headers) {");
     expect(rendered).toContain('X-Frame-Options "DENY"');
     expect(rendered).toContain('Content-Security-Policy "frame-ancestors \'none\'"');
+    expect(commonHeadersBlock).not.toContain('X-Frame-Options "DENY"');
+    expect(commonHeadersBlock).not.toContain('Content-Security-Policy "frame-ancestors \'none\'"');
+    expect(rendered).toContain(`example.dev {
+    import common_site
+    import panel_security_headers`);
     expect(rendered).toContain("app.example.dev {");
     expect(rendered).toContain("*.app.example.dev {");
   });
@@ -143,6 +151,7 @@ describe("generateCaddyfile", () => {
 
     expect(rendered).toContain(`http://203.0.113.10 {
     import common_site
+    import panel_security_headers
 
     reverse_proxy selflify:3000
 }`);
@@ -207,6 +216,7 @@ describe("generateCaddyfile", () => {
       createSite({
         stableAlias: "www.example.com",
         stableAliasAutoTls: true,
+        stableAliasUseCloudflare: true,
       }),
     );
     const rendered = generateCaddyfile(config);
@@ -216,6 +226,7 @@ describe("generateCaddyfile", () => {
     expect(rendered).toContain("*.app.example.dev {");
     expect(rendered).toContain("root * /var/www/app/stable");
     expect(rendered).not.toContain("www.example.com, *.app.example.dev");
+    expect(rendered).toContain("dns cloudflare cf-token");
   });
 
   it("keeps the stable alias on plain http when alias tls is disabled", () => {
@@ -223,12 +234,30 @@ describe("generateCaddyfile", () => {
       createSite({
         stableAlias: "www.example.com",
         stableAliasAutoTls: false,
+        stableAliasUseCloudflare: true,
       }),
     );
     const rendered = generateCaddyfile(config);
 
     expect(rendered).toContain("http://www.example.com {");
     expect(rendered).not.toContain("\nwww.example.com {\n");
+  });
+
+  it("lets the alias use direct tls even when the canonical site still uses cloudflare dns", () => {
+    const config = createConfig(
+      createSite({
+        stableAlias: "www.example.com",
+        stableAliasAutoTls: true,
+        stableAliasUseCloudflare: false,
+      }),
+    );
+    const rendered = generateCaddyfile(config);
+
+    expect(rendered).toContain("app.example.dev {");
+    expect(rendered).toContain("www.example.com {");
+    expect(rendered).toContain("    import tls_cf");
+    expect(rendered).toContain("www.example.com {\n    import common_headers\n    import static_cache");
+    expect(rendered).not.toContain("www.example.com {\n    import tls_cf");
   });
 
   it("uses docker exec for caddy commands in development when no explicit local binary is configured", () => {

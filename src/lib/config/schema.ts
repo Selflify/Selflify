@@ -45,6 +45,7 @@ export const siteConfigSchema = z.object({
       }
     }),
   stableAliasAutoTls: z.boolean().default(false),
+  stableAliasUseCloudflare: z.boolean().default(true),
   previewAuth: previewAuthSchema.default({
     enabled: false,
     login: null,

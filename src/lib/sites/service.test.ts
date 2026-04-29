@@ -43,6 +43,7 @@ function createSite(): SiteConfig {
     mainBranch: "stable",
     stableAlias: null,
     stableAliasAutoTls: false,
+    stableAliasUseCloudflare: true,
     previewAuth: {
       enabled: false,
       login: null,
@@ -132,6 +133,7 @@ describe("site service", () => {
       name: "Transport",
       stableAlias: null,
       stableAliasAutoTls: false,
+      stableAliasUseCloudflare: true,
     };
 
     config.sites = [appSite, transportSite];

@@ -39,6 +39,7 @@ describe("runCleanupOnce", () => {
         mainBranch: "stable",
         stableAlias: null,
         stableAliasAutoTls: false,
+        stableAliasUseCloudflare: true,
         previewAuth: {
           enabled: false,
           login: null,
