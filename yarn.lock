@@ -1933,9 +1933,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@vitest/eslint-plugin@npm:^1.6.14":
-  version: 1.6.14
-  resolution: "@vitest/eslint-plugin@npm:1.6.14"
+"@vitest/eslint-plugin@npm:^1.6.16":
+  version: 1.6.16
+  resolution: "@vitest/eslint-plugin@npm:1.6.16"
   dependencies:
     "@typescript-eslint/scope-manager": "npm:^8.58.0"
     "@typescript-eslint/utils": "npm:^8.58.0"
@@ -1951,7 +1951,7 @@ __metadata:
       optional: true
     vitest:
       optional: true
-  checksum: 10c0/4721f554cab1c8bfa6d0df7b350e54223ecfd285ba3f51be5db2dafaa6147b26400dd80840114019bd80f584fed6e30180ba70e4b044dbfa7b909b283d241d8e
+  checksum: 10c0/b2871ce12b831ea1e1ff8cf01d978d0746aaeac951830880ad966ad2783de4fbe835a1c74c44f5bccca73ca6007174cd0434c2725269cfafdcc6fbb43d4da495
   languageName: node
   linkType: hard
 
@@ -6295,7 +6295,7 @@ __metadata:
     "@types/react": "npm:^19.2.2"
     "@types/react-dom": "npm:^19.2.2"
     "@vitest/coverage-v8": "npm:^4.1.5"
-    "@vitest/eslint-plugin": "npm:^1.6.14"
+    "@vitest/eslint-plugin": "npm:^1.6.16"
     bcryptjs: "npm:^3.0.3"
     eslint: "npm:^9.38.0"
     eslint-config-next: "npm:16.2.2"
