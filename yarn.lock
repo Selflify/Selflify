@@ -1933,7 +1933,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@vitest/eslint-plugin@npm:1.6.16":
+"@vitest/eslint-plugin@npm:^1.6.16":
   version: 1.6.16
   resolution: "@vitest/eslint-plugin@npm:1.6.16"
   dependencies:
@@ -6315,7 +6315,7 @@ __metadata:
     "@types/react": "npm:^19.2.2"
     "@types/react-dom": "npm:^19.2.2"
     "@vitest/coverage-v8": "npm:^4.1.5"
-    "@vitest/eslint-plugin": "npm:1.6.16"
+    "@vitest/eslint-plugin": "npm:^1.6.16"
     bcryptjs: "npm:^3.0.3"
     eslint: "npm:^9.38.0"
     eslint-config-next: "npm:16.2.2"
