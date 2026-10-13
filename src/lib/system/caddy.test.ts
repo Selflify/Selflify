@@ -243,6 +243,20 @@ describe("generateCaddyfile", () => {
     expect(rendered).not.toContain("\nwww.example.com {\n");
   });
 
+  it("shares marker routing and SPA fallback across stable, alias and preview hosts", () => {
+    const rendered = generateCaddyfile(createConfig(createSite({ stableAlias: "www.example.com" })));
+
+    expect(rendered.match(/import spa_files/g)).toHaveLength(3);
+    expect(rendered).toContain('header /__preview_commit__/* Cache-Control "no-store"');
+    expect(rendered).toContain(`handle /__preview_commit__/* {
+        file_server
+    }
+    handle {
+        try_files {path} {path}/ /index.html
+        file_server
+    }`);
+  });
+
   it("lets the alias use direct tls even when the canonical site still uses cloudflare dns", () => {
     const config = createConfig(
       createSite({

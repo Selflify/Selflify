@@ -222,8 +222,7 @@ function renderStableHostBlock(
 ${renderCommonSiteImports(useManagedTls)}
 
     root * ${previewRoot}/${site.mainBranch}
-    try_files {path} {path}/ /index.html
-    file_server
+    import spa_files
 }
 `;
 }
@@ -265,8 +264,7 @@ function renderPreviewBlock(config: SelflifyConfig, site: SiteConfig): string {
     import common_site
 
 ${authBlock}    root * ${previewRoot}/{labels.3}
-    try_files {path} {path}/ /index.html
-    file_server
+    import spa_files
 }
 `;
 }
@@ -365,6 +363,18 @@ ${renderCommonSiteImports(usesManagedTls)}
         }
         format json
         level INFO
+    }
+}
+
+(spa_files) {
+    header /__preview_commit__/* Cache-Control "no-store"
+    # Keep readiness markers out of the SPA rewrite. Basic auth runs before handle.
+    handle /__preview_commit__/* {
+        file_server
+    }
+    handle {
+        try_files {path} {path}/ /index.html
+        file_server
     }
 }
 
