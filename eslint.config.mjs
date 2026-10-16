@@ -26,6 +26,7 @@ export default defineConfig([
     ".next/**",
     "out/**",
     "build/**",
+    "dist/**",
     "coverage/**",
     ".selflify/**",
     "tmp_scaffold/**",

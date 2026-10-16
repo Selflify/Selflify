@@ -8,6 +8,8 @@ import {
   updateSiteStableAliasAction,
   updateSitePreviewAccessAction,
 } from "@/app/actions";
+import { DeployTokens } from "@/components/deploy-tokens";
+import { getDeploymentSiteId } from "@/lib/deploy/permissions";
 import { ActionFeedbackToast } from "@/components/action-feedback-toast";
 import { DeleteSiteDialog } from "@/components/delete-site-dialog";
 import { FormField } from "@/components/form-field";
@@ -42,16 +44,16 @@ export default async function SiteDetailsPage({ params, searchParams }: SiteDeta
     <Stack gap="8">
       <ActionFeedbackToast notice={notice} error={error} />
 
-      {stableDeploy
-        ? <SiteDeployCard
-            siteSlug={site.slug}
-            configRevision={config.configRevision}
-            deploy={stableDeploy}
-            title={siteDisplayName}
-            metaText={site.mainBranch}
-            extraHosts={site.stableAlias ? [site.stableAlias] : undefined}
-          />
-        : null}
+      {stableDeploy ? (
+        <SiteDeployCard
+          siteSlug={site.slug}
+          configRevision={config.configRevision}
+          deploy={stableDeploy}
+          title={siteDisplayName}
+          metaText={site.mainBranch}
+          extraHosts={site.stableAlias ? [site.stableAlias] : undefined}
+        />
+      ) : null}
 
       {view === "deploys" ? (
         <SiteDeployInventory
@@ -65,6 +67,20 @@ export default async function SiteDetailsPage({ params, searchParams }: SiteDeta
 
       {view === "configuration" ? (
         <Stack gap="6">
+          <DeployTokens
+            siteSlug={site.slug}
+            revision={config.configRevision}
+            tokens={config.deployTokens
+              .filter((token) => token.siteId === getDeploymentSiteId(site))
+              .map(({ id, name, scopes, createdAt, expiresAt, revokedAt }) => ({
+                id,
+                name,
+                scopes,
+                createdAt,
+                expiresAt,
+                revokedAt,
+              }))}
+          />
           <Box
             rounded="2xl"
             borderWidth="1px"
@@ -135,8 +151,8 @@ export default async function SiteDetailsPage({ params, searchParams }: SiteDeta
           >
             <Heading size="lg">Stable alias (optional)</Heading>
             <Text color="muted" mt="2">
-              Add one extra hostname that should serve the main branch only. Preview deploys stay
-              on the canonical subdomain and wildcard hosts.
+              Add one extra hostname that should serve the main branch only. Preview deploys stay on
+              the canonical subdomain and wildcard hosts.
             </Text>
 
             <form action={updateSiteStableAliasAction.bind(null, site.slug)}>
@@ -196,8 +212,8 @@ export default async function SiteDetailsPage({ params, searchParams }: SiteDeta
                         Use Cloudflare for certificate issuance
                       </Text>
                       <Text color="muted" fontSize="xs">
-                        Enable this when the alias domain is managed through Cloudflare. Disable
-                        it when the alias points directly to the server and Caddy should use direct
+                        Enable this when the alias domain is managed through Cloudflare. Disable it
+                        when the alias points directly to the server and Caddy should use direct
                         ACME validation.
                       </Text>
                     </Stack>

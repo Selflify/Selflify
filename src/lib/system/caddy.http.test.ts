@@ -101,7 +101,7 @@ describe.skipIf(process.env.SELFLIFY_TEST_CADDY_HTTP !== "1")(
         "-p",
         "127.0.0.1::80",
         "-v",
-        `${tempDir}:/fixtures:ro`,
+        `${tempDir}:/fixtures`,
         "caddy:2.10.2-alpine",
         "caddy",
         "run",
@@ -167,6 +167,40 @@ describe.skipIf(process.env.SELFLIFY_TEST_CADDY_HTTP !== "1")(
       const ready = await request("branch.private.example.test", markerPath);
       expect(ready.status).toBe(401);
       expect(ready.headers.get("cache-control")).toBe("no-store");
+    });
+    it("switches managed releases for stable, aliases and previews without exposing internal files", async () => {
+      const id = "aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa";
+      const nextId = "bbbbbbbb-bbbb-4bbb-bbbb-bbbbbbbbbbbb";
+      for (const directory of new Set(hosts.map((host) => host.directory))) {
+        const managed = path.join(tempDir, "sites", directory, ".selflify");
+        for (const release of [id, nextId]) {
+          const dir = path.join(managed, "releases", release);
+          await fs.mkdir(path.join(dir, "__preview_commit__"), { recursive: true });
+          await fs.writeFile(path.join(dir, "index.html"), `managed:${release}`);
+          await fs.writeFile(path.join(dir, "__preview_commit__", sha), "managed-marker");
+        }
+        await fs.symlink(`releases/${id}`, path.join(managed, "current"));
+      }
+      for (const { host, protected: authenticated } of hosts) {
+        expect(await (await request(host, "/", authenticated)).text()).toBe(`managed:${id}`);
+        expect(await (await request(host, "/spa/deep/link", authenticated)).text()).toBe(
+          `managed:${id}`,
+        );
+        expect(await (await request(host, markerPath, authenticated)).text()).toBe(
+          "managed-marker",
+        );
+        expect(
+          (await request(host, `/.selflify/releases/${id}/index.html`, authenticated)).status,
+        ).toBe(404);
+      }
+      for (const directory of new Set(hosts.map((host) => host.directory))) {
+        const managed = `/fixtures/sites/${directory}/.selflify`;
+        await exec("docker", ["exec", containerId!, "ln", "-s", `releases/${nextId}`, `${managed}/next`]);
+        await exec("docker", ["exec", containerId!, "mv", "-Tf", `${managed}/next`, `${managed}/current`]);
+      }
+      for (const { host, protected: authenticated } of hosts) {
+        expect(await (await request(host, "/", authenticated)).text()).toBe(`managed:${nextId}`);
+      }
     });
   },
 );

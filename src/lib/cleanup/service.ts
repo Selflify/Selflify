@@ -1,3 +1,4 @@
+import { pruneReleases } from "@/lib/deploy/publication";
 import fs from "node:fs/promises";
 import path from "node:path";
 
@@ -67,6 +68,7 @@ export async function runCleanupOnce(
     const childDirs = await listChildDirectories(siteDir);
 
     for (const childDir of childDirs) {
+      await pruneReleases(childDir);
       if (path.basename(childDir) === site.mainBranch) {
         continue;
       }

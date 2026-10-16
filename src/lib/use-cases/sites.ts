@@ -1,6 +1,9 @@
+import crypto from "node:crypto";
+import { getDeploymentSiteId } from "@/lib/deploy/permissions";
 import { type SiteConfig } from "@/lib/config/schema";
 import {
   ConfigConflictError,
+  type ConfigOperationContext,
   runConfigOperation,
   runTrackedSideEffectOperation,
 } from "@/lib/operations";
@@ -135,6 +138,7 @@ export async function createSite(
       }
 
       const site: SiteConfig = {
+        deploymentId: crypto.randomUUID(),
         slug: payload.slug,
         name: formatSiteName(payload.name),
         mainBranch: payload.mainBranch,
@@ -177,8 +181,10 @@ export async function updateSiteStableAlias(
   siteSlug: string,
   payload: UpdateSiteStableAliasInput,
   expectedRevision?: number,
+  context?: ConfigOperationContext,
 ): Promise<string> {
   return runConfigOperation({
+    ...context,
     label: `update-site-stable-alias:${siteSlug}`,
     expectedRevision,
     mutate: async (draft) => {
@@ -209,12 +215,14 @@ export async function updateSite(
   siteSlug: string,
   payload: UpdateSiteInput,
   expectedRevision?: number,
+  context?: ConfigOperationContext,
 ): Promise<string> {
   let updatedSite: SiteConfig | null = null;
   let previousMainBranch: string | null = null;
   let shouldRemoveCreatedMainDeploy = false;
 
   return runConfigOperation({
+    ...context,
     label: `update-site:${siteSlug}`,
     expectedRevision,
     mutate: async (draft) => {
@@ -264,8 +272,10 @@ export async function updateSitePreviewAccess(
   siteSlug: string,
   payload: UpdateSitePreviewAccessInput,
   expectedRevision?: number,
+  context?: ConfigOperationContext,
 ): Promise<string> {
   return runConfigOperation({
+    ...context,
     label: `update-site-preview-access:${siteSlug}`,
     expectedRevision,
     mutate: async (draft) => {
@@ -307,8 +317,10 @@ export async function updateSitePreviewAccess(
 export async function resetSitePreviewAccess(
   siteSlug: string,
   expectedRevision?: number,
+  context?: ConfigOperationContext,
 ): Promise<string> {
   return runConfigOperation({
+    ...context,
     label: `reset-site-preview-access:${siteSlug}`,
     expectedRevision,
     mutate: async (draft) => {
@@ -353,6 +365,15 @@ export async function deleteSite(
 
       removedSite = { ...site };
       draft.sites = draft.sites.filter((entry) => entry.slug !== siteSlug);
+      for (const token of draft.deployTokens) {
+        if (
+          !token.allSites &&
+          !token.siteIds &&
+          token.siteId === getDeploymentSiteId(site) &&
+          !token.revokedAt
+        )
+          token.revokedAt = new Date().toISOString();
+      }
 
       return {
         config: draft,

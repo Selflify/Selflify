@@ -13,6 +13,7 @@ FROM base AS deps
 
 COPY package.json yarn.lock .yarnrc.yml ./
 COPY .yarn/releases ./.yarn/releases
+COPY packages/selflify-cli/package.json ./packages/selflify-cli/package.json
 RUN node .yarn/releases/yarn-4.13.0.cjs install --immutable
 
 FROM deps AS dev
@@ -24,6 +25,22 @@ FROM deps AS builder
 
 COPY . .
 RUN node .yarn/releases/yarn-4.13.0.cjs build
+RUN node .yarn/releases/yarn-4.13.0.cjs upload:build
+
+FROM deps AS upload-builder
+COPY . .
+RUN node .yarn/releases/yarn-4.13.0.cjs upload:build
+
+FROM base AS upload
+RUN mkdir /state && chown 10001:0 /state
+COPY --from=upload-builder /workspace/dist/upload/upload.js /workspace/upload.cjs
+USER 10001:0
+CMD ["node", "/workspace/upload.cjs"]
+
+FROM base AS deploy-init
+COPY --from=caddy-builder /usr/bin/caddy /usr/bin/caddy
+COPY --from=upload-builder /workspace/dist/upload/prepare-deploy.js /workspace/prepare-deploy.cjs
+CMD ["node", "/workspace/prepare-deploy.cjs"]
 
 FROM deps AS cleanup
 

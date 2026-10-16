@@ -10,11 +10,16 @@ services:
       - -lc
       - node .yarn/releases/yarn-4.13.0.cjs dev:prepare && rm -rf /workspace/.next/* && node .yarn/releases/yarn-4.13.0.cjs install --immutable && node .yarn/releases/yarn-4.13.0.cjs dev --hostname 0.0.0.0 --port 3000
     environment:
+      SELFLIFY_DEPLOY_PERMISSIONS_PATH: /workspace/.dev/deploy-permissions/permissions.json
+      SELFLIFY_DEPLOY_LOCK_PATH: /workspace/.dev/deploy-coordination/operation
+      SELFLIFY_UPLOAD_STATE: /upload-state
+      SELFLIFY_MCP_PUBLIC_ORIGIN: ${SELFLIFY_MCP_PUBLIC_ORIGIN:-http://127.0.0.1:8080}
       AUTH_SECRET: ${AUTH_SECRET}
       SELFLIFY_CONFIG_PATH: /workspace/.dev/selflify.config.json
       SELFLIFY_CADDY_CONFIG_PATH: /workspace/.dev/Caddyfile
       SELFLIFY_CADDY_BIN: /usr/bin/caddy
-      SELFLIFY_CADDY_ADMIN_ADDRESS: http://caddy:2019
+      SELFLIFY_CADDY_ADMIN_ADDRESS: unix//run/caddy-admin/admin.sock
+      SELFLIFY_CADDY_ADMIN_BIND: unix//run/caddy-admin/admin.sock
       SELFLIFY_UPSTREAM: selflify:3000
       SELFLIFY_PREVIEW_ROOT: /var/www
       SELFLIFY_BACKUP_ROOT: /workspace/.selflify/backups
@@ -22,12 +27,19 @@ services:
       SELFLIFY_SKIP_CADDY_RELOAD: "0"
       SELFLIFY_PREVIEW_TTL_DAYS: ${SELFLIFY_PREVIEW_TTL_DAYS:-30}
       SELFLIFY_ORPHAN_TTL_DAYS: ${SELFLIFY_ORPHAN_TTL_DAYS:-30}
+    depends_on:
+      deploy-init:
+        condition: service_completed_successfully
     ports:
       - "3000:3000"
     volumes:
+      - selflify_dev_upload_state:/upload-state
       - .:/workspace
       - selflify_dev_node_modules:/workspace/node_modules
+      - selflify_dev_cli_node_modules:/workspace/packages/selflify-cli/node_modules
       - selflify_dev_next:/workspace/.next
+      - selflify_dev_caddy_admin:/run/caddy-admin
+      - selflify_dev_upload_state:/upload-state:ro
       - ./.dev/var-www:/var/www
 
   cleanup:
@@ -36,18 +48,25 @@ services:
       dockerfile: docker/selflify/Dockerfile
       target: cleanup
     container_name: selflify-dev-cleanup
+    depends_on:
+      deploy-init:
+        condition: service_completed_successfully
     command:
       - sh
       - -lc
       - node .yarn/releases/yarn-4.13.0.cjs dev:prepare && node .yarn/releases/yarn-4.13.0.cjs install --immutable && while true; do node .yarn/releases/yarn-4.13.0.cjs cleanup:run; sleep "${SELFLIFY_CLEANUP_INTERVAL_SECONDS:-3600}"; done
     environment:
+      SELFLIFY_DEPLOY_LOCK_PATH: /workspace/.dev/deploy-coordination/operation
+      SELFLIFY_UPLOAD_STATE: /upload-state
       SELFLIFY_CONFIG_PATH: /workspace/.dev/selflify.config.json
       SELFLIFY_PREVIEW_TTL_DAYS: ${SELFLIFY_PREVIEW_TTL_DAYS:-30}
       SELFLIFY_ORPHAN_TTL_DAYS: ${SELFLIFY_ORPHAN_TTL_DAYS:-30}
       SELFLIFY_CLEANUP_INTERVAL_SECONDS: ${SELFLIFY_CLEANUP_INTERVAL_SECONDS:-3600}
     volumes:
+      - selflify_dev_upload_state:/upload-state
       - .:/workspace
       - selflify_cleanup_node_modules:/workspace/node_modules
+      - selflify_cleanup_cli_node_modules:/workspace/packages/selflify-cli/node_modules
       - ./.dev/var-www:/var/www
 
   caddy:
@@ -56,7 +75,8 @@ services:
       dockerfile: docker/caddy/Dockerfile
     container_name: selflify-dev-caddy
     depends_on:
-      - selflify
+      deploy-init:
+        condition: service_completed_successfully
     ports:
       - "8080:80"
     command:
@@ -66,15 +86,67 @@ services:
         test -f /workspace/.dev/Caddyfile || cp /workspace/.dev/Caddyfile.example /workspace/.dev/Caddyfile
         exec caddy run --config /workspace/.dev/Caddyfile --adapter caddyfile
     volumes:
+      - selflify_dev_upload_state:/upload-state
       - ./.dev:/workspace/.dev
+      - selflify_dev_caddy_admin:/run/caddy-admin
       - ./.dev/caddy-data:/data
       - ./.dev/caddy-config:/config
       - ./.dev/logs:/var/log/caddy
       - ./.dev/var-www:/var/www
+
+  deploy-init:
+    build:
+      context: .
+      dockerfile: docker/selflify/Dockerfile
+      target: deploy-init
+    environment:
+      SELFLIFY_UPLOAD_STATE: /upload-state
+      AUTH_SECRET: ${AUTH_SECRET}
+      SELFLIFY_CONFIG_PATH: /workspace/.dev/selflify.config.json
+      SELFLIFY_CADDY_CONFIG_PATH: /workspace/.dev/Caddyfile
+      SELFLIFY_CADDY_ADMIN_ADDRESS: unix//run/caddy-admin/admin.sock
+      SELFLIFY_CADDY_ADMIN_BIND: unix//run/caddy-admin/admin.sock
+      SELFLIFY_PREPARE_CADDY: "1"
+      SELFLIFY_CADDY_BIN: /usr/bin/caddy
+      SELFLIFY_DEV_MODE: "1"
+      SELFLIFY_MOCK_CLOUDFLARE: "1"
+    volumes:
+      - selflify_dev_upload_state:/upload-state
+      - ./.dev:/workspace/.dev
+      - ./.dev/var-www:/var/www
+
+  upload:
+    build:
+      context: .
+      dockerfile: docker/selflify/Dockerfile
+      target: upload
+    container_name: selflify-dev-upload
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    environment:
+      SELFLIFY_DEPLOY_LOCK_PATH: /coordination/operation
+    volumes:
+      - ./.dev/var-www:/var/www
+      - ./.dev/deploy-permissions:/permissions:ro
+      - ./.dev/deploy-coordination:/coordination
+      - selflify_dev_upload_state:/state
+    depends_on:
+      deploy-init:
+        condition: service_completed_successfully
     expose:
-      - "2019"
+      - "3001"
 
 volumes:
   selflify_dev_node_modules:
   selflify_dev_next:
   selflify_cleanup_node_modules:
+  selflify_dev_upload_state:
+  selflify_dev_caddy_admin:
+  selflify_dev_cli_node_modules:
+  selflify_cleanup_cli_node_modules:

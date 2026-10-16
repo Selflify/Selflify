@@ -6,7 +6,7 @@ import {
   shouldMockCloudflare,
   shouldSkipCaddyReload,
 } from "@/lib/system/runtime";
-import { formatDateTime, formatRelativeTime } from "@/lib/utils/format";
+import { DeployTimestamp } from "@/components/deploy-timestamp";
 
 type OperationStatusCardProps = {
   config: SelflifyConfig;
@@ -126,17 +126,12 @@ export function OperationStatusCard({ config }: OperationStatusCardProps) {
             {humanizeOperationLabel(config.operations.lastOperationLabel)}
           </Heading>
           <Text color="muted" fontSize="sm">
-            Last attempt: {formatDateTime(config.operations.lastAppliedAt)} · {formatRelativeTime(config.operations.lastAppliedAt)}
+            Last attempt: <DeployTimestamp value={config.operations.lastAppliedAt} />
           </Text>
         </Stack>
 
         <Stack gap="2" align={{ base: "flex-start", md: "flex-end" }}>
-          <Badge
-            colorPalette={getStatusColor(status)}
-            variant="subtle"
-            px="2.5"
-            py="1"
-          >
+          <Badge colorPalette={getStatusColor(status)} variant="subtle" px="2.5" py="1">
             {getStatusLabel(status)}
           </Badge>
           <Badge

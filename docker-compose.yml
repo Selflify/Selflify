@@ -3,18 +3,27 @@ services:
     image: ghcr.io/selflify/selflify:${SELFLIFY_IMAGE_TAG:-stable}
     restart: unless-stopped
     environment:
+      SELFLIFY_DEPLOY_PERMISSIONS_PATH: /workspace/runtime/deploy-permissions/permissions.json
+      SELFLIFY_DEPLOY_LOCK_PATH: /workspace/runtime/deploy-coordination/operation
+      SELFLIFY_UPLOAD_STATE: /upload-state
       AUTH_SECRET: ${AUTH_SECRET}
       SELFLIFY_SETUP_TOKEN: ${SELFLIFY_SETUP_TOKEN:-}
       SELFLIFY_CONFIG_PATH: /workspace/runtime/selflify.config.json
       SELFLIFY_CADDY_CONFIG_PATH: /workspace/runtime/Caddyfile
       SELFLIFY_CADDY_BIN: /usr/bin/caddy
-      SELFLIFY_CADDY_ADMIN_ADDRESS: http://caddy:2019
+      SELFLIFY_CADDY_ADMIN_ADDRESS: unix//run/caddy-admin/admin.sock
+      SELFLIFY_CADDY_ADMIN_BIND: unix//run/caddy-admin/admin.sock
       SELFLIFY_MOCK_CLOUDFLARE: ${SELFLIFY_MOCK_CLOUDFLARE:-0}
       SELFLIFY_SKIP_CADDY_RELOAD: ${SELFLIFY_SKIP_CADDY_RELOAD:-0}
       SELFLIFY_CLOUDFLARE_API_BASE_URL: ${SELFLIFY_CLOUDFLARE_API_BASE_URL:-}
     volumes:
       - ./runtime:/workspace/runtime
       - /var/www:/var/www
+      - caddy_admin:/run/caddy-admin
+      - upload_state:/upload-state:ro
+    depends_on:
+      deploy-init:
+        condition: service_completed_successfully
     expose:
       - "3000"
 
@@ -22,17 +31,21 @@ services:
     image: ghcr.io/selflify/selflify-cleanup:${SELFLIFY_IMAGE_TAG:-stable}
     restart: unless-stopped
     depends_on:
-      - selflify
+      deploy-init:
+        condition: service_completed_successfully
     command:
       - sh
       - -lc
       - while true; do node .yarn/releases/yarn-4.13.0.cjs cleanup:run; sleep "${SELFLIFY_CLEANUP_INTERVAL_SECONDS:-86400}"; done
     environment:
+      SELFLIFY_DEPLOY_LOCK_PATH: /workspace/runtime/deploy-coordination/operation
+      SELFLIFY_UPLOAD_STATE: /upload-state
       SELFLIFY_CONFIG_PATH: /workspace/runtime/selflify.config.json
       SELFLIFY_PREVIEW_TTL_DAYS: ${SELFLIFY_PREVIEW_TTL_DAYS:-30}
       SELFLIFY_ORPHAN_TTL_DAYS: ${SELFLIFY_ORPHAN_TTL_DAYS:-30}
       SELFLIFY_CLEANUP_INTERVAL_SECONDS: ${SELFLIFY_CLEANUP_INTERVAL_SECONDS:-86400}
     volumes:
+      - upload_state:/upload-state
       - ./runtime:/workspace/runtime
       - /var/www:/var/www
 
@@ -40,20 +53,66 @@ services:
     image: ghcr.io/selflify/selflify-caddy:${SELFLIFY_IMAGE_TAG:-stable}
     restart: unless-stopped
     depends_on:
-      - selflify
+      deploy-init:
+        condition: service_completed_successfully
     ports:
       - "80:80"
       - "443:443"
     volumes:
+      - upload_state:/upload-state
       - ./runtime/Caddyfile:/etc/caddy/Caddyfile
+      - caddy_admin:/run/caddy-admin
       - ./runtime/data:/data
       - ./runtime/config:/config
       - ./runtime/logs:/var/log/caddy
       - /var/www:/var/www
-    expose:
-      - "2019"
     logging:
       driver: json-file
       options:
         max-size: "10m"
         max-file: "3"
+
+  deploy-init:
+    image: ghcr.io/selflify/selflify-deploy-init:${SELFLIFY_IMAGE_TAG:-stable}
+    environment:
+      SELFLIFY_UPLOAD_STATE: /upload-state
+      AUTH_SECRET: ${AUTH_SECRET}
+      SELFLIFY_CONFIG_PATH: /workspace/runtime/selflify.config.json
+      SELFLIFY_CADDY_CONFIG_PATH: /workspace/runtime/Caddyfile
+      SELFLIFY_CADDY_ADMIN_ADDRESS: unix//run/caddy-admin/admin.sock
+      SELFLIFY_CADDY_ADMIN_BIND: unix//run/caddy-admin/admin.sock
+      SELFLIFY_PREPARE_CADDY: "1"
+      SELFLIFY_CADDY_BIN: /usr/bin/caddy
+      SELFLIFY_MOCK_CLOUDFLARE: ${SELFLIFY_MOCK_CLOUDFLARE:-0}
+    volumes:
+      - upload_state:/upload-state
+      - ./runtime:/workspace/runtime
+      - /var/www:/var/www
+
+  upload:
+    image: ghcr.io/selflify/selflify-upload:${SELFLIFY_IMAGE_TAG:-stable}
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    environment:
+      SELFLIFY_DEPLOY_LOCK_PATH: /coordination/operation
+    volumes:
+      - /var/www:/var/www
+      - ./runtime/deploy-permissions:/permissions:ro
+      - ./runtime/deploy-coordination:/coordination
+      - upload_state:/state
+    depends_on:
+      deploy-init:
+        condition: service_completed_successfully
+    expose:
+      - "3001"
+
+volumes:
+  upload_state:
+  caddy_admin:

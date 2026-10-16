@@ -1,3 +1,4 @@
+import { currentRelease } from "@/lib/deploy/publication";
 import fs from "node:fs/promises";
 import path from "node:path";
 
@@ -9,6 +10,7 @@ import { formatBytes } from "@/lib/utils/format";
 type SizeCacheEntry = {
   bytes: number;
   expiresAt: number;
+  modifiedAt: number;
 };
 
 const sizeCache = new Map<string, SizeCacheEntry>();
@@ -151,7 +153,9 @@ export async function ensureSiteDirectories(
   const mainDir = path.join(siteDir, site.mainBranch);
   const placeholderPath = path.join(mainDir, "index.html");
 
-  await fs.mkdir(mainDir, { recursive: true });
+  await fs.mkdir(mainDir, { recursive: true, mode: 0o775 });
+  await fs.chmod(siteDir, 0o775);
+  await fs.chmod(mainDir, 0o775);
 
   try {
     await fs.access(placeholderPath);
@@ -287,19 +291,21 @@ export async function removeOrphanedSiteDirectory(orphanPath: string): Promise<v
 
 async function getDirectorySizeBytes(dir: string): Promise<number> {
   const key = cacheKey(dir);
+  const modifiedAt = (await fs.stat(dir).catch(() => null))?.mtimeMs ?? 0;
   const cached = sizeCache.get(key);
 
-  if (cached && cached.expiresAt > now()) {
+  if (cached && cached.expiresAt > now() && cached.modifiedAt === modifiedAt) {
     return cached.bytes;
   }
 
   try {
-    const output = await runCommand("du", ["-sk", dir]);
+    const output = await runCommand("du", ["-sk", (await currentRelease(dir)) ?? dir]);
     const bytes = Number(output.split(/\s+/)[0] ?? "0") * 1024;
 
     sizeCache.set(key, {
       bytes,
       expiresAt: now() + SIZE_CACHE_TTL_MS,
+      modifiedAt,
     });
 
     return bytes;
@@ -314,7 +320,10 @@ export function invalidateSiteCache(config: SelflifyConfig, site: SiteConfig): v
   sizeCache.delete(cacheKey(siteDir));
 }
 
-async function readDeployRecords(config: SelflifyConfig, site: SiteConfig): Promise<DeployRecord[]> {
+async function readDeployRecords(
+  config: SelflifyConfig,
+  site: SiteConfig,
+): Promise<DeployRecord[]> {
   const siteDir = getSiteDirectory(config, site);
   let entries: Array<{ name: string; isDirectory: boolean }> = [];
 

@@ -49,6 +49,7 @@ export function AppShell({ domain, children }: AppShellProps) {
           <NavItem href="/sites" label="Sites" />
           <SiteSidebarNav />
           <NavItem href="/settings" label="Settings" />
+          <NavItem href="/mcp/authorize" label="MCP access" />
         </Stack>
 
         <Flex mt={{ base: "6", lg: "auto" }} pt={{ base: "0", lg: "6" }}>

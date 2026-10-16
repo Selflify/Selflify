@@ -1,0 +1,29 @@
+{
+  "name": "@selflify/selflify-cli",
+  "version": "0.1.0",
+  "description": "Deploy static builds to Selflify over HTTPS",
+  "type": "module",
+  "license": "MIT",
+  "bin": {
+    "selflify": "bin/selflify.mjs"
+  },
+  "files": [
+    "bin",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "tar-stream": "^3.2.2"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Selflify/Selflify.git",
+    "directory": "packages/selflify-cli"
+  }
+}

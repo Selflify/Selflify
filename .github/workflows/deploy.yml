@@ -45,6 +45,12 @@ jobs:
       - name: Unit tests
         run: yarn test:run
 
+      - name: Caddy routing tests
+        run: SELFLIFY_TEST_CADDY_HTTP=1 yarn test:run src/lib/system/caddy.http.test.ts
+
+      - name: CLI tests
+        run: yarn cli:test
+
       - name: Typecheck
         run: yarn typecheck
 
@@ -109,6 +115,38 @@ jobs:
             org.opencontainers.image.description=Selflify cleanup worker image
           cache-from: type=gha,scope=selflify-cleanup
           cache-to: type=gha,mode=max,scope=selflify-cleanup
+
+      - name: Build and push upload image
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: docker/selflify/Dockerfile
+          target: upload
+          push: true
+          provenance: false
+          tags: |
+            ghcr.io/selflify/selflify-upload:stable
+            ghcr.io/selflify/selflify-upload:sha-${{ github.sha }}
+          labels: |
+            org.opencontainers.image.source=https://github.com/Selflify/Selflify
+          cache-from: type=gha,scope=selflify-upload
+          cache-to: type=gha,mode=max,scope=selflify-upload
+
+      - name: Build and push deploy-init image
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: docker/selflify/Dockerfile
+          target: deploy-init
+          push: true
+          provenance: false
+          tags: |
+            ghcr.io/selflify/selflify-deploy-init:stable
+            ghcr.io/selflify/selflify-deploy-init:sha-${{ github.sha }}
+          labels: |
+            org.opencontainers.image.source=https://github.com/Selflify/Selflify
+          cache-from: type=gha,scope=selflify-deploy-init
+          cache-to: type=gha,mode=max,scope=selflify-deploy-init
 
       - name: Build and push caddy image
         uses: docker/build-push-action@v7

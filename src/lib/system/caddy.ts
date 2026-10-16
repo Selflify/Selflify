@@ -133,6 +133,8 @@ function normalizeAdminApiBaseUrl(value: string): string {
 }
 
 function renderAdminBlock(config: SelflifyConfig): string {
+  const bind = process.env.SELFLIFY_CADDY_ADMIN_BIND ?? CADDY_ADMIN_BIND_ADDRESS;
+  if (bind.startsWith("unix/")) return `    admin ${bind}`;
   const origins = new Set(DEFAULT_CADDY_ADMIN_ORIGINS);
   const configuredOrigin = normalizeAdminOrigin(getEffectiveCaddyAdminAddress(config));
 
@@ -140,7 +142,7 @@ function renderAdminBlock(config: SelflifyConfig): string {
     origins.add(configuredOrigin);
   }
 
-  return `    admin ${CADDY_ADMIN_BIND_ADDRESS} {
+  return `    admin ${bind} {
         origins ${Array.from(origins).join(" ")}
     }`;
 }
@@ -168,9 +170,11 @@ export function resolveCaddyCommandConfigPath(config: SelflifyConfig): string {
 }
 
 export function resolveCaddyCommandAdminAddress(config: SelflifyConfig): string {
-  const rawAddress = shouldUseContainerizedCaddy(config)
-    ? DEV_CONTAINER_CADDY_ADMIN_ADDRESS
-    : getEffectiveCaddyAdminAddress(config);
+  const rawAddress =
+    process.env.SELFLIFY_CADDY_ADMIN_BIND ??
+    (shouldUseContainerizedCaddy(config)
+      ? DEV_CONTAINER_CADDY_ADMIN_ADDRESS
+      : getEffectiveCaddyAdminAddress(config));
 
   return normalizeAdminAddressForCli(rawAddress);
 }
@@ -230,7 +234,12 @@ ${renderCommonSiteImports(useManagedTls)}
 function renderStableBlock(config: SelflifyConfig, site: SiteConfig): string {
   const usesManagedTls = Boolean(config.server.cloudflareApiToken) && !shouldMockCloudflare();
 
-  return renderStableHostBlock([`${site.slug}.${config.server.domain}`], config, site, usesManagedTls);
+  return renderStableHostBlock(
+    [`${site.slug}.${config.server.domain}`],
+    config,
+    site,
+    usesManagedTls,
+  );
 }
 
 function renderStableAliasBlock(config: SelflifyConfig, site: SiteConfig): string {
@@ -270,22 +279,42 @@ ${authBlock}    root * ${previewRoot}/{labels.3}
 }
 
 function renderSiteBlocks(config: SelflifyConfig, site: SiteConfig): string {
-  return [renderStableBlock(config, site), renderStableAliasBlock(config, site), renderPreviewBlock(config, site)]
+  return [
+    renderStableBlock(config, site),
+    renderStableAliasBlock(config, site),
+    renderPreviewBlock(config, site),
+  ]
     .filter(Boolean)
     .join("\n");
 }
 
 function renderSelflifyPanelBlocks(config: SelflifyConfig): string {
+  const panelHosts = isDevelopmentRuntime()
+    ? [
+        ...new Set([withDevScheme(config.server.domain), "http://localhost", "http://127.0.0.1"]),
+      ].join(", ")
+    : withDevScheme(config.server.domain);
   const blocks = [
-    `${withDevScheme(config.server.domain)} {
+    `${panelHosts} {
     import common_site
     import panel_security_headers
 
-    reverse_proxy ${getEffectiveSelflifyUpstream(config)}
+    handle /api/deploy/v1/* {
+        request_body {
+            max_size 128MiB
+        }
+        reverse_proxy ${process.env.SELFLIFY_UPLOAD_UPSTREAM ?? "upload:3001"}
+    }
+    handle {
+        reverse_proxy ${getEffectiveSelflifyUpstream(config)}
+    }
 }`,
   ];
 
-  if (config.server.serverIp.trim()) {
+  if (
+    config.server.serverIp.trim() &&
+    !(isDevelopmentRuntime() && ["127.0.0.1", "localhost"].includes(config.server.serverIp.trim()))
+  ) {
     const shouldRedirectIpToDomain =
       isAdminConfigured(config) && !isDevelopmentRuntime() && !shouldMockCloudflare();
 
@@ -368,13 +397,18 @@ ${renderCommonSiteImports(usesManagedTls)}
 
 (spa_files) {
     header /__preview_commit__/* Cache-Control "no-store"
-    # Keep readiness markers out of the SPA rewrite. Basic auth runs before handle.
-    handle /__preview_commit__/* {
-        file_server
-    }
-    handle {
-        try_files {path} {path}/ /index.html
-        file_server
+    route {
+        @internal path /.selflify /.selflify/* */.selflify */.selflify/*
+        respond @internal 404
+        @managed file .selflify/current/index.html
+        root @managed {http.vars.root}/.selflify/current
+        handle /__preview_commit__/* {
+            file_server
+        }
+        handle {
+            try_files {path} {path}/ /index.html
+            file_server
+        }
     }
 }
 
@@ -403,14 +437,21 @@ export function createCaddyGateway(
     async validateConfig(config) {
       const configPath = resolveCaddyCommandConfigPath(config);
 
-      await runCaddyCommand(config, ["validate", "--config", configPath, "--adapter", "caddyfile"], commandRunner);
+      await runCaddyCommand(
+        config,
+        ["validate", "--config", configPath, "--adapter", "caddyfile"],
+        commandRunner,
+      );
     },
     async reload(config) {
       if (shouldSkipCaddyReload()) {
         return;
       }
 
-      if (shouldUseContainerizedCaddy(config)) {
+      if (
+        shouldUseContainerizedCaddy(config) ||
+        getEffectiveCaddyAdminAddress(config).startsWith("unix/")
+      ) {
         const configPath = resolveCaddyCommandConfigPath(config);
         const adminAddress = resolveCaddyCommandAdminAddress(config);
 
@@ -465,6 +506,9 @@ export async function reloadCaddy(config: SelflifyConfig): Promise<void> {
   await caddyGateway.reload(config);
 }
 
-export async function hashPasswordWithCaddy(config: SelflifyConfig, password: string): Promise<string> {
+export async function hashPasswordWithCaddy(
+  config: SelflifyConfig,
+  password: string,
+): Promise<string> {
   return caddyGateway.hashPassword(config, password);
 }

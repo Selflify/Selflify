@@ -21,6 +21,7 @@ const previewAuthSchema = z
   });
 
 export const siteConfigSchema = z.object({
+  deploymentId: z.string().uuid().optional(),
   slug: z
     .string()
     .trim()
@@ -57,6 +58,28 @@ export const siteConfigSchema = z.object({
 
 export const operationStatusSchema = z.enum(["idle", "success", "partial", "failed"]);
 
+export const deployTokenSchema = z.object({
+  id: z.string().uuid(),
+  siteId: z.string().min(1),
+  siteIds: z.array(z.string().min(1)).min(1).optional(),
+  allSites: z.boolean().optional(),
+  oauth: z.object({
+    clientId: z.string(),
+    resource: z.string().url(),
+    refreshHash: z.string().regex(/^[a-f0-9]{64}$/),
+    usedRefreshHashes: z.array(z.string().regex(/^[a-f0-9]{64}$/)).max(1024).optional(),
+    refreshExpiresAt: z.string().datetime(),
+  }).optional(),
+  name: z.string().trim().min(1).max(80),
+  secretHash: z.string().regex(/^[a-f0-9]{64}$/),
+  scopes: z.array(z.enum(["preview:write", "stable:write", "mcp:read", "mcp:write"])).min(1),
+  createdAt: z.string().datetime(),
+  expiresAt: z.string().datetime(),
+  revokedAt: z.string().datetime().nullable().default(null),
+});
+
+export type DeployToken = z.infer<typeof deployTokenSchema>;
+
 export const selflifyConfigSchema = z.object({
   version: z.literal(1),
   configRevision: z.number().int().nonnegative(),
@@ -87,6 +110,26 @@ export const selflifyConfigSchema = z.object({
     lastAppliedAt: z.string().datetime().nullable().default(null),
   }),
   sites: z.array(siteConfigSchema),
+  deployTokens: z.array(deployTokenSchema).default([]),
+  mcpOAuth: z.object({
+    clients: z.array(z.object({
+      id: z.string().uuid(),
+      name: z.string().min(1).max(80),
+      redirectUris: z.array(z.string().url()).min(1).max(10),
+      createdAt: z.string().datetime(),
+    })),
+    codes: z.array(z.object({
+      hash: z.string(),
+      clientId: z.string(),
+      redirectUri: z.string(),
+      challenge: z.string(),
+      resource: z.string(),
+      scopes: deployTokenSchema.shape.scopes,
+      siteIds: z.array(z.string()),
+      allSites: z.boolean(),
+      expiresAt: z.string().datetime(),
+    })),
+  }).default(() => ({ clients: [], codes: [] })),
 });
 
 export type PreviewAuthConfig = z.infer<typeof previewAuthSchema>;

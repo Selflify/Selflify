@@ -1,17 +1,11 @@
 import crypto from "node:crypto";
 import fs from "node:fs/promises";
-import os from "node:os";
-import path from "node:path";
 
 import { writeOperationBackups } from "@/lib/config/backups";
 import type { SelflifyConfig } from "@/lib/config/schema";
 import { readSelflifyConfig, writeSelflifyConfig } from "@/lib/config/service";
+import { withDeployLock } from "@/lib/deploy/lock";
 import { caddyGateway } from "@/lib/system/caddy";
-
-const LOCK_PATH =
-  process.env.SELFLIFY_LOCK_PATH ?? path.join(os.tmpdir(), "selflify.operation.lock");
-const RETRY_DELAY_MS = 120;
-const RETRY_ATTEMPTS = 80;
 
 let operationQueue = Promise.resolve();
 
@@ -19,40 +13,6 @@ export class ConfigConflictError extends Error {
   constructor() {
     super("The configuration has changed. Reload the page and retry.");
     this.name = "ConfigConflictError";
-  }
-}
-
-async function sleep(ms: number): Promise<void> {
-  await new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-async function withFileLock<T>(task: () => Promise<T>): Promise<T> {
-  let handle: fs.FileHandle | null = null;
-
-  for (let attempt = 0; attempt < RETRY_ATTEMPTS; attempt += 1) {
-    try {
-      handle = await fs.open(LOCK_PATH, "wx");
-      break;
-    } catch (error) {
-      const nodeError = error as NodeJS.ErrnoException;
-
-      if (nodeError.code !== "EEXIST" || attempt === RETRY_ATTEMPTS - 1) {
-        throw error;
-      }
-
-      await sleep(RETRY_DELAY_MS);
-    }
-  }
-
-  if (!handle) {
-    throw new Error("Could not acquire operation lock.");
-  }
-
-  try {
-    return await task();
-  } finally {
-    await handle.close();
-    await fs.rm(LOCK_PATH, { force: true });
   }
 }
 
@@ -73,7 +33,12 @@ async function serializeOperation<T>(task: () => Promise<T>): Promise<T> {
   }
 }
 
-type OperationOptions<T> = {
+export type ConfigOperationContext = {
+  authorize?: (config: SelflifyConfig) => void | Promise<void>;
+  onApplied?: (config: SelflifyConfig) => void;
+};
+
+type OperationOptions<T> = ConfigOperationContext & {
   label: string;
   expectedRevision?: number;
   mutate: (draft: SelflifyConfig) => Promise<{ config: SelflifyConfig; result: T }>;
@@ -142,7 +107,7 @@ function withRollbackContext(error: unknown, rollbackError: unknown): Error {
 }
 
 export async function runSerializedTask<T>(task: () => Promise<T>): Promise<T> {
-  return serializeOperation(() => withFileLock(task));
+  return serializeOperation(() => withDeployLock(task));
 }
 
 export async function runConfigOperation<T>({
@@ -152,9 +117,12 @@ export async function runConfigOperation<T>({
   beforePersist,
   rollbackBeforePersist,
   afterApply,
+  authorize,
+  onApplied,
 }: OperationOptions<T>): Promise<T> {
   return runSerializedTask(async () => {
     const current = await readSelflifyConfig();
+    await authorize?.(current);
 
     if (expectedRevision !== undefined && expectedRevision !== current.configRevision) {
       throw new ConfigConflictError();
@@ -276,16 +244,16 @@ export async function runConfigOperation<T>({
       }
     }
 
-    if (partialMessage) {
-      await writeSelflifyConfig(
-        buildOperationSnapshot(nextConfig, {
+    const appliedConfig = partialMessage
+      ? buildOperationSnapshot(nextConfig, {
           operationId,
           label,
           status: "partial",
           message: partialMessage,
-        }),
-      );
-    }
+        })
+      : nextConfig;
+    if (partialMessage) await writeSelflifyConfig(appliedConfig);
+    onApplied?.(appliedConfig);
 
     return result;
   });

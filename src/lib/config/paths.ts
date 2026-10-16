@@ -16,6 +16,20 @@ export function getConfigPath(): string {
   return resolveOrDefault(process.env.SELFLIFY_CONFIG_PATH, "./runtime/selflify.config.json");
 }
 
+export function getDeployPermissionsPath(): string {
+  return resolveOrDefault(
+    process.env.SELFLIFY_DEPLOY_PERMISSIONS_PATH,
+    path.join(path.dirname(getConfigPath()), "deploy-permissions", "permissions.json"),
+  );
+}
+
+export function getDeployLockPath(): string {
+  return resolveOrDefault(
+    process.env.SELFLIFY_DEPLOY_LOCK_PATH ?? process.env.SELFLIFY_LOCK_PATH,
+    path.join(path.dirname(getConfigPath()), "deploy-coordination", "operation"),
+  );
+}
+
 export function getDefaultPreviewRoot(): string {
   return resolveOrDefault(process.env.SELFLIFY_PREVIEW_ROOT, "/var/www");
 }

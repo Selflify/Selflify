@@ -15,6 +15,8 @@ import {
   getDefaultPreviewRoot,
 } from "@/lib/config/paths";
 
+import { writeDeployPermissions } from "@/lib/deploy/permissions";
+
 function isoNow(): string {
   return new Date().toISOString();
 }
@@ -94,8 +96,11 @@ export async function writeSelflifyConfig(config: SelflifyConfig): Promise<void>
     encoding: "utf8",
     mode: 0o600,
   });
+  // Fail closed across the two files, including a crash between renames.
+  await writeDeployPermissions(null);
   await fsp.rename(tempPath, resolvedPath);
   await fsp.chmod(resolvedPath, 0o600);
+  await writeDeployPermissions(normalized);
 }
 
 export async function ensureConfigOnDisk(): Promise<SelflifyConfig> {

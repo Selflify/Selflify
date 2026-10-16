@@ -25,6 +25,8 @@ Implemented:
 - production `docker-compose.yml`
 - development `docker-compose.dev.yml`
 - dev fixture deploy directories in `.dev/var-www`
+- HTTPS static build uploads with site-scoped deploy tokens and a separate upload service
+- `@selflify/selflify-cli` package source under `packages/selflify-cli`
 - application source under `src/`
 
 ## Tooling
@@ -108,6 +110,12 @@ In local development, the recommended behavior is:
 - `/sites/[site]`: update the site, inspect deploys, remove preview deploys or delete the site
 - `/settings`: domain, Caddy, Cloudflare and credentials settings
 
+## Deploy static builds
+
+Create a deploy token in the site Configuration screen and upload your build with the Selflify CLI. See [HTTPS deployments](docs/https-deploy.md) for CI setup, Docker isolation, storage and limits.
+
+Agents can connect to `/mcp` through an OAuth consent page or a manual token. Choose selected sites or all sites, then grant read, settings, preview or production permissions. Open MCP access in the panel sidebar to manage connections. See [MCP access](docs/mcp.md) for permissions, connection settings and deployment steps.
+
 ## Dev compose
 
 ```bash
@@ -115,6 +123,9 @@ docker compose -f docker-compose.dev.yml up --build
 ```
 
 This runs:
+
+- `deploy-init` to prepare permissions and routing
+- `upload` to accept static builds through Caddy
 
 - `selflify` on `http://localhost:3000`
 - `cleanup` worker against `/var/www` mounted from `.dev/var-www`
@@ -213,7 +224,8 @@ What the installer does:
 
 Production images are published to GitHub Container Registry. After the first successful image publish,
 make the `ghcr.io/selflify/selflify`, `ghcr.io/selflify/selflify-cleanup` and
-`ghcr.io/selflify/selflify-caddy` packages public once in the GitHub UI. After that, fresh servers can
+`ghcr.io/selflify/selflify-caddy`, `ghcr.io/selflify/selflify-upload` and
+`ghcr.io/selflify/selflify-deploy-init` packages public once in the GitHub UI. After that, fresh servers can
 pull them without `docker login`.
 
 The GitHub deploy workflow does not seed runtime config anymore. It expects the server to be bootstrapped

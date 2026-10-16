@@ -3,6 +3,7 @@ import { Box, Heading, Stack, Text } from "@chakra-ui/react";
 import { ActionFeedbackToast } from "@/components/action-feedback-toast";
 import { LoginForm } from "@/components/login-form";
 import { redirectIfAuthenticated } from "@/lib/auth/guards";
+import { safeLoginReturnTo } from "@/lib/auth/redirects";
 
 type LoginPageProps = {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
@@ -11,9 +12,9 @@ type LoginPageProps = {
 export const dynamic = "force-dynamic";
 
 export default async function LoginPage({ searchParams }: LoginPageProps) {
-  const config = await redirectIfAuthenticated();
-
   const params = await searchParams;
+  const returnTo = safeLoginReturnTo(params.returnTo);
+  const config = await redirectIfAuthenticated(returnTo);
   const notice = typeof params.notice === "string" ? params.notice : "";
   const error = typeof params.error === "string" ? params.error : "";
 
@@ -50,7 +51,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
             </Text>
           </Box>
 
-          <LoginForm />
+          <LoginForm returnTo={returnTo} />
         </Stack>
       </Box>
     </Box>

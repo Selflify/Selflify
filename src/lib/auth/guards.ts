@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 
 import { readOptionalSession } from "@/lib/auth/session";
 import { isAdminConfigured, readSelflifyConfig } from "@/lib/config/service";
+import { safeLoginReturnTo } from "@/lib/auth/redirects";
 
 function isActiveAdminSession(
   session: Awaited<ReturnType<typeof readOptionalSession>>,
@@ -9,8 +10,8 @@ function isActiveAdminSession(
 ): boolean {
   return Boolean(
     session?.user &&
-      session.user.name === config.admin.login &&
-      session.user.adminConfiguredAt === config.admin.configuredAt,
+    session.user.name === config.admin.login &&
+    session.user.adminConfiguredAt === config.admin.configuredAt,
   );
 }
 
@@ -24,18 +25,20 @@ export async function requireConfiguredAdmin() {
   return config;
 }
 
-export async function requireAdminSession() {
+export async function requireAdminSession(returnTo?: string) {
   const config = await requireConfiguredAdmin();
   const session = await readOptionalSession();
 
   if (!isActiveAdminSession(session, config)) {
-    redirect("/login");
+    redirect(
+      returnTo ? `/login?returnTo=${encodeURIComponent(safeLoginReturnTo(returnTo))}` : "/login",
+    );
   }
 
   return { config, session };
 }
 
-export async function redirectIfAuthenticated() {
+export async function redirectIfAuthenticated(returnTo?: string) {
   const config = await readSelflifyConfig();
   const session = await readOptionalSession();
 
@@ -44,7 +47,7 @@ export async function redirectIfAuthenticated() {
   }
 
   if (isActiveAdminSession(session, config)) {
-    redirect("/sites");
+    redirect(safeLoginReturnTo(returnTo));
   }
 
   return config;

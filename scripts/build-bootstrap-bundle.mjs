@@ -20,6 +20,7 @@ const bundleEntries = [
   "next-env.d.ts",
   "next.config.ts",
   "package.json",
+  "packages",
   "public",
   "src",
   "tsconfig.json",
@@ -30,7 +31,15 @@ async function copyEntry(relativePath) {
   const source = path.join(rootDir, relativePath);
   const target = path.join(bundleDir, relativePath);
 
-  await cp(source, target, { recursive: true });
+  await cp(source, target, {
+    recursive: true,
+    filter: (entry) =>
+      relativePath !== "packages" ||
+      !path
+        .relative(source, entry)
+        .split(path.sep)
+        .some((segment) => ["node_modules", "dist", "test"].includes(segment)),
+  });
 }
 
 async function pruneBundleTests(dirPath) {

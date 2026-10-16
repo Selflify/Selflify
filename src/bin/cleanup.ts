@@ -1,5 +1,6 @@
 import fs from "node:fs/promises";
 
+import { withDeployLock } from "@/lib/deploy/lock";
 import { runCleanupOnce } from "@/lib/cleanup/service";
 import { getConfigPath } from "@/lib/config/paths";
 import { readSelflifyConfig } from "@/lib/config/service";
@@ -27,14 +28,15 @@ async function main(): Promise<void> {
     process.exit(1);
   }
 
-  const config = await readSelflifyConfig();
-  const report = await runCleanupOnce(config, {
-    previewTtlDays: readTtlDays("SELFLIFY_PREVIEW_TTL_DAYS", DEFAULT_PREVIEW_TTL_DAYS),
-    orphanTtlDays: readTtlDays("SELFLIFY_ORPHAN_TTL_DAYS", DEFAULT_ORPHAN_TTL_DAYS),
-    logger: (message) => {
-      console.log(message);
-    },
-  });
+  const report = await withDeployLock(async () =>
+    runCleanupOnce(await readSelflifyConfig(), {
+      previewTtlDays: readTtlDays("SELFLIFY_PREVIEW_TTL_DAYS", DEFAULT_PREVIEW_TTL_DAYS),
+      orphanTtlDays: readTtlDays("SELFLIFY_ORPHAN_TTL_DAYS", DEFAULT_ORPHAN_TTL_DAYS),
+      logger: (message) => {
+        console.log(message);
+      },
+    }),
+  );
 
   console.log(
     `Cleanup finished. Removed ${report.removedPreviewDirs.length} preview dirs and ${report.removedOrphanDirs.length} orphan dirs.`,

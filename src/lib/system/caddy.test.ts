@@ -69,12 +69,14 @@ describe("generateCaddyfile", () => {
     expect(rendered).toContain("preview-user hashed-secret");
     expect(rendered).toContain("output file /var/log/caddy/access.log");
     expect(rendered).toContain("roll_keep 10");
-    expect(rendered).toContain("origins http://0.0.0.0:2019 http://127.0.0.1:2019 http://localhost:2019 http://caddy:2019");
+    expect(rendered).toContain(
+      "origins http://0.0.0.0:2019 http://127.0.0.1:2019 http://localhost:2019 http://caddy:2019",
+    );
     expect(rendered).toContain("(panel_security_headers) {");
     expect(rendered).toContain('X-Frame-Options "DENY"');
-    expect(rendered).toContain('Content-Security-Policy "frame-ancestors \'none\'"');
+    expect(rendered).toContain("Content-Security-Policy \"frame-ancestors 'none'\"");
     expect(commonHeadersBlock).not.toContain('X-Frame-Options "DENY"');
-    expect(commonHeadersBlock).not.toContain('Content-Security-Policy "frame-ancestors \'none\'"');
+    expect(commonHeadersBlock).not.toContain("Content-Security-Policy \"frame-ancestors 'none'\"");
     expect(rendered).toContain(`example.dev {
     import common_site
     import panel_security_headers`);
@@ -244,17 +246,15 @@ describe("generateCaddyfile", () => {
   });
 
   it("shares marker routing and SPA fallback across stable, alias and preview hosts", () => {
-    const rendered = generateCaddyfile(createConfig(createSite({ stableAlias: "www.example.com" })));
+    const rendered = generateCaddyfile(
+      createConfig(createSite({ stableAlias: "www.example.com" })),
+    );
 
     expect(rendered.match(/import spa_files/g)).toHaveLength(3);
     expect(rendered).toContain('header /__preview_commit__/* Cache-Control "no-store"');
-    expect(rendered).toContain(`handle /__preview_commit__/* {
-        file_server
-    }
-    handle {
-        try_files {path} {path}/ /index.html
-        file_server
-    }`);
+    expect(rendered).toMatch(/handle \/__preview_commit__\/\* \{\s+file_server\s+\}/);
+    expect(rendered).toContain("@managed file .selflify/current/index.html");
+    expect(rendered).toContain("respond @internal 404");
   });
 
   it("lets the alias use direct tls even when the canonical site still uses cloudflare dns", () => {
@@ -270,7 +270,9 @@ describe("generateCaddyfile", () => {
     expect(rendered).toContain("app.example.dev {");
     expect(rendered).toContain("www.example.com {");
     expect(rendered).toContain("    import tls_cf");
-    expect(rendered).toContain("www.example.com {\n    import common_headers\n    import static_cache");
+    expect(rendered).toContain(
+      "www.example.com {\n    import common_headers\n    import static_cache",
+    );
     expect(rendered).not.toContain("www.example.com {\n    import tls_cf");
   });
 

@@ -7,9 +7,9 @@ import { signIn } from "next-auth/react";
 
 import { toaster } from "@/components/app-toaster";
 import { FormField } from "@/components/form-field";
-import { resolveAuthClientRedirect } from "@/lib/auth/redirects";
+import { resolveAuthClientRedirect, safeLoginReturnTo } from "@/lib/auth/redirects";
 
-export function LoginForm() {
+export function LoginForm({ returnTo = "/sites" }: { returnTo?: string }) {
   const router = useRouter();
   const [login, setLogin] = useState("");
   const [password, setPassword] = useState("");
@@ -23,7 +23,7 @@ export function LoginForm() {
       login,
       password,
       redirect: false,
-      callbackUrl: "/sites",
+      callbackUrl: safeLoginReturnTo(returnTo),
     });
 
     if (!result || result.error) {
@@ -37,7 +37,9 @@ export function LoginForm() {
       return;
     }
 
-    router.push(resolveAuthClientRedirect(result.url, "/sites", window.location.origin));
+    router.push(
+      resolveAuthClientRedirect(result.url, safeLoginReturnTo(returnTo), window.location.origin),
+    );
     router.refresh();
   }
 
