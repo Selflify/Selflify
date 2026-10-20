@@ -38,6 +38,11 @@ function createConfig(site: SiteConfig, partial?: Partial<SelflifyConfig>): Self
 
   return {
     ...base,
+    admin: {
+      login: "owner",
+      passwordHash: "hash",
+      configuredAt: "2026-04-07T12:00:00.000Z",
+    },
     ...partial,
     server: {
       ...base.server,
@@ -55,6 +60,29 @@ function createConfig(site: SiteConfig, partial?: Partial<SelflifyConfig>): Self
 describe("generateCaddyfile", () => {
   afterEach(() => {
     vi.unstubAllEnvs();
+  });
+
+  it("serves first launch on HTTP until the admin is configured", () => {
+    vi.stubEnv("SELFLIFY_DEV_MODE", "0");
+    const config = createDefaultConfig();
+    config.server.serverIp = "203.0.113.10";
+    const bootstrap = generateCaddyfile(config);
+    expect(bootstrap).toContain("auto_https off");
+    expect(bootstrap).toContain(`:80 {
+    import common_site
+    import panel_security_headers
+
+    reverse_proxy ${config.server.selflifyUpstream}
+}`);
+    config.admin = {
+      login: "owner",
+      passwordHash: "hash",
+      configuredAt: "2026-04-07T12:00:00.000Z",
+    };
+    const configured = generateCaddyfile(config);
+    expect(configured).not.toContain("auto_https off");
+    expect(configured).not.toContain("\n:80 {");
+    expect(configured).toContain(`${config.server.domain} {`);
   });
 
   it("renders apex proxy, preview auth and stable root mapping", () => {

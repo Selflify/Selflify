@@ -289,6 +289,15 @@ function renderSiteBlocks(config: SelflifyConfig, site: SiteConfig): string {
 }
 
 function renderSelflifyPanelBlocks(config: SelflifyConfig): string {
+  if (!isAdminConfigured(config) && !isDevelopmentRuntime()) {
+    return `:80 {
+    import common_site
+    import panel_security_headers
+
+    reverse_proxy ${getEffectiveSelflifyUpstream(config)}
+}`;
+  }
+
   const panelHosts = isDevelopmentRuntime()
     ? [
         ...new Set([withDevScheme(config.server.domain), "http://localhost", "http://127.0.0.1"]),
@@ -340,7 +349,8 @@ function renderSelflifyPanelBlocks(config: SelflifyConfig): string {
 
 export function generateCaddyfile(config: SelflifyConfig): string {
   const usesManagedTls = Boolean(config.server.cloudflareApiToken) && !shouldMockCloudflare();
-  const autoHttps = isDevelopmentRuntime() ? "    auto_https off\n" : "";
+  const autoHttps =
+    isDevelopmentRuntime() || !isAdminConfigured(config) ? "    auto_https off\n" : "";
   const siteBlocks = config.sites
     .slice()
     .sort((left, right) => left.slug.localeCompare(right.slug))

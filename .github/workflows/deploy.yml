@@ -46,7 +46,7 @@ jobs:
         run: yarn test:run
 
       - name: Caddy routing tests
-        run: SELFLIFY_TEST_CADDY_HTTP=1 yarn test:run src/lib/system/caddy.http.test.ts
+        run: SELFLIFY_TEST_CADDY_HTTP=1 yarn test:run src/lib/system/caddy.http.test.ts src/lib/system/caddy.bootstrap.http.test.ts
 
       - name: CLI tests
         run: yarn cli:test
