@@ -142,6 +142,63 @@ describe("HTTPS deployment protocol", () => {
     return { id: id as string, uploaded };
   }
 
+  it("limits a content ticket to its upload and rejects other operations and tampering", async () => {
+    const created = await (await create()).json();
+    const another = await (await create("another")).json();
+    const ticket = created.contentTicket;
+    const put = (id: string, value: string) =>
+      request(`/uploads/${id}/content?ticket=${value}`, "PUT", content, { Authorization: "" });
+    expect((await put(another.id, ticket)).status).toBe(401);
+    expect((await put(created.id, "0".repeat(64))).status).toBe(401);
+    expect(
+      (
+        await request(`/uploads/${created.id}?ticket=${ticket}`, "GET", undefined, {
+          Authorization: "",
+        })
+      ).status,
+    ).toBe(401);
+    expect(
+      (
+        await request(`/uploads/${created.id}/publish?ticket=${ticket}`, "POST", undefined, {
+          Authorization: "",
+        })
+      ).status,
+    ).toBe(401);
+    expect((await put(created.id, ticket)).status).toBe(200);
+    expect((await request(`/uploads/${created.id}`)).status).toBe(200);
+    expect(JSON.stringify(await (await request(`/uploads/${created.id}`)).json())).not.toContain(
+      ticket,
+    );
+    expect(JSON.stringify(events)).not.toContain(ticket);
+  });
+
+  it.each(["revoked", "expired", "permission", "site", "timeout"])(
+    "rejects content tickets after %s changes",
+    async (change) => {
+      const created = await (await create()).json();
+      const config = await readSelflifyConfig();
+      if (change === "revoked") config.deployTokens[0].revokedAt = new Date().toISOString();
+      if (change === "expired")
+        config.deployTokens[0].expiresAt = new Date(Date.now() - 1000).toISOString();
+      if (change === "permission") config.deployTokens[0].scopes = ["mcp:read"];
+      if (change === "site") config.sites[0].deploymentId = crypto.randomUUID();
+      await writeSelflifyConfig(config);
+      if (change === "timeout") {
+        const file = path.join(root, "state", `${created.id}.json`);
+        const record = JSON.parse(await fs.readFile(file, "utf8"));
+        record.createdAt = new Date(Date.now() - 31 * 60_000).toISOString();
+        await fs.writeFile(file, JSON.stringify(record));
+      }
+      const response = await request(
+        `/uploads/${created.id}/content?ticket=${created.contentTicket}`,
+        "PUT",
+        content,
+        { Authorization: "" },
+      );
+      expect(response.status).toBe(["permission", "site"].includes(change) ? 403 : 401);
+    },
+  );
+
   it("publishes complete builds atomically, preserves legacy files and supports retries", async () => {
     const legacy = path.join(root, "sites/app/pr-123");
     await fs.mkdir(legacy, { recursive: true });

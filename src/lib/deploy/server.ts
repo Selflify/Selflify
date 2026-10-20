@@ -93,11 +93,21 @@ export async function createUploadServer(options: ServerOptions): Promise<http.S
     rate.set(key, item);
     if (++item.count > max) throw new DeployError(429, "Too many requests.");
   }
+  function contentTicket(secretHash: string, id: string) {
+    return crypto.createHmac("sha256", secretHash).update(`upload-content:${id}`).digest("hex");
+  }
   async function authenticate(request: http.IncomingMessage) {
     const match = /^Bearer slf_([a-f0-9-]{36})\.([A-Za-z0-9_-]{43})$/.exec(
       request.headers.authorization ?? "",
     );
-    if (!match) throw new DeployError(401, "Invalid deploy token.");
+    const url = new URL(request.url ?? "/", "http://upload");
+    const content =
+      request.method === "PUT" && !request.headers.authorization
+        ? /^\/api\/deploy\/v1\/uploads\/([a-f0-9-]{36})\/content$/.exec(url.pathname)
+        : null;
+    const ticket = url.searchParams.get("ticket");
+    if (!match && !(content && ticket && /^[a-f0-9]{64}$/.test(ticket)))
+      throw new DeployError(401, "Invalid deploy token.");
     let permissions: DeployPermissions;
     try {
       permissions = permissionSchema.parse(
@@ -109,14 +119,21 @@ export async function createUploadServer(options: ServerOptions): Promise<http.S
     if (path.resolve(permissions.previewRoot) !== path.resolve(options.root)) {
       throw new DeployError(503, "Deploy storage configuration does not match.");
     }
-    const token = permissions.tokens.find((entry) => entry.id === match[1]);
-    const supplied = Buffer.from(hashDeploySecret(match[2]), "hex");
-    const expected = Buffer.from(token?.secretHash ?? "0".repeat(64), "hex");
+    const upload = content ? await read(content[1]) : undefined;
+    const token = permissions.tokens.find((entry) => entry.id === (match?.[1] ?? upload?.tokenId));
+    const supplied = Buffer.from(match ? hashDeploySecret(match[2]) : ticket!, "hex");
+    const expected = Buffer.from(
+      content
+        ? contentTicket(token?.secretHash ?? "", content[1])
+        : (token?.secretHash ?? "0".repeat(64)),
+      "hex",
+    );
     if (
       !crypto.timingSafeEqual(supplied, expected) ||
       !token ||
       token.revokedAt ||
-      Date.parse(token.expiresAt) <= Date.now()
+      Date.parse(token.expiresAt) <= Date.now() ||
+      (upload && Date.now() - Date.parse(upload.createdAt) > UPLOAD_TTL)
     ) {
       throw new DeployError(401, "Invalid deploy token.");
     }
@@ -269,7 +286,13 @@ export async function createUploadServer(options: ServerOptions): Promise<http.S
         });
         return created;
       });
-      return response(res, 201, publicStatus(upload));
+      return response(res, 201, {
+        ...publicStatus(upload),
+        contentTicket: contentTicket(auth.token.secretHash, upload.id),
+        uploadExpiresAt: new Date(
+          Math.min(Date.parse(upload.createdAt) + UPLOAD_TTL, Date.parse(auth.token.expiresAt)),
+        ).toISOString(),
+      });
     }
     const match = /^\/api\/deploy\/v1\/uploads\/([a-f0-9-]{36})(?:\/(content|publish))?$/.exec(
       pathname,

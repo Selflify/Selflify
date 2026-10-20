@@ -453,9 +453,13 @@ describe("Selflify MCP", () => {
     expect(prepared.isError).not.toBe(true);
     const uploadId = prepared.structuredContent.id;
     expect((await call("prepare_deploy", args)).structuredContent.id).toBe(uploadId);
-    const response = await fetch(`http://${upstream}${prepared.structuredContent.uploadPath}`, {
+    expect(prepared.structuredContent.uploadUrl).toEqual(
+      expect.stringContaining("https://example.test/api/deploy/v1/uploads/"),
+    );
+    const uploadUrl = new URL(String(prepared.structuredContent.uploadUrl));
+    const response = await fetch(`http://${upstream}${uploadUrl.pathname}${uploadUrl.search}`, {
       method: "PUT",
-      headers: { Authorization: `Bearer ${token}`, "Content-Length": String(content.length) },
+      headers: { "Content-Length": String(content.length) },
       body: new Uint8Array(content),
     });
     expect(response.status).toBe(200);

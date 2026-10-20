@@ -53,14 +53,16 @@ The local CLI can use `http://127.0.0.1:8080` with `--allow-local-http`. Host-ru
 
 ## API contract
 
-All endpoints require `Authorization: Bearer <deploy-token>`. API versions are part of the URL.
+Endpoints require `Authorization: Bearer <deploy-token>`, except content uploads may use the temporary ticket returned when creating an upload. MCP returns a complete upload URL for OAuth clients, so agents do not need access to the connection token. API versions are part of the URL.
 
-| Method and endpoint                       | Body                                                       | Result                                           |
-| ----------------------------------------- | ---------------------------------------------------------- | ------------------------------------------------ |
-| `POST /api/deploy/v1/uploads`             | JSON with `site`, `deploy`, compressed `size` and `sha256` | Upload ID and state. Requires `Idempotency-Key`. |
-| `PUT /api/deploy/v1/uploads/:id/content`  | Gzip tar stream with matching `Content-Length`             | Validated upload state.                          |
-| `POST /api/deploy/v1/uploads/:id/publish` | Empty                                                      | Published state, timestamp and URL.              |
-| `GET /api/deploy/v1/uploads/:id`          | Empty                                                      | Current state and publication result.            |
+| Method and endpoint                       | Body                                                       | Result                                                                   |
+| ----------------------------------------- | ---------------------------------------------------------- | ------------------------------------------------------------------------ |
+| `POST /api/deploy/v1/uploads`             | JSON with `site`, `deploy`, compressed `size` and `sha256` | Upload ID, state, content ticket and expiry. Requires `Idempotency-Key`. |
+| `PUT /api/deploy/v1/uploads/:id/content`  | Gzip tar stream with matching `Content-Length`             | Validated upload state.                                                  |
+| `POST /api/deploy/v1/uploads/:id/publish` | Empty                                                      | Published state, timestamp and URL.                                      |
+| `GET /api/deploy/v1/uploads/:id`          | Empty                                                      | Current state and publication result.                                    |
+
+The content endpoint accepts `?ticket=<contentTicket>` with PUT and no Authorization header. A ticket grants only the transfer of one archive, expires 30 minutes after creation or with its owning token, and is invalidated by revocation or token rotation. Status and publication still require bearer authentication. Tickets are omitted from status responses and service logs. Treat ticket URLs as secrets.
 
 An upload belongs to the token that created it. Every request checks token expiry, revocation, site identity and scope. Publication repeats those checks under the same lock used by token revocation.
 

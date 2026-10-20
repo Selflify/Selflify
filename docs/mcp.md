@@ -71,7 +71,7 @@ Use `list_sites` to discover permitted sites. Site tools accept an optional `sit
 | `update_site_alias`  | Sets `alias`, `autoTls` and `useCloudflare`. An empty alias removes it. Requires `expectedRevision`.                                                                       |
 | `set_preview_auth`   | Sets a preview `login` and `password`. Requires `expectedRevision`.                                                                                                        |
 | `reset_preview_auth` | Removes preview authentication and makes previews public. Requires `expectedRevision`.                                                                                     |
-| `prepare_deploy`     | Creates an upload using `deploy`, compressed `size`, archive `sha256` and `idempotencyKey`. Returns an upload ID and relative upload path.                                 |
+| `prepare_deploy`     | Creates an upload using `deploy`, compressed `size`, archive `sha256` and `idempotencyKey`. Returns an upload ID, absolute temporary `uploadUrl` and expiry time.          |
 | `get_deploy_status`  | Reads an upload owned by the same token using `uploadId`.                                                                                                                  |
 | `publish_deploy`     | Publishes a validated upload using `uploadId`. A retry returns the existing publication result.                                                                            |
 
@@ -89,7 +89,9 @@ yarn selflify deploy ./dist --site app --deploy dev-feature
 
 Set `SELFLIFY_SERVER` to the panel origin and provide a deploy token through `SELFLIFY_DEPLOY_TOKEN`. The CLI uploads and publishes the build. The agent can then call `check_deploy` through MCP.
 
-An agent can also control publication through MCP. First, it creates a gzip tar archive containing `index.html` at the root and calculates its size and SHA-256 hash. Second, it calls `prepare_deploy` with those values and a unique idempotency key. Third, it sends the archive to the returned `uploadPath` on the same panel origin using PUT, the same bearer token and a matching Content-Length. Finally, it calls `publish_deploy` and checks the deployment.
+An agent can also control publication through MCP. First, it creates a gzip tar archive containing `index.html` at the root and calculates its size and SHA-256 hash. Second, it calls `prepare_deploy` with those values and a unique idempotency key. Third, it sends the archive to the returned absolute `uploadUrl` using PUT and a matching Content-Length, without an Authorization header. OAuth connections require no separate deploy token, CLI credentials or manually configured API origin. Finally, it calls `publish_deploy` and checks the deployment.
+
+The upload URL grants permission to transfer only that archive for up to 30 minutes from upload creation, and no later than the access token expiry. It cannot read status or publish a build. The server checks current site identity and deployment permissions when receiving and validating the archive. Revoking the connection or rotating its access token invalidates the URL. Treat the URL as a secret. If it expires, prepare a new upload with a new idempotency key. This flow works for every permitted site, including sites created later when the connection grants access to all sites.
 
 Archives travel through the existing HTTPS upload API. MCP tool arguments do not carry archive bytes or local directory paths. The existing upload limits and atomic publication rules apply. See [HTTPS deployments](https-deploy.md).
 

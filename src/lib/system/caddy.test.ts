@@ -97,6 +97,7 @@ describe("generateCaddyfile", () => {
     expect(rendered).toContain("preview-user hashed-secret");
     expect(rendered).toContain("output file /var/log/caddy/access.log");
     expect(rendered).toContain("roll_keep 10");
+    expect(rendered).toContain("request>uri query {\n                    replace ticket REDACTED");
     expect(rendered).toContain(
       "origins http://0.0.0.0:2019 http://127.0.0.1:2019 http://localhost:2019 http://caddy:2019",
     );

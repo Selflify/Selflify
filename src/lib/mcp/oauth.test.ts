@@ -3,6 +3,8 @@ import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import http from "node:http";
+import { gzipSync } from "node:zlib";
+import tar from "tar-stream";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { auth, type OAuthClientProvider } from "@modelcontextprotocol/sdk/client/auth.js";
 import type {
@@ -381,6 +383,103 @@ describe("MCP consent and OAuth", () => {
       expect(response.status).toBe(status);
     }
   });
+
+  it.each([false, true])(
+    "deploys through OAuth without exposing credentials with allSites=%s",
+    async (allSites) => {
+      const tokens = await exchangeMcpToken(
+        await approved({
+          allSites,
+          siteIds: allSites ? [] : siteIds.slice(0, 2),
+          scopes: ["mcp:read", "preview:write", "stable:write"],
+        }),
+      );
+      server = await createUploadServer({
+        root: path.join(root, "sites"),
+        state: path.join(root, "uploads"),
+        permissions: getDeployPermissionsPath(),
+      });
+      await new Promise<void>((resolve) => server!.listen(0, "127.0.0.1", resolve));
+      const upstream = `127.0.0.1:${(server.address() as { port: number }).port}`;
+      vi.stubEnv("SELFLIFY_UPLOAD_UPSTREAM", upstream);
+      const config = await readSelflifyConfig();
+      config.sites.push({ ...config.sites[0], slug: "future", deploymentId: crypto.randomUUID() });
+      await writeSelflifyConfig(config);
+      const pack = tar.pack();
+      pack.entry({ name: "index.html" }, "OAuth build");
+      pack.finalize();
+      const chunks: Buffer[] = [];
+      for await (const chunk of pack) chunks.push(Buffer.from(chunk as Uint8Array));
+      const content = gzipSync(Buffer.concat(chunks));
+      const args = {
+        deploy: "feature",
+        size: content.length,
+        sha256: crypto.createHash("sha256").update(content).digest("hex"),
+      };
+      expect(
+        (
+          await tool(tokens.access_token, "prepare_deploy", {
+            ...args,
+            idempotencyKey: crypto.randomUUID(),
+          })
+        ).isError,
+      ).toBe(true);
+      for (const site of ["app", "docs", "private", "future"]) {
+        const prepared = await tool(tokens.access_token, "prepare_deploy", {
+          ...args,
+          site,
+          idempotencyKey: crypto.randomUUID(),
+        });
+        const denied = !allSites && ["private", "future"].includes(site);
+        expect(prepared.isError === true).toBe(denied);
+        if (denied) continue;
+        expect(JSON.stringify(prepared)).not.toContain(tokens.access_token);
+        expect(JSON.stringify(prepared)).not.toContain(tokens.refresh_token);
+        const { id, uploadUrl } = prepared.structuredContent;
+        const url = new URL(uploadUrl);
+        expect(url.origin).toBe("https://example.test");
+        expect(
+          (
+            await fetch(`http://${upstream}${url.pathname}${url.search}`, {
+              method: "PUT",
+              body: new Uint8Array(content),
+            })
+          ).status,
+        ).toBe(200);
+        expect(
+          (await tool(tokens.access_token, "publish_deploy", { uploadId: id })).structuredContent,
+        ).toMatchObject({
+          state: "published",
+          url: `https://feature.${site}.example.test`,
+        });
+        const stable = await tool(tokens.access_token, "prepare_deploy", {
+          ...args,
+          site,
+          deploy: "stable",
+          idempotencyKey: crypto.randomUUID(),
+        });
+        const stableUrl = new URL(stable.structuredContent.uploadUrl);
+        expect(
+          (
+            await fetch(`http://${upstream}${stableUrl.pathname}${stableUrl.search}`, {
+              method: "PUT",
+              body: new Uint8Array(content),
+            })
+          ).status,
+        ).toBe(200);
+        expect(
+          (
+            await tool(tokens.access_token, "publish_deploy", {
+              uploadId: stable.structuredContent.id,
+            })
+          ).structuredContent,
+        ).toMatchObject({
+          state: "published",
+          url: `https://${site}.example.test`,
+        });
+      }
+    },
+  );
 
   it("supports discovery, registration and exchange with the official SDK OAuth client", async () => {
     let information: OAuthClientInformationMixed | undefined;

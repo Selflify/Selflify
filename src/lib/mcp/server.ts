@@ -6,6 +6,7 @@ import { deployNamePattern, siteSlugPattern } from "@/lib/config/schema";
 import { readSelflifyConfig } from "@/lib/config/service";
 import { ConfigConflictError, type ConfigOperationContext } from "@/lib/operations";
 import { authorizeMcp, McpAccessError } from "@/lib/mcp/auth";
+import { mcpOrigin } from "@/lib/mcp/oauth-urls";
 import { assertSiteStorage, checkDeploy, readDeployFiles } from "@/lib/mcp/deploy-check";
 import {
   getDeploySummary,
@@ -114,6 +115,11 @@ async function uploadRequest(
       state: z.string(),
       url: z.string().optional(),
       publishedAt: z.string().optional(),
+      contentTicket: z
+        .string()
+        .regex(/^[a-f0-9]{64}$/)
+        .optional(),
+      uploadExpiresAt: z.string().optional(),
     })
     .parse(await response.json());
   return result;
@@ -124,7 +130,7 @@ export function createSelflifyMcpServer(authorization: string) {
     { name: "selflify", version: "0.1.0" },
     {
       instructions:
-        "Use list_sites to discover permitted sites. Pass site to site tools when access includes multiple sites. Build static files locally and transfer archives with the Selflify CLI or HTTPS upload URL. Read configRevision before settings changes. check_deploy observes HTTPS from the server without preview passwords. Publication status alone does not prove HTTPS readiness.",
+        "Use list_sites to discover permitted sites. Pass site to site tools when access includes multiple sites. Build static files locally. Call prepare_deploy, PUT the archive to its absolute uploadUrl without an Authorization header, then call publish_deploy. OAuth connections need no separate token or CLI credentials. Treat the temporary uploadUrl as a secret. Read configRevision before settings changes. check_deploy observes HTTPS from the server without preview passwords. Publication status alone does not prove HTTPS readiness.",
     },
   );
 
@@ -466,7 +472,7 @@ export function createSelflifyMcpServer(authorization: string) {
     "prepare_deploy",
     {
       description:
-        "Create an upload for a locally built gzip tar archive. Returns a relative HTTPS upload path; send the archive outside MCP with PUT and the same bearer token. Requires preview:write or stable:write. Reuse idempotencyKey on retries.",
+        "Create an upload for a locally built gzip tar archive for any permitted site. Returns an absolute temporary uploadUrl; PUT the archive there without an Authorization header or separate credentials, then call publish_deploy. Treat uploadUrl as a secret. Requires preview:write or stable:write. Reuse idempotencyKey on retries.",
       inputSchema: {
         site: siteField,
         deploy: deployField,
@@ -488,7 +494,7 @@ export function createSelflifyMcpServer(authorization: string) {
     async ({ site, deploy, size, sha256, idempotencyKey }) =>
       execute(
         "prepare_deploy",
-        async (_config, auth) => {
+        async (config, auth) => {
           const upload = await uploadRequest(
             authorization,
             "",
@@ -496,9 +502,13 @@ export function createSelflifyMcpServer(authorization: string) {
             { site: auth.site.slug, deploy, size, sha256 },
             idempotencyKey,
           );
+          const { contentTicket, ...status } = upload;
+          if (!contentTicket) throw new Error("Upload service did not issue a content ticket.");
+          const uploadPath = `/api/deploy/v1/uploads/${upload.id}/content`;
           return {
-            ...upload,
-            uploadPath: `/api/deploy/v1/uploads/${upload.id}/content`,
+            ...status,
+            uploadUrl: `${mcpOrigin(config)}${uploadPath}?ticket=${contentTicket}`,
+            uploadPath,
             uploadMethod: "PUT",
             contentLength: size,
           };

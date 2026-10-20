@@ -400,7 +400,14 @@ ${renderCommonSiteImports(usesManagedTls)}
             roll_keep 10
             roll_keep_for 720h
         }
-        format json
+        format filter {
+            wrap json
+            fields {
+                request>uri query {
+                    replace ticket REDACTED
+                }
+            }
+        }
         level INFO
     }
 }
