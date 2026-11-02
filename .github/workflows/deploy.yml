@@ -456,6 +456,12 @@ jobs:
           fi
 
           docker compose pull
+          if [ "$(id -u)" = 0 ]; then
+            python3 bootstrap/configure-mptcp.py
+          else
+            sudo -n python3 bootstrap/configure-mptcp.py
+          fi
           docker compose up -d --remove-orphans
+          bash bootstrap/verify-mptcp-disabled.sh -f docker-compose.yml
           docker compose ps
           EOF

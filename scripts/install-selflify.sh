@@ -228,7 +228,9 @@ fi
 log "Starting Selflify stack"
 cd "${INSTALL_DIR}"
 docker_compose pull
+$SUDO python3 bootstrap/configure-mptcp.py
 docker_compose up -d
+bash bootstrap/verify-mptcp-disabled.sh -f docker-compose.yml
 
 log "Bootstrap complete"
 printf '\n'

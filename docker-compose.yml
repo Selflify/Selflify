@@ -1,5 +1,7 @@
 services:
   selflify:
+    sysctls:
+      net.mptcp.enabled: "0"
     image: ghcr.io/selflify/selflify:${SELFLIFY_IMAGE_TAG:-stable}
     restart: unless-stopped
     environment:
@@ -28,6 +30,8 @@ services:
       - "3000"
 
   cleanup:
+    sysctls:
+      net.mptcp.enabled: "0"
     image: ghcr.io/selflify/selflify-cleanup:${SELFLIFY_IMAGE_TAG:-stable}
     restart: unless-stopped
     depends_on:
@@ -50,6 +54,8 @@ services:
       - /var/www:/var/www
 
   caddy:
+    sysctls:
+      net.mptcp.enabled: "0"
     image: ghcr.io/selflify/selflify-caddy:${SELFLIFY_IMAGE_TAG:-stable}
     restart: unless-stopped
     depends_on:
@@ -73,6 +79,8 @@ services:
         max-file: "3"
 
   deploy-init:
+    sysctls:
+      net.mptcp.enabled: "0"
     image: ghcr.io/selflify/selflify-deploy-init:${SELFLIFY_IMAGE_TAG:-stable}
     environment:
       SELFLIFY_UPLOAD_STATE: /upload-state
@@ -90,6 +98,8 @@ services:
       - /var/www:/var/www
 
   upload:
+    sysctls:
+      net.mptcp.enabled: "0"
     image: ghcr.io/selflify/selflify-upload:${SELFLIFY_IMAGE_TAG:-stable}
     restart: unless-stopped
     logging:
