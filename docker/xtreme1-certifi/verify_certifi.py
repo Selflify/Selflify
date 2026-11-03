@@ -2,6 +2,7 @@
 import argparse
 import hashlib
 import importlib.metadata
+import importlib
 import json
 import ssl
 import urllib.request
@@ -24,7 +25,20 @@ def verify(https=False):
     context = ssl.create_default_context(cafile=certifi.where())
     fingerprints = {hashlib.sha256(c).hexdigest() for c in context.get_ca_certs(binary_form=True)}
     assert not fingerprints.intersection(REVOKED_ROOTS), "Revoked CA remains trusted"
-    result = {"certifi": VERSION, "bundle_sha256": digest, "removed_roots_present": 0}
+    copies = {"certifi": {"version": VERSION, "bundle_sha256": digest}}
+    try:
+        vendor = importlib.import_module("pip._vendor.certifi")
+    except ImportError:
+        vendor = None
+    if vendor is not None:
+        with open(vendor.where(), "rb") as stream:
+            vendor_digest = hashlib.sha256(stream.read()).hexdigest()
+        assert vendor_digest == BUNDLE_SHA256, "pip-vendored CA bundle differs"
+        copies["pip._vendor.certifi"] = {
+            "version": getattr(vendor, "__version__", None),
+            "bundle_sha256": vendor_digest,
+        }
+    result = {"certifi": VERSION, "bundle_sha256": digest, "removed_roots_present": 0, "copies": copies}
     if https:
         with urllib.request.urlopen("https://pypi.org/simple/certifi/", context=context, timeout=20) as response:
             assert response.status == 200
