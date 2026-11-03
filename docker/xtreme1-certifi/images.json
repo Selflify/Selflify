@@ -1,0 +1,5 @@
+{
+  "backend": "docker-registry.selectel.ru/basicai/xtreme1-backend@sha256:b6db4f1249b8113d1b7255df079ca35620d7d3859c8cb007c6cf9b99e1c502a3",
+  "image-vect-visualization": "docker-registry.selectel.ru/basicai/xtreme1-image-vect-visualization@sha256:6cff5589527dded16b128f525ecc3c463c0e2f9b058bc4a8fbff1c0a6b57d38e",
+  "pcd-tools": "docker-registry.selectel.ru/basicai/xtreme1-pcd-tools@sha256:e849e829fa5bafaf8bbb2584ac5f8c673f471de64b09364951d2349a02ba585a"
+}
