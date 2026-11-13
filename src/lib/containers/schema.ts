@@ -45,6 +45,25 @@ export const containerConfigSchema = containerSettingsSchema.extend({
   previous: containerReleaseSchema.optional(),
 });
 
+const envNameSchema = z
+  .string()
+  .max(128)
+  .regex(/^[A-Za-z_][A-Za-z0-9_]*$/);
+const envValueSchema = z
+  .string()
+  .max(8192)
+  .refine((value) => !value.includes("\0"));
+
+export const environmentRowsSchema = z
+  .array(
+    z.object({
+      name: envNameSchema,
+      value: envValueSchema.nullable(),
+      secret: z.boolean(),
+    }),
+  )
+  .max(64);
+
 export const containerSecretsSchema = z.object({
   registry: z
     .object({
@@ -53,18 +72,8 @@ export const containerSecretsSchema = z.object({
       password: z.string().min(1).max(4096),
     })
     .optional(),
-  env: z
-    .record(
-      z
-        .string()
-        .regex(/^[A-Za-z_][A-Za-z0-9_]*$/)
-        .max(128),
-      z.string().max(8192),
-    )
-    .refine(
-      (env) =>
-        Object.keys(env).length <= 64 && !Object.values(env).some((value) => value.includes("\0")),
-    ),
+  env: z.record(envNameSchema, envValueSchema).refine((env) => Object.keys(env).length <= 64),
+  publicEnvNames: z.array(envNameSchema).max(64).optional(),
 });
 
 export type ContainerSettings = z.infer<typeof containerSettingsSchema>;

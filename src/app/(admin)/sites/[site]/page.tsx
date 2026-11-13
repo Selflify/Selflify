@@ -46,7 +46,12 @@ export default async function SiteDetailsPage({ params, searchParams }: SiteDeta
       ? await readContainerSecrets(site.container?.secretsId).catch(() => null)
       : null;
   const secretSummary = secrets
-    ? { registry: Boolean(secrets.registry), envNames: Object.keys(secrets.env) }
+    ? {
+        registry: Boolean(secrets.registry),
+        environment: Object.entries(secrets.env).map(([name, value]) =>
+          secrets.publicEnvNames?.includes(name) ? { name, value } : { name },
+        ),
+      }
     : null;
 
   return (

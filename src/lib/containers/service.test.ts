@@ -16,6 +16,7 @@ import {
 } from "./recovery";
 import { ContainerError } from "./runner-contract";
 import { containerHostname } from "./schema";
+import { readContainerSecrets } from "./secrets";
 import { configureContainer, publishContainer } from "./service";
 
 vi.mock("./client", () => ({
@@ -32,8 +33,7 @@ const credentials = {
   registryUsername: "pull-user",
   registryPassword: "private-registry-token",
   clearRegistry: false,
-  env: '{"MCP_ACCESS_TOKEN":"private-mcp-token"}',
-  clearEnv: false,
+  environment: [{ name: "MCP_ACCESS_TOKEN", value: "private-mcp-token", secret: true }],
 };
 const imageA = `${settings.repository}@sha256:${"a".repeat(64)}`;
 const imageB = `${settings.repository}@sha256:${"b".repeat(64)}`;
@@ -105,6 +105,54 @@ describe("stable container releases", () => {
         /private-(registry|mcp)-token/,
       );
     }
+  });
+
+  it("preserves masked values by name and removes only omitted variables", async () => {
+    const update = { registryUsername: "", registryPassword: "", clearRegistry: false };
+    await configureContainer(
+      "storybook",
+      settings,
+      {
+        ...update,
+        environment: [
+          { name: "MCP_ACCESS_TOKEN", value: null, secret: true },
+          { name: "EMPTY", value: "", secret: false },
+          { name: "REMOVE_ME", value: "old", secret: false },
+        ],
+      },
+      1,
+    );
+    await configureContainer(
+      "storybook",
+      settings,
+      {
+        ...update,
+        environment: [
+          { name: "MCP_ACCESS_TOKEN", value: null, secret: true },
+          { name: "EMPTY", value: "", secret: false },
+        ],
+      },
+      2,
+    );
+    const config = await readSelflifyConfig();
+    const secrets = await readContainerSecrets(config.sites[0].container?.secretsId);
+    expect(secrets.env).toEqual({ MCP_ACCESS_TOKEN: "private-mcp-token", EMPTY: "" });
+    expect(secrets.publicEnvNames).toEqual(["EMPTY"]);
+
+    await expect(
+      configureContainer(
+        "storybook",
+        settings,
+        {
+          ...update,
+          environment: [
+            { name: "MCP_ACCESS_TOKEN", value: null, secret: true },
+            { name: "MCP_ACCESS_TOKEN", value: "duplicate", secret: false },
+          ],
+        },
+        3,
+      ),
+    ).rejects.toThrow("Environment variable names must be unique.");
   });
 
   it("preserves the active release on failed health and reload, then supports rollback", async () => {

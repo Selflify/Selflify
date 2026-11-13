@@ -19,7 +19,7 @@ Use Docker Engine 25 or newer. The runner mounts the local Docker socket. Enable
 ## Deploy Storybook from account
 
 1. Create or open the Storybook site. Open **Configuration → Container** and enter the image repository from the `storybook-image.txt` artifact, omitting the `@sha256:…` suffix. Set port `3000` and health check path `/healthz`.
-2. If the GitLab registry is private, enter a username and token with read access to that repository. In **Environment variables**, enter a JSON object with `MCP_ACCESS_TOKEN` set to the token the Storybook client will use. If the client sends an Origin header, also set `MCP_ALLOWED_ORIGIN` to the allowed origin.
+2. If the GitLab registry is private, enter a username and token with read access to that repository. Under **Environment & secrets**, add `MCP_ACCESS_TOKEN` as a secret. If the client sends an Origin header, add `MCP_ALLOWED_ORIGIN` as a variable.
 3. In **Deploys**, paste the complete reference from `storybook-image.txt` into **Image digest reference** and select **Deploy image**. The stable domain switches when the new process returns HTTP 2xx from `/healthz`. Open Storybook at the site root and configure the MCP client with `https://<stable-host>/mcp` and `Authorization: Bearer <MCP_ACCESS_TOKEN>`.
 4. To publish from CI, create a token with **Allow container deployments** as its only permission. Store it as `SELFLIFY_DEPLOY_TOKEN` and set `SELFLIFY_SERVER` to the panel origin. Use the CLI version that includes `deploy-image`:
 
@@ -33,4 +33,4 @@ Use Docker Engine 25 or newer. The runner mounts the local Docker socket. Enable
 
 A failed pull, readiness check, or Caddy apply leaves the previous route in use. The Deploys view shows the active and previous image. **Rollback** checks the previous process before restoring its route. Saving settings affects subsequent deployments. To apply new settings to the same image, publish its digest again from the panel. A CI retry for the already active digest returns that release.
 
-Secret values are stored in protected files next to the runtime config. The panel shows variable names and whether registry credentials are configured. Previous versions of the secret files are kept for restoring config backups. Revoke old registry tokens at the registry when rotating them. Open **View container logs** in the active release to see recent output.
+Secret values are stored in protected files next to the runtime config. The panel shows variable values and masks stored secrets. Existing environment entries appear under **Secrets**. Previous versions of the secret files are kept for restoring config backups. Revoke old registry tokens at the registry when rotating them. Open **View container logs** in the active release to see recent output.

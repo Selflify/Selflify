@@ -1,6 +1,7 @@
-import { Box, Heading, Input, Stack, Text, Textarea } from "@chakra-ui/react";
+import { Box, Heading, Input, Stack, Text } from "@chakra-ui/react";
 
 import { publishContainerAction, saveContainerAction } from "@/app/container-actions";
+import { ContainerEnvironment, type EnvironmentEntry } from "@/components/container-environment";
 import { FormField } from "@/components/form-field";
 import { FormSubmitButton } from "@/components/form-submit-button";
 import type { SiteConfig } from "@/lib/config/schema";
@@ -23,7 +24,7 @@ export function ContainerSettings({
   site,
   revision,
   secrets,
-}: Props & { secrets: { registry: boolean; envNames: string[] } | null }) {
+}: Props & { secrets: { registry: boolean; environment: EnvironmentEntry[] } | null }) {
   const container = site.container;
   const enabled = containerRunnerEnabled();
   if (!enabled && !container) return null;
@@ -94,33 +95,12 @@ export function ContainerSettings({
                 ) : null}
               </Stack>
             </details>
-            <details>
-              <summary>Environment variables</summary>
-              <Stack gap="3" mt="3">
-                {secrets && secrets.envNames.length ? (
-                  <Text color="muted">Configured variables: {secrets.envNames.join(", ")}</Text>
-                ) : null}
-                <FormField
-                  label="Replace environment variables"
-                  htmlFor="container-env"
-                  hint="Enter a JSON object of string values. Leave empty to keep the current variables."
-                >
-                  <Textarea
-                    id="container-env"
-                    name="env"
-                    placeholder={'{"MCP_ACCESS_TOKEN":"…"}'}
-                    autoComplete="off"
-                    spellCheck={false}
-                    fontFamily="mono"
-                  />
-                </FormField>
-                {secrets && secrets.envNames.length ? (
-                  <label>
-                    <input type="checkbox" name="clearEnv" /> Remove all environment variables
-                  </label>
-                ) : null}
-              </Stack>
-            </details>
+            {secrets ? (
+              <ContainerEnvironment
+                key={`${site.slug}:${site.container?.secretsId ?? ""}`}
+                entries={secrets.environment}
+              />
+            ) : null}
             {!secrets ? <Text role="alert">Stored secrets could not be read.</Text> : null}
             <FormSubmitButton
               alignSelf="flex-start"

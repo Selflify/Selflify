@@ -14,6 +14,7 @@ import {
 import {
   containerSecretsSchema,
   imageReferenceSchema,
+  environmentRowsSchema,
   containerSettingsSchema,
   type ContainerRelease,
   type ContainerSecrets,
@@ -64,8 +65,7 @@ export async function configureContainer(
     registryUsername: string;
     registryPassword: string;
     clearRegistry: boolean;
-    env: string;
-    clearEnv: boolean;
+    environment?: Array<{ name: string; value: string | null; secret: boolean }>;
   },
   expectedRevision: number,
 ) {
@@ -81,16 +81,30 @@ export async function configureContainer(
       const site = getSite(config, slug);
       const host = validated.repository.split("/")[0];
       const previous = await readContainerSecrets(site.container?.secretsId);
-      let env: unknown = changes.clearEnv ? {} : previous.env;
-      if (changes.env.trim() && !changes.clearEnv) {
-        try {
-          env = JSON.parse(changes.env);
-        } catch {
+      let env = previous.env;
+      let publicEnvNames = previous.publicEnvNames;
+      if (changes.environment) {
+        const rows = environmentRowsSchema.safeParse(changes.environment);
+        if (!rows.success) {
           throw new ContainerError(
             400,
-            "Enter environment variables as a JSON object of string values.",
+            "Enter valid environment variable names and values (up to 64 entries).",
           );
         }
+        const entries = new Map<string, string>();
+        publicEnvNames = [];
+        for (const { name, value, secret } of rows.data) {
+          if (entries.has(name)) {
+            throw new ContainerError(400, "Environment variable names must be unique.");
+          }
+          if (value === null && (!secret || !Object.hasOwn(previous.env, name))) {
+            throw new ContainerError(400, "Enter a value for each new secret.");
+          }
+          entries.set(name, value ?? previous.env[name]);
+          if (!secret) publicEnvNames.push(name);
+        }
+        env = Object.fromEntries(entries);
+        if (!publicEnvNames.length) publicEnvNames = undefined;
       }
 
       let registry = previous.registry?.host === host ? previous.registry : undefined;
@@ -103,7 +117,7 @@ export async function configureContainer(
         registry = { host, username: changes.registryUsername, password: changes.registryPassword };
       }
 
-      const secrets = containerSecretsSchema.safeParse({ env, registry });
+      const secrets = containerSecretsSchema.safeParse({ env, registry, publicEnvNames });
       if (!secrets.success)
         throw new ContainerError(400, "Registry credentials or environment variables are invalid.");
       let secretsId = site.container?.secretsId;
@@ -202,7 +216,10 @@ export async function publishContainer(
           await containerRunner.check(candidate);
         } else {
           const secrets = await readContainerSecrets(getSite(config, slug).container?.secretsId);
-          await containerRunner.prepare(candidate, secrets);
+          await containerRunner.prepare(candidate, {
+            env: secrets.env,
+            registry: secrets.registry,
+          });
         }
         authorize(config);
         await markContainerPublication();

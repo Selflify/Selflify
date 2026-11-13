@@ -16,6 +16,27 @@ function errorMessage(error: unknown) {
     : "Could not apply the container operation. Check the operation status.";
 }
 
+function readEnvironment(form: FormData) {
+  const names = form.getAll("envName");
+  const values = form.getAll("envValue");
+  const modes = form.getAll("envMode");
+  if (names.length !== values.length || names.length !== modes.length || names.length > 64) {
+    throw new ContainerError(400, "Invalid environment variables.");
+  }
+  return names.map((name, index) => {
+    const mode = modes[index];
+    const value = String(values[index]);
+    if (mode !== "variable" && mode !== "secret" && mode !== "stored") {
+      throw new ContainerError(400, "Invalid environment variable type.");
+    }
+    return {
+      name: String(name).trim(),
+      value: mode === "stored" && value === "" ? null : value,
+      secret: mode !== "variable",
+    };
+  });
+}
+
 export async function saveContainerAction(site: string, form: FormData) {
   await requireAdminSession();
   const query = new URLSearchParams({ view: "configuration" });
@@ -35,8 +56,7 @@ export async function saveContainerAction(site: string, form: FormData) {
           registryUsername: String(form.get("registryUsername") ?? "").trim(),
           registryPassword: String(form.get("registryPassword") ?? ""),
           clearRegistry: form.get("clearRegistry") === "on",
-          env: String(form.get("env") ?? ""),
-          clearEnv: form.get("clearEnv") === "on",
+          environment: form.has("editEnvironment") ? readEnvironment(form) : undefined,
         },
         Number(form.get("configRevision")),
       );
