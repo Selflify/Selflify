@@ -31,6 +31,14 @@ FROM deps AS upload-builder
 COPY . .
 RUN node .yarn/releases/yarn-4.13.0.cjs upload:build
 
+FROM deps AS container-runner-builder
+COPY . .
+RUN node .yarn/releases/yarn-4.13.0.cjs container-runner:build
+
+FROM base AS container-runner
+COPY --from=container-runner-builder /workspace/dist/container-runner/runner.cjs /workspace/runner.cjs
+CMD ["node", "/workspace/runner.cjs"]
+
 FROM base AS upload
 RUN mkdir /state && chown 10001:0 /state
 COPY --from=upload-builder /workspace/dist/upload/upload.js /workspace/upload.cjs

@@ -1,9 +1,11 @@
 import assert from "node:assert/strict";
+import { once } from "node:events";
+import { createServer } from "node:http";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { test } from "node:test";
-import { packBuild, serverUrl } from "../bin/selflify.mjs";
+import { deployImage, packBuild, serverUrl } from "../bin/selflify.mjs";
 
 test("requires HTTPS and rejects URLs which could redirect or embed credentials", () => {
   assert.equal(serverUrl("https://panel.example.test"), "https://panel.example.test");
@@ -32,5 +34,36 @@ test("creates deterministic archives and rejects build symlinks", async () => {
     await assert.rejects(packBuild(build, path.join(root, "third.tar.gz")), /regular files/);
   } finally {
     await fs.rm(root, { recursive: true, force: true });
+  }
+});
+
+test("publishes an image by digest through the container deployment API", async () => {
+  const image = `registry.example.test/account/storybook@sha256:${"a".repeat(64)}`;
+  const token = `slf_71f7d606-2d4a-4a69-8183-1a4b06bf22f2.${"a".repeat(43)}`;
+  const result = { url: "https://storybook.example.test" };
+  const server = createServer(async (req, res) => {
+    assert.equal(req.method, "POST");
+    assert.equal(req.url, "/api/deploy/v1/images");
+    assert.equal(req.headers.authorization, `Bearer ${token}`);
+    const chunks = [];
+    for await (const chunk of req) chunks.push(chunk);
+    assert.deepEqual(JSON.parse(Buffer.concat(chunks).toString("utf8")), {
+      site: "storybook",
+      image,
+    });
+    res.end(JSON.stringify(result));
+  });
+  server.listen(0, "127.0.0.1");
+  await once(server, "listening");
+  const origin = `http://127.0.0.1:${server.address().port}`;
+  try {
+    const options = { server: origin, token, site: "storybook", allowLocalHttp: true };
+    await assert.rejects(
+      deployImage({ ...options, image: "storybook:latest" }),
+      /pinned by digest/,
+    );
+    assert.deepEqual(await deployImage({ ...options, image }), result);
+  } finally {
+    await new Promise((resolve) => server.close(resolve));
   }
 });

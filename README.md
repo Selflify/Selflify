@@ -116,6 +116,10 @@ Create a deploy token in the site Configuration screen and upload your build wit
 
 Agents can connect to `/mcp` through an OAuth consent page or a manual token. Choose selected sites or all sites, then grant read, settings, preview or production permissions. Open MCP access in the panel sidebar to manage connections. See [MCP access](docs/mcp.md) for permissions, connection settings and deployment steps.
 
+## Deploy HTTP containers
+
+See [container deployments](docs/container-deploy.md) for digest publication, registry access, and the Storybook MCP setup.
+
 ## Dev compose
 
 ```bash

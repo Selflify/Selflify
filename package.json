@@ -30,6 +30,7 @@
     "bootstrap:bundle": "node ./scripts/build-bootstrap-bundle.mjs",
     "deploy:prepare": "tsx src/bin/prepare-deploy.ts",
     "upload:run": "tsx src/bin/upload.ts",
+    "container-runner:build": "esbuild src/bin/container-runner.ts --bundle --platform=node --format=cjs --outfile=dist/container-runner/runner.cjs",
     "upload:build": "esbuild src/bin/upload.ts src/bin/prepare-deploy.ts --bundle --platform=node --format=cjs --outdir=dist/upload",
     "cli:test": "node --test packages/selflify-cli/test/*.test.mjs",
     "e2e:deploy": "playwright test --config=playwright.deploy.config.ts"

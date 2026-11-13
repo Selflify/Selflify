@@ -171,6 +171,30 @@ export async function deploy({
   }
 }
 
+export async function deployImage({ image, server, token, site, allowLocalHttp = false }) {
+  const origin = serverUrl(server, allowLocalHttp);
+  if (!/^slf_[a-f0-9-]{36}\.[A-Za-z0-9_-]{43}$/.test(token ?? ""))
+    throw new Error("Set SELFLIFY_DEPLOY_TOKEN to a container deploy token from the panel.");
+  if (!/^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/.test(site ?? ""))
+    throw new Error("Supply a valid --site name.");
+  if (!/^[^@\s]+@sha256:[a-f0-9]{64}$/.test(image ?? ""))
+    throw new Error("Supply an image reference pinned by digest.");
+  const response = await fetch(`${origin}/api/deploy/v1/images`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ site, image }),
+    redirect: "error",
+    signal: AbortSignal.timeout(240_000),
+  });
+  const result = await response.json().catch(() => null);
+  if (!response.ok || !result?.url) {
+    throw new Error(
+      `Selflify returned ${response.status}: ${result?.error ?? "Deployment failed."}`,
+    );
+  }
+  return result;
+}
+
 async function main() {
   const { values, positionals } = parseArgs({
     options: {
@@ -185,8 +209,19 @@ async function main() {
   });
   if (values.help) {
     console.log(
-      "selflify deploy <directory> --server https://panel.example.com --site app --deploy pr-123\nSet SELFLIFY_DEPLOY_TOKEN in the environment. Optional: --idempotency-key <CI-job-key>.",
+      "selflify deploy <directory> --server https://panel.example.com --site app --deploy pr-123\nselflify deploy-image <image@sha256:digest> --server https://panel.example.com --site app\nSet SELFLIFY_DEPLOY_TOKEN in the environment. For static deploys: --idempotency-key <CI-job-key>.",
     );
+    return;
+  }
+  if (positionals[0] === "deploy-image" && positionals.length === 2) {
+    const result = await deployImage({
+      image: positionals[1],
+      server: values.server ?? process.env.SELFLIFY_SERVER,
+      token: process.env.SELFLIFY_DEPLOY_TOKEN,
+      site: values.site,
+      allowLocalHttp: values["allow-local-http"],
+    });
+    console.log(result.url);
     return;
   }
   if (positionals[0] !== "deploy" || positionals.length !== 2)

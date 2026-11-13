@@ -10,6 +10,7 @@ import {
   getEffectivePreviewRoot,
   getEffectiveSelflifyUpstream,
 } from "@/lib/config/paths";
+import { containerHostname } from "@/lib/containers/schema";
 import { isAdminConfigured } from "@/lib/config/service";
 import { runCommand } from "@/lib/system/commands";
 import type { CaddyGateway, CommandRunner } from "@/lib/system/ports";
@@ -222,6 +223,16 @@ function renderStableHostBlock(
   const previewRoot = path.join(getEffectivePreviewRoot(config), site.slug).replace(/\\/g, "/");
   const stableHosts = hosts.map(withDevScheme).join(", ");
 
+  const release = site.container?.active;
+  if (release) {
+    const tls = useManagedTls ? "    import tls_cf\n" : "";
+    return `${stableHosts} {
+${tls}    import common_headers
+    reverse_proxy ${containerHostname(release.id)}:${release.port}
+}
+`;
+  }
+
   return `${stableHosts} {
 ${renderCommonSiteImports(useManagedTls)}
 
@@ -308,6 +319,12 @@ function renderSelflifyPanelBlocks(config: SelflifyConfig): string {
     import common_site
     import panel_security_headers
 
+    handle /api/deploy/v1/images {
+        request_body {
+            max_size 4KiB
+        }
+        reverse_proxy ${getEffectiveSelflifyUpstream(config)}
+    }
     handle /api/deploy/v1/* {
         request_body {
             max_size 128MiB

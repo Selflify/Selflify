@@ -11,6 +11,7 @@ export async function createDeployToken(
     name: string;
     expiresAt: string;
     stable: boolean;
+    container?: boolean;
     preview?: boolean;
     mcpRead?: boolean;
     mcpWrite?: boolean;
@@ -40,6 +41,13 @@ export async function createDeployToken(
     const scopes: DeployToken["scopes"] = [];
     if (input.preview !== false) scopes.push("preview:write");
     if (input.stable) scopes.push("stable:write");
+    if (input.container) {
+      if (scopes.length || input.mcpRead || input.mcpWrite) {
+        throw new Error("Create a separate token for container deployments.");
+      }
+      if (!site.container) throw new Error("Configure the container repository first.");
+      scopes.push("container:write");
+    }
     if (input.mcpRead || input.mcpWrite) scopes.push("mcp:read");
     if (input.mcpWrite) scopes.push("mcp:write");
     if (!scopes.length) throw new Error("Select at least one token permission.");

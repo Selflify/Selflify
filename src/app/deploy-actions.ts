@@ -19,6 +19,7 @@ export async function createDeployTokenAction(
       name: String(form.get("name") ?? ""),
       expiresAt: `${String(form.get("expiresAt") ?? "")}T23:59:59.000Z`,
       stable: form.get("stable") === "on",
+      container: form.get("container") === "on",
       preview: form.get("preview") === "on",
       mcpRead: form.get("mcpRead") === "on",
       mcpWrite: form.get("mcpWrite") === "on",

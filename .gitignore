@@ -167,3 +167,5 @@ vite.config.ts.timestamp-*
 
 .dev/deploy-permissions/
 .dev/deploy-coordination/
+.dev/container-secrets/
+.dev/container-publication.json

@@ -199,6 +199,24 @@ describe("HTTPS deployment protocol", () => {
     },
   );
 
+  it("accepts static previews but reserves stable publication for the container", async () => {
+    const config = await readSelflifyConfig();
+    config.sites[0].container = {
+      repository: "registry.example.test/account/storybook",
+      port: 3000,
+      healthPath: "/healthz",
+    };
+    await writeSelflifyConfig(config);
+    token = await createDeployToken("app", {
+      name: "Static CI",
+      expiresAt: new Date(Date.now() + 86400_000).toISOString(),
+      stable: true,
+      revision: config.configRevision,
+    });
+    expect((await create("stable")).status).toBe(409);
+    expect((await create("pr-123")).status).toBe(201);
+  });
+
   it("publishes complete builds atomically, preserves legacy files and supports retries", async () => {
     const legacy = path.join(root, "sites/app/pr-123");
     await fs.mkdir(legacy, { recursive: true });

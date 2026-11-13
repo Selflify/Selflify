@@ -20,7 +20,7 @@ export type DeployPermissions = {
   version: 1;
   domain: string;
   previewRoot: string;
-  sites: Array<{ id: string; slug: string; mainBranch: string }>;
+  sites: Array<{ id: string; slug: string; mainBranch: string; containerStable?: boolean }>;
   tokens: DeployToken[];
 };
 
@@ -45,14 +45,20 @@ export async function writeDeployPermissions(config: SelflifyConfig | null): Pro
         id: getDeploymentSiteId(site),
         slug: site.slug,
         mainBranch: site.mainBranch,
+        ...(site.container ? { containerStable: true } : {}),
       })) ?? [],
     // OAuth refresh credentials are panel-only and never enter the upload container.
     tokens:
-      config?.deployTokens.map((token) => {
-        const projected = { ...token };
-        delete projected.oauth;
-        return projected;
-      }) ?? [],
+      config?.deployTokens
+        .filter((token) => token.scopes.some((scope) => scope !== "container:write"))
+        .map((token) => {
+          const projected = {
+            ...token,
+            scopes: token.scopes.filter((scope) => scope !== "container:write"),
+          };
+          delete projected.oauth;
+          return projected;
+        }) ?? [],
   };
   // Root-owned, group-readable by the unprivileged upload process.
   await atomicJson(getDeployPermissionsPath(), permissions, 0o640);

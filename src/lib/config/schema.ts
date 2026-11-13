@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+import { containerConfigSchema } from "@/lib/containers/schema";
 import { isValidHostname, normalizeHostname } from "@/lib/utils/hostname";
 
 export const siteSlugPattern = /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/;
@@ -22,6 +23,7 @@ const previewAuthSchema = z
 
 export const siteConfigSchema = z.object({
   deploymentId: z.string().uuid().optional(),
+  container: containerConfigSchema.optional(),
   slug: z
     .string()
     .trim()
@@ -72,7 +74,9 @@ export const deployTokenSchema = z.object({
   }).optional(),
   name: z.string().trim().min(1).max(80),
   secretHash: z.string().regex(/^[a-f0-9]{64}$/),
-  scopes: z.array(z.enum(["preview:write", "stable:write", "mcp:read", "mcp:write"])).min(1),
+  scopes: z
+    .array(z.enum(["preview:write", "stable:write", "container:write", "mcp:read", "mcp:write"]))
+    .min(1),
   createdAt: z.string().datetime(),
   expiresAt: z.string().datetime(),
   revokedAt: z.string().datetime().nullable().default(null),

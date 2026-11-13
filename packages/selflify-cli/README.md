@@ -35,3 +35,17 @@ node packages/selflify-cli/bin/selflify.mjs deploy ./dist \
 Builds must contain `index.html` at their root. Symlinks, special files and `.selflify` path segments are rejected. The limits are 128 MiB for the archive, 512 MiB for file contents and 20,000 archive entries.
 
 During a network failure, the CLI retries requests with the same upload identifier. A failed or expired transfer requires a new upload. Use the panel's recent deployments to inspect its result.
+
+## Deploy an HTTP container
+
+Configure the site's image repository in Selflify and create a token with
+**Allow container deployments**. Set `SELFLIFY_SERVER` and
+`SELFLIFY_DEPLOY_TOKEN`, then pass the full digest reference produced by your
+image build.
+
+```bash
+yarn selflify deploy-image "$(cat storybook-image.txt)" --site storybook
+```
+
+The command prints the stable URL after the image passes its readiness check
+and Selflify switches the route.

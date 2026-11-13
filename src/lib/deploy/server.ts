@@ -26,6 +26,7 @@ const permissionSchema = z.object({
       id: z.string(),
       slug: z.string().regex(siteSlugPattern),
       mainBranch: z.string().regex(deployNamePattern),
+      containerStable: z.boolean().optional(),
     }),
   ),
   tokens: z.array(deployTokenSchema),
@@ -150,6 +151,8 @@ export async function createUploadServer(options: ServerOptions): Promise<http.S
     if (!site || (siteId && site.id !== siteId))
       throw new DeployError(403, "Token cannot deploy to this site.");
     const scope = input.deploy === site.mainBranch ? "stable:write" : "preview:write";
+    if (scope === "stable:write" && site.containerStable)
+      throw new DeployError(409, "This site publishes its stable release from a container image.");
     if (!auth.token.scopes.includes(scope))
       throw new DeployError(403, "Token cannot deploy to this environment.");
     return site;

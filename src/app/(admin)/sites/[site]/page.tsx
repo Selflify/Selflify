@@ -8,6 +8,7 @@ import {
   updateSiteStableAliasAction,
   updateSitePreviewAccessAction,
 } from "@/app/actions";
+import { ContainerDeploy, ContainerSettings } from "@/components/container-deploy";
 import { DeployTokens } from "@/components/deploy-tokens";
 import { getDeploymentSiteId } from "@/lib/deploy/permissions";
 import { ActionFeedbackToast } from "@/components/action-feedback-toast";
@@ -17,7 +18,8 @@ import { FormSubmitButton } from "@/components/form-submit-button";
 import { SiteDeployCard } from "@/components/site-deploy-card";
 import { SiteDeployInventory } from "@/components/site-deploy-inventory";
 import { requireAdminSession } from "@/lib/auth/guards";
-import { getDeploySummary, listPreviewDeployPage } from "@/lib/sites/service";
+import { getDeploySummary, getStableUrl, listPreviewDeployPage } from "@/lib/sites/service";
+import { readContainerSecrets } from "@/lib/containers/secrets";
 import { formatSiteName } from "@/lib/utils/format";
 
 type SiteDetailsPageProps = {
@@ -31,7 +33,7 @@ export default async function SiteDetailsPage({ params, searchParams }: SiteDeta
   const site = config.sites.find((entry) => entry.slug === slug) ?? notFound();
 
   const [stableDeploy, previewPage] = await Promise.all([
-    getDeploySummary(config, site, site.mainBranch),
+    site.container?.active ? null : getDeploySummary(config, site, site.mainBranch),
     listPreviewDeployPage(config, site),
   ]);
   const queries = await searchParams;
@@ -39,6 +41,13 @@ export default async function SiteDetailsPage({ params, searchParams }: SiteDeta
   const error = typeof queries.error === "string" ? queries.error : "";
   const view = queries.view === "configuration" ? "configuration" : "deploys";
   const siteDisplayName = formatSiteName(site.name);
+  const secrets =
+    view === "configuration"
+      ? await readContainerSecrets(site.container?.secretsId).catch(() => null)
+      : null;
+  const secretSummary = secrets
+    ? { registry: Boolean(secrets.registry), envNames: Object.keys(secrets.env) }
+    : null;
 
   return (
     <Stack gap="8">
@@ -55,6 +64,14 @@ export default async function SiteDetailsPage({ params, searchParams }: SiteDeta
         />
       ) : null}
 
+      {view === "deploys" && site.container ? (
+        <ContainerDeploy
+          site={site}
+          revision={config.configRevision}
+          url={getStableUrl(config, site)}
+        />
+      ) : null}
+
       {view === "deploys" ? (
         <SiteDeployInventory
           siteSlug={site.slug}
@@ -67,9 +84,11 @@ export default async function SiteDetailsPage({ params, searchParams }: SiteDeta
 
       {view === "configuration" ? (
         <Stack gap="6">
+          <ContainerSettings site={site} revision={config.configRevision} secrets={secretSummary} />
           <DeployTokens
             siteSlug={site.slug}
             revision={config.configRevision}
+            container={Boolean(site.container)}
             tokens={config.deployTokens
               .filter((token) => token.siteId === getDeploymentSiteId(site))
               .map(({ id, name, scopes, createdAt, expiresAt, revokedAt }) => ({

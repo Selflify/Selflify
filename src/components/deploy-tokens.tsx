@@ -17,10 +17,12 @@ export function DeployTokens({
   siteSlug,
   revision,
   tokens,
+  container,
 }: {
   siteSlug: string;
   revision: number;
   tokens: PublicToken[];
+  container?: boolean;
 }) {
   const [state, action] = useActionState(
     async (_previous: DeployTokenActionState, form: FormData) =>
@@ -52,8 +54,9 @@ export function DeployTokens({
     >
       <Heading size="lg">Deploy tokens</Heading>
       <Text color="muted" mt="2">
-        Upload builds with the Selflify CLI or connect an agent to /mcp. Each token is limited to
-        this site. MCP access is opt-in.
+        Deploy with the Selflify CLI or connect an agent to /mcp. Each token is limited to this
+        site.{" "}
+        {container ? "Use a dedicated token for container deployments." : "MCP access is opt-in."}
       </Text>
       <Stack gap="4" mt="5">
         {tokens.map((token) => (
@@ -109,11 +112,18 @@ export function DeployTokens({
               <Input id="deploy-token-expiry" name="expiresAt" type="date" required />
             </FormField>
             <label>
-              <input type="checkbox" name="preview" defaultChecked /> Allow preview deployments
+              <input type="checkbox" name="preview" defaultChecked={!container} /> Allow preview
+              deployments
             </label>
-            <label>
-              <input type="checkbox" name="stable" /> Allow stable deployments
-            </label>
+            {container ? (
+              <label>
+                <input type="checkbox" name="container" /> Allow container deployments
+              </label>
+            ) : (
+              <label>
+                <input type="checkbox" name="stable" /> Allow stable deployments
+              </label>
+            )}
             <label>
               <input type="checkbox" name="mcpRead" /> Allow MCP read access
             </label>

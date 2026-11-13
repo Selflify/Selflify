@@ -148,6 +148,22 @@ jobs:
           cache-from: type=gha,scope=selflify-deploy-init
           cache-to: type=gha,mode=max,scope=selflify-deploy-init
 
+      - name: Build and push container runner image
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: docker/selflify/Dockerfile
+          target: container-runner
+          push: true
+          provenance: false
+          tags: |
+            ghcr.io/selflify/selflify-container-runner:stable
+            ghcr.io/selflify/selflify-container-runner:sha-${{ github.sha }}
+          labels: |
+            org.opencontainers.image.source=https://github.com/Selflify/Selflify
+          cache-from: type=gha,scope=selflify-container-runner
+          cache-to: type=gha,scope=selflify-container-runner,mode=max
+
       - name: Build and push caddy image
         uses: docker/build-push-action@v7
         with:
@@ -455,6 +471,9 @@ jobs:
             exit 1
           fi
 
+          if [ -f runtime/enable-containers ]; then
+            export COMPOSE_PROFILES=containers
+          fi
           docker compose pull
           if [ "$(id -u)" = 0 ]; then
             python3 bootstrap/configure-mptcp.py

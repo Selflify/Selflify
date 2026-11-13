@@ -1,6 +1,7 @@
 import crypto from "node:crypto";
 import fs from "node:fs/promises";
 
+import { getEffectiveCaddyConfigPath } from "@/lib/config/paths";
 import { writeOperationBackups } from "@/lib/config/backups";
 import type { SelflifyConfig } from "@/lib/config/schema";
 import { readSelflifyConfig, writeSelflifyConfig } from "@/lib/config/service";
@@ -142,7 +143,7 @@ export async function runConfigOperation<T>({
         message: null,
       },
     );
-    const previousCaddyPath = nextConfig.server.caddyConfigPath;
+    const previousCaddyPath = getEffectiveCaddyConfigPath(nextConfig);
     let previousCaddyContents: string | null = null;
 
     try {

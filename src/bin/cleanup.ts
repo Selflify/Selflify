@@ -4,6 +4,9 @@ import { withDeployLock } from "@/lib/deploy/lock";
 import { runCleanupOnce } from "@/lib/cleanup/service";
 import { getConfigPath } from "@/lib/config/paths";
 import { readSelflifyConfig } from "@/lib/config/service";
+import { containerRunner, containerRunnerEnabled } from "@/lib/containers/client";
+import { hasPendingContainerPublication } from "@/lib/containers/recovery";
+import { collectContainerReleases } from "@/lib/containers/service";
 
 const DEFAULT_PREVIEW_TTL_DAYS = 30;
 const DEFAULT_ORPHAN_TTL_DAYS = 30;
@@ -28,15 +31,21 @@ async function main(): Promise<void> {
     process.exit(1);
   }
 
-  const report = await withDeployLock(async () =>
-    runCleanupOnce(await readSelflifyConfig(), {
+  const report = await withDeployLock(async () => {
+    const config = await readSelflifyConfig();
+    if (containerRunnerEnabled() && !(await hasPendingContainerPublication())) {
+      await containerRunner.prune(collectContainerReleases(config)).catch(() => {
+        console.error("Could not prune unreferenced containers.");
+      });
+    }
+    return runCleanupOnce(config, {
       previewTtlDays: readTtlDays("SELFLIFY_PREVIEW_TTL_DAYS", DEFAULT_PREVIEW_TTL_DAYS),
       orphanTtlDays: readTtlDays("SELFLIFY_ORPHAN_TTL_DAYS", DEFAULT_ORPHAN_TTL_DAYS),
       logger: (message) => {
         console.log(message);
       },
-    }),
-  );
+    });
+  });
 
   console.log(
     `Cleanup finished. Removed ${report.removedPreviewDirs.length} preview dirs and ${report.removedOrphanDirs.length} orphan dirs.`,
