@@ -167,7 +167,7 @@ export function SiteDeployInventory({
   const hasSearch = deferredQuery.trim().length > 0;
 
   return (
-    <Stack gap="4">
+    <Stack gap="4" className="form-layout">
       <Box>
         <Text fontWeight="700" fontSize="2xl">
           Deploy inventory
@@ -177,7 +177,7 @@ export function SiteDeployInventory({
         </Text>
       </Box>
 
-      <Stack gap="2" maxW="26rem">
+      <Stack gap="2" maxW={{ base: "26rem", lg: "min(50cqi, 26rem)" }}>
         <InputGroup
           endElement={
             query.trim().length > 0 ? (

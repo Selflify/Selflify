@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useId, useRef, useState } from "react";
 import {
   Button,
   Dialog,
@@ -12,6 +12,7 @@ import {
   type ButtonProps,
 } from "@chakra-ui/react";
 import { useFormStatus } from "react-dom";
+import { FormField } from "@/components/form-field";
 
 const dangerButtonStyles: ButtonProps = {
   borderColor: "rgba(214,58,99,0.34)",
@@ -62,11 +63,12 @@ export function FormSubmitButton({
   formTarget,
   ...props
 }: FormSubmitButtonProps) {
+  const confirmationId = useId();
   const { pending } = useFormStatus();
   const [open, setOpen] = useState(false);
   const [confirmValue, setConfirmValue] = useState("");
   const hiddenSubmitRef = useRef<HTMLButtonElement>(null);
-  const buttonProps = { ...props };
+  const buttonProps: ButtonProps = { alignSelf: "flex-start", ...props };
   const actionButtonProps = danger ? { ...buttonProps, ...dangerButtonStyles } : buttonProps;
   const requiresTypedConfirmation = Boolean(confirmInputValue);
   const typedConfirmationMatches =
@@ -128,6 +130,7 @@ export function FormSubmitButton({
           <Dialog.Backdrop bg="rgba(0,0,0,0.66)" backdropFilter="blur(6px)" />
           <Dialog.Positioner px={{ base: "4", md: "6" }}>
             <Dialog.Content
+              className="form-layout"
               rounded="2xl"
               borderWidth="1px"
               borderColor="rgba(255,255,255,0.08)"
@@ -142,17 +145,18 @@ export function FormSubmitButton({
                 <Stack gap="4">
                   <Text color="muted">{confirmMessage}</Text>
                   {requiresTypedConfirmation ? (
-                    <Stack gap="2">
-                      <Text fontSize="sm" fontWeight="700" color="whiteAlpha.900">
-                        {confirmInputLabel ?? "Type the confirmation value to continue"}
-                      </Text>
+                    <FormField
+                      htmlFor={confirmationId}
+                      label={confirmInputLabel ?? "Type the confirmation value to continue"}
+                    >
                       <Input
+                        id={confirmationId}
                         value={confirmValue}
                         onChange={(event) => setConfirmValue(event.target.value)}
                         placeholder={confirmInputPlaceholder}
                         bg="rgba(255,255,255,0.04)"
                       />
-                    </Stack>
+                    </FormField>
                   ) : null}
                 </Stack>
               </Dialog.Body>
@@ -164,7 +168,7 @@ export function FormSubmitButton({
                 justify="flex-end"
                 align="center"
                 gap="3"
-                wrap="nowrap"
+                wrap="wrap"
               >
                 <Button
                   type="button"

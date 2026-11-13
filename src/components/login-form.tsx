@@ -44,7 +44,7 @@ export function LoginForm({ returnTo = "/sites" }: { returnTo?: string }) {
   }
 
   return (
-    <form onSubmit={handleSubmit}>
+    <form className="form-layout" onSubmit={handleSubmit}>
       <Stack gap="4">
         <FormField label="Login" htmlFor="login-form-login">
           <Input
@@ -78,6 +78,7 @@ export function LoginForm({ returnTo = "/sites" }: { returnTo?: string }) {
           />
         </FormField>
         <Button
+          alignSelf="flex-start"
           type="submit"
           bg="action.500"
           color="white"

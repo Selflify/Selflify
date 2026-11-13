@@ -77,7 +77,7 @@ export function SetupWizard({
             : "Finish the required infrastructure settings: main domain, public server IP, Cloudflare API token and the email used by Caddy certificates."}
         </Text>
       </Stack>
-      <form action={setupAction}>
+      <form className="form-layout" action={setupAction}>
         <Stack gap="4">
           {step === 1 ? (
             <>

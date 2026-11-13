@@ -47,7 +47,8 @@ export function ContainerEnvironment({ entries }: { entries: EnvironmentEntry[] 
                   <Grid
                     key={row.id}
                     gap="2"
-                    templateColumns={{ base: "1fr", md: "minmax(0, 1fr) minmax(0, 1.5fr) auto" }}
+                    maxW="65rem"
+                    templateColumns={{ base: "1fr", md: "minmax(0, 1fr) minmax(0, 1fr) auto" }}
                   >
                     <input type="hidden" name="envMode" value={row.mode} />
                     <Input
@@ -86,6 +87,7 @@ export function ContainerEnvironment({ entries }: { entries: EnvironmentEntry[] 
                     <Button
                       type="button"
                       variant="outline"
+                      justifySelf="start"
                       aria-label={`Remove ${label.toLowerCase()}`}
                       onClick={() =>
                         setRows((current) => current.filter(({ id }) => id !== row.id))

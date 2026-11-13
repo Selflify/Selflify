@@ -600,6 +600,7 @@
 }
 .formFooter {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   gap: 14px;
   align-items: center;
@@ -765,27 +766,6 @@
   line-height: 1.8;
   color: #aaa0b5;
 }
-.success .fieldLabel {
-  margin-bottom: -12px;
-}
-.token {
-  width: 100%;
-  background: #0e0f15;
-  border: 1px solid #4d3b4d;
-  border-radius: 8px;
-  padding: 12px;
-  min-height: 94px;
-  color: #ead7e5;
-  font:
-    11px/1.8 ui-monospace,
-    monospace;
-  resize: vertical;
-  overflow-wrap: anywhere;
-}
-.successActions {
-  display: flex;
-  gap: 10px;
-}
 .endpoint {
   width: 100%;
   border-top: 1px solid var(--mcp-line);
@@ -803,11 +783,6 @@
 }
 .success .successHint {
   font-size: 10px;
-}
-.tokenHidden {
-  display: flex;
-  align-items: center;
-  gap: 8px;
 }
 @media (max-width: 1000px) {
   .main {

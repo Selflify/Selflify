@@ -22,7 +22,7 @@ export function SetupAccessGate({ canUnlock, message }: SetupAccessGateProps) {
       </Stack>
 
       {canUnlock ? (
-        <form action={unlockSetupAccessAction}>
+        <form className="form-layout" action={unlockSetupAccessAction}>
           <Stack gap="4">
             <FormField
               label="Setup token"
@@ -40,7 +40,13 @@ export function SetupAccessGate({ canUnlock, message }: SetupAccessGateProps) {
               />
             </FormField>
 
-            <Button bg="action.500" color="white" _hover={{ bg: "action.600" }} type="submit">
+            <Button
+              bg="action.500"
+              color="white"
+              _hover={{ bg: "action.600" }}
+              alignSelf="flex-start"
+              type="submit"
+            >
               Continue to setup
             </Button>
           </Stack>

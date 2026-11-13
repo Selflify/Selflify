@@ -119,7 +119,7 @@ export default async function SiteDetailsPage({ params, searchParams }: SiteDeta
               preview root.
             </Text>
 
-            <form action={updateSiteAction.bind(null, site.slug)}>
+            <form className="form-layout" action={updateSiteAction.bind(null, site.slug)}>
               <input type="hidden" name="configRevision" value={String(config.configRevision)} />
               <Stack gap="4" mt="6">
                 <FormField
@@ -179,7 +179,10 @@ export default async function SiteDetailsPage({ params, searchParams }: SiteDeta
               the canonical subdomain and wildcard hosts.
             </Text>
 
-            <form action={updateSiteStableAliasAction.bind(null, site.slug)}>
+            <form
+              className="form-layout"
+              action={updateSiteStableAliasAction.bind(null, site.slug)}
+            >
               <input type="hidden" name="configRevision" value={String(config.configRevision)} />
               <Stack gap="4" mt="6">
                 <FormField
@@ -270,6 +273,7 @@ export default async function SiteDetailsPage({ params, searchParams }: SiteDeta
             </Text>
 
             <form
+              className="form-layout"
               id="site-preview-access-form"
               action={updateSitePreviewAccessAction.bind(null, site.slug)}
             >
@@ -314,6 +318,7 @@ export default async function SiteDetailsPage({ params, searchParams }: SiteDeta
             </form>
 
             <form
+              className="form-layout"
               id="site-preview-access-reset-form"
               action={resetSitePreviewAccessAction.bind(null, site.slug)}
             >
@@ -356,7 +361,7 @@ export default async function SiteDetailsPage({ params, searchParams }: SiteDeta
               server files and managed DNS records at the same time.
             </Text>
 
-            <form action={deleteSiteAction.bind(null, site.slug)}>
+            <form className="form-layout" action={deleteSiteAction.bind(null, site.slug)}>
               <input type="hidden" name="configRevision" value={String(config.configRevision)} />
               <DeleteSiteDialog siteSlug={site.slug} siteDisplayName={siteDisplayName} />
             </form>

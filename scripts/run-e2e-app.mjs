@@ -8,6 +8,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const rootDir = path.resolve(__dirname, "..");
 const e2eRoot = path.join(rootDir, ".tmp", "playwright-runtime");
 const fakeCaddyPath = path.join(e2eRoot, "fake-caddy.sh");
+const fakeRunnerPath = path.join(e2eRoot, "container-runner.sock");
 
 function createMockCloudflareServer() {
   const zoneId = "zone-e2e";
@@ -189,6 +190,8 @@ esac
 
   await writeFile(fakeCaddyPath, fakeCaddyScript, "utf8");
   await chmod(fakeCaddyPath, 0o755);
+  // Enable the container configuration form without starting Docker.
+  await writeFile(fakeRunnerPath, "");
 }
 
 async function main() {
@@ -219,6 +222,7 @@ async function main() {
       SELFLIFY_CLOUDFLARE_API_BASE_URL: mockCloudflareBaseUrl,
       SELFLIFY_CONFIG_PATH: path.join(e2eRoot, "selflify.config.json"),
       SELFLIFY_CADDY_CONFIG_PATH: path.join(e2eRoot, "Caddyfile"),
+      SELFLIFY_CONTAINER_RUNNER_SOCKET: fakeRunnerPath,
       SELFLIFY_CADDY_BIN: fakeCaddyPath,
       SELFLIFY_BACKUP_ROOT: path.join(e2eRoot, "backups"),
       SELFLIFY_PREVIEW_ROOT: path.join(e2eRoot, "var-www"),

@@ -27,3 +27,43 @@ textarea,
 select {
   font: inherit;
 }
+
+.form-layout {
+  container-type: inline-size;
+  min-inline-size: 0;
+}
+
+.form-layout fieldset {
+  min-inline-size: 0;
+}
+
+.form-choice {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  align-self: flex-start;
+  cursor: pointer;
+}
+
+.form-select {
+  width: 100%;
+  min-height: 2.5rem;
+  padding-inline: 0.625rem;
+  color: inherit;
+  background: transparent;
+  border: 1px solid var(--chakra-colors-border, rgba(255, 255, 255, 0.16));
+  border-radius: 0.375rem;
+}
+
+@media (min-width: 64rem) {
+  .form-layout
+    :is(input:not([type="radio"], [type="checkbox"], [type="hidden"]), textarea, select) {
+    max-inline-size: min(50cqi, 32rem);
+  }
+
+  .form-layout button {
+    max-inline-size: 50cqi;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+}

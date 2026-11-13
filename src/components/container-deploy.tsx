@@ -38,7 +38,7 @@ export function ContainerSettings({
       {!enabled ? (
         <Text mt="3">Enable the container runner to edit these settings.</Text>
       ) : (
-        <form action={saveContainerAction.bind(null, site.slug)}>
+        <form className="form-layout" action={saveContainerAction.bind(null, site.slug)}>
           <input type="hidden" name="configRevision" value={revision} />
           <Stack gap="4" mt="5">
             <FormField label="Image repository" htmlFor="container-repository">
@@ -156,7 +156,10 @@ export function ContainerDeploy({ site, revision, url }: Props & { url: string }
             <Text fontFamily="mono" overflowWrap="anywhere">
               {container.previous.image}
             </Text>
-            <form action={publishContainerAction.bind(null, site.slug, true)}>
+            <form
+              className="form-layout"
+              action={publishContainerAction.bind(null, site.slug, true)}
+            >
               <input type="hidden" name="configRevision" value={revision} />
               <FormSubmitButton
                 variant="outline"
@@ -170,7 +173,10 @@ export function ContainerDeploy({ site, revision, url }: Props & { url: string }
           </Stack>
         ) : null}
         {enabled ? (
-          <form action={publishContainerAction.bind(null, site.slug, false)}>
+          <form
+            className="form-layout"
+            action={publishContainerAction.bind(null, site.slug, false)}
+          >
             <input type="hidden" name="configRevision" value={revision} />
             <Stack gap="3">
               <FormField

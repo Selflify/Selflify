@@ -14,6 +14,8 @@ import {
 } from "@chakra-ui/react";
 import { useFormStatus } from "react-dom";
 
+import { FormField } from "@/components/form-field";
+
 const dangerButtonStyles: ButtonProps = {
   borderColor: "rgba(214,58,99,0.34)",
   bg: "rgba(161,33,65,0.18)",
@@ -131,6 +133,7 @@ export function DeleteSiteDialog({ siteSlug, siteDisplayName }: DeleteSiteDialog
           <Dialog.Backdrop bg="rgba(0,0,0,0.66)" backdropFilter="blur(6px)" />
           <Dialog.Positioner px={{ base: "4", md: "6" }}>
             <Dialog.Content
+              className="form-layout"
               rounded="2xl"
               borderWidth="1px"
               borderColor="rgba(255,255,255,0.08)"
@@ -169,17 +172,18 @@ export function DeleteSiteDialog({ siteSlug, siteDisplayName }: DeleteSiteDialog
                     />
                   </Stack>
 
-                  <Stack gap="2">
-                    <Text fontSize="sm" fontWeight="700" color="whiteAlpha.900">
-                      Type &quot;{siteDisplayName}&quot; to confirm deletion
-                    </Text>
+                  <FormField
+                    htmlFor="delete-site-confirmation"
+                    label={`Type “${siteDisplayName}” to confirm deletion`}
+                  >
                     <Input
+                      id="delete-site-confirmation"
                       value={confirmValue}
                       onChange={(event) => setConfirmValue(event.target.value)}
                       placeholder={siteDisplayName}
                       bg="rgba(255,255,255,0.04)"
                     />
-                  </Stack>
+                  </FormField>
                 </Stack>
               </Dialog.Body>
 
@@ -190,7 +194,7 @@ export function DeleteSiteDialog({ siteSlug, siteDisplayName }: DeleteSiteDialog
                 justify="flex-end"
                 align="center"
                 gap="3"
-                wrap="nowrap"
+                wrap="wrap"
               >
                 <Button
                   type="button"

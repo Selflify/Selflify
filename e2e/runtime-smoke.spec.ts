@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
 import crypto from "node:crypto";
+import { readFile } from "node:fs/promises";
 
 import { attachRuntimeErrorTracker } from "./support/runtime-errors";
 
@@ -9,10 +10,28 @@ const updatedCloudflareToken = "cfut_abcdefghijklmnopqrstuvwxyzABCDEF1234567890"
 test("setup, login and key admin pages render without runtime errors", async ({ page }) => {
   const runtimeErrors = attachRuntimeErrorTracker(page);
 
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  async function expectCompactForm() {
+    const oversized = await page.locator(".form-layout").evaluateAll((forms) =>
+      forms.flatMap((form) => {
+        const half = form.getBoundingClientRect().width / 2;
+        return Array.from(
+          form.querySelectorAll(
+            'input:not([type="hidden"],[type="radio"],[type="checkbox"]), textarea, select, button',
+          ),
+        )
+          .filter((control) => control.getBoundingClientRect().width > half + 1)
+          .map((control) => control.id || control.textContent?.trim());
+      }),
+    );
+    expect(oversized).toEqual([]);
+  }
+
   await page.goto("/setup");
   await expect(page.getByRole("heading", { name: "Create account" })).toBeVisible();
   await runtimeErrors.assertClean();
 
+  await expectCompactForm();
   await page.locator("#setup-login").fill("owner");
   await page.locator("#setup-password").fill("supersecret123");
   await page.locator("#setup-password-confirm").fill("supersecret123");
@@ -31,6 +50,7 @@ test("setup, login and key admin pages render without runtime errors", async ({ 
   await expect(page.getByRole("heading", { name: "Sign in" })).toBeVisible();
   await runtimeErrors.assertClean();
 
+  await expectCompactForm();
   await page.locator("#login-form-login").fill("owner");
   await page.locator("#login-form-password").fill("supersecret123");
   await page.getByRole("button", { name: "Sign in" }).click();
@@ -44,6 +64,7 @@ test("setup, login and key admin pages render without runtime errors", async ({ 
 
   await page.getByRole("button", { name: "Create site" }).click();
   await expect(page.getByRole("dialog")).toBeVisible();
+  await expectCompactForm();
   await page.locator("#create-site-slug").fill("app");
   await page.locator("#create-site-name").fill("App");
   await page.locator("#create-site-main-branch").fill("stable");
@@ -63,6 +84,7 @@ test("setup, login and key admin pages render without runtime errors", async ({ 
   await page.goto("/sites/app?view=configuration");
   await expect(page.getByRole("heading", { name: "Stable alias (optional)" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Deploy tokens", exact: true })).toBeVisible();
+  await expectCompactForm();
   await expect(page.getByLabel("Allow stable deployments")).not.toBeChecked();
   await page.locator("#deploy-token-name").fill("Runtime smoke CI");
   await page
@@ -71,12 +93,28 @@ test("setup, login and key admin pages render without runtime errors", async ({ 
   await page.getByRole("button", { name: "Create token", exact: true }).click();
   const newToken = page.getByRole("textbox", { name: "New deploy token" });
   await expect(newToken).toBeVisible();
-  expect(await newToken.inputValue()).toMatch(/^slf_[a-f0-9-]{36}\.[A-Za-z0-9_-]{43}$/);
-  await page.getByRole("button", { name: "Hide token" }).click();
+  await expect(newToken).toHaveValue(/^slf_[a-f0-9-]{36}\.[A-Za-z0-9_-]{43}$/);
+  const tokenValue = await newToken.inputValue();
+  await expect(
+    page.getByRole("heading", { name: "Token created: Runtime smoke CI" }),
+  ).toBeVisible();
+  await expect(page.getByText("Runtime smoke CI", { exact: true })).toHaveCount(0);
+  await expectCompactForm();
+  await page.context().grantPermissions(["clipboard-read", "clipboard-write"]);
+  await page.getByRole("button", { name: "Copy token" }).click();
+  await expect(page.getByRole("status").filter({ hasText: "Token copied." })).toBeVisible();
+  expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(tokenValue);
+  const [download] = await Promise.all([
+    page.waitForEvent("download"),
+    page.getByRole("button", { name: "Download token" }).click(),
+  ]);
+  expect(download.suggestedFilename()).toBe("selflify-deploy-token.txt");
+  expect(await readFile((await download.path())!, "utf8")).toBe(tokenValue);
+  await page.getByRole("button", { name: "Done" }).click();
   await expect(newToken).not.toBeVisible();
   await page.getByRole("button", { name: "Revoke", exact: true }).click();
   await page.getByRole("alertdialog").getByRole("button", { name: "Revoke", exact: true }).click();
-  await expect(page.getByText("preview:write · Expires", { exact: false })).toContainText(
+  await expect(page.getByText("Preview deployments · Expires", { exact: false })).toContainText(
     "Revoked",
   );
   await runtimeErrors.assertClean();
@@ -86,7 +124,7 @@ test("setup, login and key admin pages render without runtime errors", async ({ 
     .locator("#deploy-token-expiry")
     .fill(new Date(Date.now() + 30 * 86400_000).toISOString().slice(0, 10));
   await page.getByLabel("Allow preview deployments", { exact: true }).uncheck();
-  await page.getByLabel("Allow MCP read access", { exact: true }).check();
+  await page.getByLabel("MCP permissions", { exact: true }).selectOption("read");
   await page.getByRole("button", { name: "Create token", exact: true }).click();
   await expect(newToken).toBeVisible();
   const mcpToken = await newToken.inputValue();
@@ -123,10 +161,12 @@ test("setup, login and key admin pages render without runtime errors", async ({ 
   expect((await sites.json()).result.structuredContent.sites).toEqual([
     expect.objectContaining({ slug: "app" }),
   ]);
-  await page.getByRole("button", { name: "Hide token" }).click();
+  await page.getByRole("button", { name: "Done" }).click();
   await page.getByRole("button", { name: "Revoke", exact: true }).click();
   await page.getByRole("alertdialog").getByRole("button", { name: "Revoke", exact: true }).click();
-  await expect(page.getByText("mcp:read · Expires", { exact: false })).toContainText("Revoked");
+  await expect(page.getByText("MCP read access · Expires", { exact: false })).toContainText(
+    "Revoked",
+  );
   const revokedMcp = await page.request.post("/mcp", {
     headers: mcpHeaders,
     data: { jsonrpc: "2.0", id: 3, method: "tools/list", params: {} },
@@ -147,12 +187,45 @@ test("setup, login and key admin pages render without runtime errors", async ({ 
   await expect(page.locator("#site-settings-stable-alias")).toHaveValue("www.example.com");
   await runtimeErrors.assertClean();
 
+  // Configuring the repository does not require a running container.
+  await page.getByLabel("Image repository").fill("registry.example.com/account/storybook");
+  await page.getByRole("button", { name: "Save container settings" }).click();
+  await expect
+    .poll(() => new URL(page.url()).searchParams.get("notice"))
+    .toBe("Container settings saved.");
+  const previewMode = page.getByRole("radio", { name: "Preview deployments", exact: true });
+  const containerMode = page.getByRole("radio", { name: "Container deployments", exact: true });
+  await expect(previewMode).toBeChecked();
+  await containerMode.check();
+  await expect(previewMode).not.toBeChecked();
+  await expectCompactForm();
+  await page
+    .getByRole("heading", { name: "Deploy tokens", exact: true })
+    .locator("..")
+    .screenshot({ path: "output/playwright/deploy-token-form-desktop.png" });
+  await expect(page.getByLabel("MCP permissions", { exact: true })).toHaveCount(0);
+  await page.locator("#deploy-token-name").fill("Container CI");
+  await page
+    .locator("#deploy-token-expiry")
+    .fill(new Date(Date.now() + 30 * 86400_000).toISOString().slice(0, 10));
+  await page.getByRole("button", { name: "Create token", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Token created: Container CI" })).toBeVisible();
+  await expect(page.getByText(/^Container deployments · Expires /)).toBeVisible();
+  await page.setViewportSize({ width: 390, height: 844 });
+  const tokenRightEdge = await newToken.evaluate((field) => field.getBoundingClientRect().right);
+  expect(tokenRightEdge).toBeLessThan(390);
+  const downloadButton = page.getByRole("button", { name: "Download token" });
+  await downloadButton.scrollIntoViewIfNeeded();
+  await expect(downloadButton).toBeInViewport();
+  await page.setViewportSize({ width: 1440, height: 1000 });
+
   await page.goto("/settings");
   await expect(page.getByRole("heading", { name: "Global settings" })).toBeVisible();
   await expect(page.getByText("Cloudflare DNS records")).toBeVisible();
   await expect(page.getByRole("cell", { name: "app.example.dev", exact: true })).toBeVisible();
   await expect(page.getByText("********9012")).toBeVisible();
   await page.getByLabel("Edit token").click();
+  await expectCompactForm();
   await page.locator("#settings-cloudflare-api-token").fill(updatedCloudflareToken);
   await page.getByRole("button", { name: "Save token" }).click();
   await expect(page).toHaveURL(/\/settings(?:\?|$)/);
@@ -178,6 +251,7 @@ test("setup, login and key admin pages render without runtime errors", async ({ 
   await page.setViewportSize({ width: 1440, height: 1100 });
   await expect(page.getByRole("heading", { name: "Choose its access" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Create access token" })).toBeDisabled();
+  await expectCompactForm();
   await page.getByLabel("Connection name", { exact: true }).fill("Development agent");
   await page.getByRole("checkbox", { name: "Access App", exact: true }).check();
   await page.getByRole("checkbox", { name: "Access Docs", exact: true }).check();

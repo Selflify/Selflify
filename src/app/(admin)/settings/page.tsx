@@ -58,7 +58,7 @@ export default async function SettingsPage({ searchParams }: SettingsPageProps) 
           Keep the main domain, public IP and Caddy contact email filled in at all times.
         </Text>
 
-        <form action={saveServerSettingsAction}>
+        <form className="form-layout" action={saveServerSettingsAction}>
           <input type="hidden" name="configRevision" value={String(config.configRevision)} />
           <Stack gap="4" mt="4">
             <FormField label="Domain" htmlFor="settings-domain">
@@ -120,7 +120,7 @@ export default async function SettingsPage({ searchParams }: SettingsPageProps) 
           Login and password for entering the panel.
         </Text>
 
-        <form action={saveAdminAccessAction}>
+        <form className="form-layout" action={saveAdminAccessAction}>
           <input type="hidden" name="configRevision" value={String(config.configRevision)} />
           <Stack gap="4" mt="4">
             <FormField label="Login" htmlFor="settings-admin-login">

@@ -37,6 +37,7 @@ export function CreateSiteDialog({ configRevision, domain }: CreateSiteDialogPro
         <Dialog.Backdrop bg="rgba(0,0,0,0.66)" backdropFilter="blur(6px)" />
         <Dialog.Positioner px={{ base: "4", md: "6" }}>
           <Dialog.Content
+            className="form-layout"
             rounded="2xl"
             borderWidth="1px"
             borderColor="rgba(255,255,255,0.08)"

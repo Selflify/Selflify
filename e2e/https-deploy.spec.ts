@@ -45,7 +45,7 @@ test("deploys preview and stable builds through the CLI and revokes access", asy
     const input = page.getByRole("textbox", { name: "New deploy token" });
     await expect(input).toBeVisible();
     const value = await input.inputValue();
-    await page.getByRole("button", { name: "Hide token" }).click();
+    await page.getByRole("button", { name: "Done" }).click();
     return value;
   }
   const deploy = (token: string, name: string) =>

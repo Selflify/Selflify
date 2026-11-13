@@ -5,7 +5,12 @@ import { redirect } from "next/navigation";
 import { requireAdminSession } from "@/lib/auth/guards";
 import { createDeployToken, revokeDeployToken } from "@/lib/deploy/tokens";
 
-export type DeployTokenActionState = { token?: string; error?: string; revision?: number };
+export type DeployTokenActionState = {
+  token?: string;
+  name?: string;
+  error?: string;
+  revision?: number;
+};
 
 export async function createDeployTokenAction(
   siteSlug: string,
@@ -14,19 +19,22 @@ export async function createDeployTokenAction(
 ): Promise<DeployTokenActionState> {
   await requireAdminSession();
   const revision = Number(form.get("configRevision"));
+  const name = String(form.get("name") ?? "");
+  const deployment = form.get("deployment");
+  const mcpAccess = form.get("mcpAccess");
   try {
     const token = await createDeployToken(siteSlug, {
-      name: String(form.get("name") ?? ""),
+      name,
       expiresAt: `${String(form.get("expiresAt") ?? "")}T23:59:59.000Z`,
       stable: form.get("stable") === "on",
-      container: form.get("container") === "on",
-      preview: form.get("preview") === "on",
-      mcpRead: form.get("mcpRead") === "on",
-      mcpWrite: form.get("mcpWrite") === "on",
+      container: deployment === "container",
+      preview: deployment === "preview" || form.get("preview") === "on",
+      mcpRead: mcpAccess === "read",
+      mcpWrite: mcpAccess === "write",
       revision,
     });
     revalidatePath(`/sites/${siteSlug}`);
-    return { token, revision: revision + 1 };
+    return { token, name: name.trim(), revision: revision + 1 };
   } catch (error) {
     return { error: error instanceof Error ? error.message : "Could not create deploy token." };
   }

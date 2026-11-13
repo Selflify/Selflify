@@ -9,7 +9,6 @@ import {
   ArrowRight,
   Check,
   CheckCheck,
-  Copy,
   Eye,
   Globe2,
   LockKeyhole,
@@ -25,6 +24,7 @@ import {
   type McpConsentState,
 } from "@/app/mcp/authorize/actions";
 import { FormSubmitButton } from "@/components/form-submit-button";
+import { IssuedToken } from "@/components/issued-token";
 import type { ConsentRequest } from "@/lib/mcp/oauth";
 import type { McpScope } from "@/lib/mcp/oauth-urls";
 import styles from "./mcp-consent.module.css";
@@ -101,9 +101,6 @@ export function McpConsent({
   const [selectedScopes, setSelectedScopes] = useState<string[]>(["mcp:read"]);
   const [name, setName] = useState("");
   const [search, setSearch] = useState("");
-  const [copied, setCopied] = useState(false);
-  const [copyError, setCopyError] = useState(false);
-  const [hiddenToken, setHiddenToken] = useState<string>();
   const [dismissedToken, setDismissedToken] = useState<string>();
   const allSites = siteMode === "all";
   const canGrant = (allSites || selectedSites.length > 0) && (!!request || !!name.trim());
@@ -117,16 +114,6 @@ export function McpConsent({
 
   function toggle<T extends string>(value: T, entries: T[], set: (entries: T[]) => void) {
     set(entries.includes(value) ? entries.filter((entry) => entry !== value) : [...entries, value]);
-  }
-
-  async function copyToken() {
-    try {
-      await navigator.clipboard.writeText(state.token!);
-      setCopied(true);
-      setCopyError(false);
-    } catch {
-      setCopyError(true);
-    }
   }
 
   return (
@@ -209,7 +196,7 @@ export function McpConsent({
           </Link>
         </Box>
 
-        <Box className={styles.panel}>
+        <Box className={`${styles.panel} form-layout`}>
           {state.token && state.token !== dismissedToken ? (
             <Box className={styles.success}>
               <span className={styles.successIcon}>
@@ -221,39 +208,13 @@ export function McpConsent({
                 Copy the token now and store it in the secret storage of your MCP client. Selflify
                 will not show it again.
               </Text>
-              {hiddenToken !== state.token ? (
-                <>
-                  <label htmlFor="mcp-access-token" className={styles.fieldLabel}>
-                    Access token
-                  </label>
-                  <textarea
-                    id="mcp-access-token"
-                    className={styles.token}
-                    readOnly
-                    value={state.token}
-                    onFocus={(event) => event.target.select()}
-                    spellCheck={false}
-                  />
-                  <div className={styles.successActions}>
-                    <Button className={styles.primaryButton} onClick={copyToken}>
-                      {copied ? <Check size={16} /> : <Copy size={16} />}
-                      {copied ? "Copied" : "Copy token"}
-                    </Button>
-                    <Button variant="ghost" onClick={() => setHiddenToken(state.token)}>
-                      Hide token
-                    </Button>
-                  </div>
-                  {copyError && (
-                    <p role="alert" className={styles.error}>
-                      Select the token above and copy it manually.
-                    </p>
-                  )}
-                </>
-              ) : (
-                <p className={styles.tokenHidden}>
-                  <LockKeyhole size={15} /> Token hidden
-                </p>
-              )}
+              <IssuedToken
+                key={state.token}
+                id="mcp-access-token"
+                label="Access token"
+                token={state.token}
+                filename="selflify-mcp-token.txt"
+              />
               <div className={styles.endpoint}>
                 <span>MCP endpoint</span>
                 <code>{resource}</code>
@@ -264,11 +225,9 @@ export function McpConsent({
               </Text>
               <Button
                 variant="ghost"
+                alignSelf="flex-start"
                 onClick={() => {
                   setDismissedToken(state.token);
-                  setHiddenToken(state.token);
-                  setCopied(false);
-                  setCopyError(false);
                   setName("");
                   setSelectedSites([]);
                   setSelectedScopes(["mcp:read"]);
