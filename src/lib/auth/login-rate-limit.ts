@@ -6,6 +6,7 @@ const DEFAULT_MAX_ATTEMPTS = 5;
 const MAX_BUCKETS = 10_000;
 
 type AttemptBucket = {
+  inFlight: number;
   failedAttempts: number;
   windowStartedAt: number;
   blockedUntil: number;
@@ -68,6 +69,7 @@ function buildFingerprintKey(fingerprint: string): string {
 
 function getFreshBucket(now: number): AttemptBucket {
   return {
+    inFlight: 0,
     failedAttempts: 0,
     windowStartedAt: now,
     blockedUntil: 0,
@@ -155,6 +157,24 @@ export function assertLoginAllowed(
   const normalizedFingerprint = normalizeFingerprint(fingerprint);
   assertBucketAllowed(buildFingerprintKey(normalizedFingerprint), now);
   assertBucketAllowed(buildPerLoginKey(login), now);
+}
+
+export function reserveLoginAttempt(
+  login: string,
+  fingerprint: string | null | undefined,
+  now = Date.now(),
+): () => void {
+  assertLoginAllowed(login, fingerprint, now);
+  const bucket = getBucket(buildPerLoginKey(login), now);
+  if (bucket.inFlight >= getMaxAttempts()) throw new LoginRateLimitError(1000);
+  bucket.inFlight += 1;
+  let released = false;
+  return () => {
+    if (!released) {
+      bucket.inFlight -= 1;
+      released = true;
+    }
+  };
 }
 
 export function recordFailedLoginAttempt(

@@ -5,6 +5,7 @@ import {
   clearLoginRateLimit,
   LoginRateLimitError,
   recordFailedLoginAttempt,
+  reserveLoginAttempt,
   resetLoginRateLimitStore,
   resolveLoginAttemptFingerprint,
 } from "@/lib/auth/login-rate-limit";
@@ -51,6 +52,18 @@ describe("login rate limit", () => {
     }
     expect(() => assertLoginAllowed("another", "new", 1001)).toThrow(LoginRateLimitError);
     expect(() => assertLoginAllowed("another", "new", 20 * 60 * 1000)).not.toThrow();
+  });
+
+  it("bounds concurrent password checks for one account despite changing fingerprints", () => {
+    const release = Array.from({ length: 5 }, (_, index) =>
+      reserveLoginAttempt("owner", `ip-${index}`, 1000),
+    );
+    expect(() => reserveLoginAttempt("owner", "other", 1001)).toThrow(LoginRateLimitError);
+    release[0]();
+    release[0]();
+    const next = reserveLoginAttempt("owner", "other", 1002);
+    next();
+    release.forEach((done) => done());
   });
 
   it("clears the limiter after a successful login", () => {
