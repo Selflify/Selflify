@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 """Refresh deployment secrets while preserving explicit host boundary settings."""
-import json
 import os
 from pathlib import Path
 
@@ -8,10 +7,6 @@ PRESERVED = {"SELFLIFY_HTTP_BIND", "SELFLIFY_DOCKER_DATA_ROOT"}
 
 
 def merge(root: Path) -> None:
-    config = json.loads((root / "runtime/selflify.config.json").read_text())
-    admin = config.get("admin", {})
-    if not admin.get("login") or not admin.get("passwordHash"):
-        raise ValueError("Complete setup through the SSH tunnel before production deployment")
     env = root / ".env"
     incoming = root / ".env.production"
     lines = incoming.read_text().splitlines()

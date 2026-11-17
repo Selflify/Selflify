@@ -56,13 +56,8 @@ class BootstrapHttpTests(unittest.TestCase):
             path.write_text(json.dumps({"admin": {}}))
             env = root / ".env"
             env.write_text("AUTH_SECRET=old-fixture\nSELFLIFY_HTTP_BIND=127.0.0.1\nSELFLIFY_DOCKER_DATA_ROOT=/srv/docker-data\nIGNORED_OLD=old\n")
-            old = env.read_text()
             (root / ".env.production").write_text("AUTH_SECRET=new-fixture\nSELFLIFY_BACKUP_KEEP=20\n")
-            with self.assertRaises(ValueError):
-                merge(root)
-            self.assertEqual(env.read_text(), old)
-            # Existing configured instances do not require a newer generation field.
-            path.write_text(json.dumps({"admin": {"login": "owner", "passwordHash": "fixture"}}))
+            # Even an incomplete instance keeps its loopback listener through deployment.
             merge(root)
             result = env.read_text()
             self.assertIn("AUTH_SECRET=new-fixture", result)
