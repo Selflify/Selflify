@@ -70,14 +70,14 @@ jobs:
       - name: Container runner publication control
         run: |
           set -euo pipefail
-          docker pull nginx:stable-alpine
-          digest=$(docker image inspect nginx:stable-alpine --format '{{index .RepoDigests 0}}')
+          image=docker.io/nginxinc/nginx-unprivileged@sha256:f5116ed4606f3eb015dd4a8e28cb9b351476dc0ad4bc6e9f93b19cec130cdf03
+          docker pull "$image"
           cd /opt/selflify
           app=$(docker compose ps -q selflify)
-          docker exec -e RUNNER_TEST_IMAGE="$digest" "$app" node --input-type=module -e '
+          docker exec -e RUNNER_TEST_IMAGE="$image" "$app" node --input-type=module -e '
             import http from "node:http";
-            const image = "docker.io/library/nginx@" + process.env.RUNNER_TEST_IMAGE.split("@")[1];
-            const body = JSON.stringify({release:{id:"364ba140-a198-4132-b02b-6f5456ff2e4a",image,port:80,healthPath:"/",publishedAt:new Date().toISOString()},secrets:{env:{}}});
+            const image = process.env.RUNNER_TEST_IMAGE;
+            const body = JSON.stringify({release:{id:"364ba140-a198-4132-b02b-6f5456ff2e4a",image,port:8080,healthPath:"/",publishedAt:new Date().toISOString()},secrets:{env:{}}});
             await new Promise((resolve,reject)=>{
               const req=http.request({socketPath:"/run/selflify-runner/runner.sock",path:"/prepare",method:"POST",headers:{"Content-Type":"application/json","Content-Length":Buffer.byteLength(body)}},res=>{
                 let text="";res.on("data",chunk=>text+=chunk);res.on("end",()=>res.statusCode===200?resolve():reject(new Error(text)));
