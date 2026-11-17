@@ -61,6 +61,7 @@ jobs:
           sudo python3 bootstrap/configure-mptcp.py
           docker compose up -d --pull never
           bash bootstrap/verify-mptcp-disabled.sh -f docker-compose.yml
+          test "$(docker compose port caddy 80)" = "127.0.0.1:80"
           for _ in $(seq 1 60); do
             if curl -fsS http://127.0.0.1/setup >/dev/null; then exit 0; fi
             sleep 2
@@ -76,6 +77,8 @@ jobs:
           cd /opt/selflify
           sudo python3 bootstrap/enable-public-http.py
           grep -q '^SELFLIFY_HTTP_BIND=0.0.0.0$' .env
+          docker compose up -d --pull never caddy
+          test "$(docker compose port caddy 80)" = "0.0.0.0:80"
       - name: Stop isolated stack
         if: always()
         run: |
