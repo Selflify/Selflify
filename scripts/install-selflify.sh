@@ -218,7 +218,7 @@ mkdir -p \
 
 write_runtime_templates "${INSTALL_DIR}" "${SERVER_IP}" "${AUTH_SECRET_VALUE}"
 write_env_file "${INSTALL_DIR}" "${AUTH_SECRET_VALUE}" "${SETUP_TOKEN_VALUE}"
-(cd "${INSTALL_DIR}" && python3 bootstrap/secure-bootstrap-http.py)
+(cd "${INSTALL_DIR}" && $SUDO python3 bootstrap/secure-bootstrap-http.py)
 
 rm -rf "${TMP_DIR}"
 
@@ -241,4 +241,4 @@ printf '  ssh -N -L 8080:127.0.0.1:80 <ssh-user>@%s\n' "${SERVER_IP:-<server-ip>
 printf 'Then open http://127.0.0.1:8080/setup. Do not enter setup secrets over public HTTP.\n'
 printf 'Use the SELFLIFY_SETUP_TOKEN value from %s/.env to unlock setup.\n' "${INSTALL_DIR}"
 printf 'After setup, open the configured HTTPS domain. To enable public HTTP redirects, run:\n'
-printf '  cd %s && python3 bootstrap/enable-public-http.py && docker compose up -d caddy\n' "${INSTALL_DIR}"
+printf '  cd %s && %spython3 bootstrap/enable-public-http.py && docker compose up -d caddy\n' "${INSTALL_DIR}" "${SUDO:+sudo }"

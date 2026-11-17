@@ -74,7 +74,7 @@ jobs:
       - name: Verify HTTP can open only after setup
         run: |
           cd /opt/selflify
-          python3 bootstrap/enable-public-http.py
+          sudo python3 bootstrap/enable-public-http.py
           grep -q '^SELFLIFY_HTTP_BIND=0.0.0.0$' .env
       - name: Stop isolated stack
         if: always()
