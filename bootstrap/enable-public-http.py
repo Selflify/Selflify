@@ -8,7 +8,7 @@ from pathlib import Path
 def enable(root: Path) -> None:
     config = json.loads((root / "runtime/selflify.config.json").read_text())
     admin = config.get("admin", {})
-    if not admin.get("login") or not admin.get("passwordHash") or not admin.get("configuredAt"):
+    if not admin.get("login") or not admin.get("passwordHash"):
         raise ValueError("Complete setup through the SSH tunnel before enabling public HTTP")
     if not config.get("server", {}).get("domain"):
         raise ValueError("Configure the HTTPS domain first")

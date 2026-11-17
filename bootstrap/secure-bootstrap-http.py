@@ -8,7 +8,7 @@ from pathlib import Path
 def secure(root: Path) -> None:
     config = json.loads((root / "runtime/selflify.config.json").read_text())
     admin = config.get("admin", {})
-    if admin.get("login") and admin.get("passwordHash") and admin.get("configuredAt"):
+    if admin.get("login") and admin.get("passwordHash"):
         return
     env = root / ".env"
     rows = [line for line in env.read_text().splitlines() if not line.startswith("SELFLIFY_HTTP_BIND=")]

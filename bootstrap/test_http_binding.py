@@ -15,6 +15,7 @@ def load(name):
 
 secure = load("secure-bootstrap-http").secure
 enable = load("enable-public-http").enable
+merge = load("merge-deploy-env").merge
 
 
 class BootstrapHttpTests(unittest.TestCase):
@@ -46,6 +47,31 @@ class BootstrapHttpTests(unittest.TestCase):
             (root / "runtime/selflify.config.json").write_text(json.dumps({"admin": {"login": "owner", "passwordHash": "fixture", "configuredAt": "now"}, "server": {}}))
             with self.assertRaises(ValueError):
                 enable(root)
+
+    def test_deployment_preserves_host_policy_and_does_not_open_incomplete_setup(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            (root / "runtime").mkdir()
+            path = root / "runtime/selflify.config.json"
+            path.write_text(json.dumps({"admin": {}}))
+            env = root / ".env"
+            env.write_text("AUTH_SECRET=old-fixture\nSELFLIFY_HTTP_BIND=127.0.0.1\nSELFLIFY_DOCKER_DATA_ROOT=/srv/docker-data\nIGNORED_OLD=old\n")
+            old = env.read_text()
+            (root / ".env.production").write_text("AUTH_SECRET=new-fixture\nSELFLIFY_BACKUP_KEEP=20\n")
+            with self.assertRaises(ValueError):
+                merge(root)
+            self.assertEqual(env.read_text(), old)
+            # Existing configured instances do not require a newer generation field.
+            path.write_text(json.dumps({"admin": {"login": "owner", "passwordHash": "fixture"}}))
+            merge(root)
+            result = env.read_text()
+            self.assertIn("AUTH_SECRET=new-fixture", result)
+            self.assertNotIn("old-fixture", result)
+            self.assertNotIn("IGNORED_OLD", result)
+            self.assertIn("SELFLIFY_HTTP_BIND=127.0.0.1", result)
+            self.assertIn("SELFLIFY_DOCKER_DATA_ROOT=/srv/docker-data", result)
+            self.assertFalse((root / ".env.production").exists())
+            self.assertEqual(os.stat(env).st_mode & 0o777, 0o600)
 
 
 if __name__ == "__main__":
