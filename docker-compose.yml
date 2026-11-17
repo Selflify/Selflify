@@ -66,7 +66,7 @@ services:
       deploy-init:
         condition: service_completed_successfully
     ports:
-      - "80:80"
+      - "${SELFLIFY_HTTP_BIND:-0.0.0.0}:80:80"
       - "443:443"
     networks: [default, container_apps]
     volumes:
@@ -147,6 +147,12 @@ services:
         bind:
           create_host_path: false
       - container_runner:/run/selflify-runner
+      - type: bind
+        source: ${SELFLIFY_DOCKER_DATA_ROOT:-/var/lib/docker}
+        target: /host-docker-data
+        read_only: true
+        bind:
+          create_host_path: false
 
 networks:
   container_apps:

@@ -36,6 +36,23 @@ describe("login rate limit", () => {
     );
   });
 
+  it("keeps the account blocked when the supplied client identity changes", () => {
+    for (let attempt = 0; attempt < 5; attempt += 1) {
+      recordFailedLoginAttempt("owner", `client-${attempt}`, 1000 + attempt);
+    }
+    expect(() => assertLoginAllowed("owner", "new-client", 1010)).toThrow(LoginRateLimitError);
+    expect(() => assertLoginAllowed("other", "new-client", 1010)).not.toThrow();
+    expect(() => assertLoginAllowed("owner", "new-client", 20 * 60 * 1000)).not.toThrow();
+  });
+
+  it("bounds unique attacker identities and recovers after expiration", () => {
+    for (let index = 0; index < 5000; index += 1) {
+      assertLoginAllowed(`login-${index}`, `fingerprint-${index}`, 1000);
+    }
+    expect(() => assertLoginAllowed("another", "new", 1001)).toThrow(LoginRateLimitError);
+    expect(() => assertLoginAllowed("another", "new", 20 * 60 * 1000)).not.toThrow();
+  });
+
   it("clears the limiter after a successful login", () => {
     recordFailedLoginAttempt("owner", "203.0.113.10", 2_000);
     clearLoginRateLimit("owner", "203.0.113.10");

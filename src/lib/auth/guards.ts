@@ -4,11 +4,12 @@ import { readOptionalSession } from "@/lib/auth/session";
 import { isAdminConfigured, readSelflifyConfig } from "@/lib/config/service";
 import { safeLoginReturnTo } from "@/lib/auth/redirects";
 
-function isActiveAdminSession(
+export function isActiveAdminSession(
   session: Awaited<ReturnType<typeof readOptionalSession>>,
   config: Awaited<ReturnType<typeof readSelflifyConfig>>,
 ): boolean {
   return Boolean(
+    isAdminConfigured(config) &&
     session?.user &&
     session.user.name === config.admin.login &&
     session.user.adminConfiguredAt === config.admin.configuredAt,

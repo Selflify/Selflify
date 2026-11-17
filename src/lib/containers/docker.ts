@@ -9,7 +9,11 @@ const dockerApi = "/v1.44";
 const ownerLabel = "io.selflify.container-network";
 const releaseLabel = "io.selflify.release";
 
-export function createDockerRuntime(socket: string, network: string) {
+export function createDockerRuntime(
+  socket: string,
+  network: string,
+  assertDiskBudget: () => Promise<void> = async () => {},
+) {
   async function request(
     path: string,
     method = "GET",
@@ -96,9 +100,22 @@ export function createDockerRuntime(socket: string, network: string) {
     );
   }
 
+  async function removeUnusedImage(id: string) {
+    const response = await unixRequest(socket, `${dockerApi}/images/${encodeURIComponent(id)}`, {
+      method: "DELETE",
+    });
+    const status = response.statusCode ?? 500;
+    await readBody(response, 4 * 1024 * 1024);
+    // Docker refuses to delete an image still referenced by another container/tag.
+    if (status !== 404 && status !== 409 && status >= 400) {
+      throw new ContainerError(502, "Could not remove the retired container image.");
+    }
+  }
+
   return {
     check,
     async prepare(release: ContainerRelease, secrets: ContainerSecrets) {
+      await assertDiskBudget();
       await pull(release.image, secrets.registry);
       const image = JSON.parse(
         (await request(`/images/${encodeURIComponent(release.image)}/json`))!,
@@ -106,6 +123,12 @@ export function createDockerRuntime(socket: string, network: string) {
         Id: string;
         Config?: { Volumes?: Record<string, unknown> };
       };
+      try {
+        await assertDiskBudget();
+      } catch (error) {
+        await removeUnusedImage(image.Id).catch(() => {});
+        throw error;
+      }
       if (Object.keys(image.Config?.Volumes ?? {}).length) {
         throw new ContainerError(
           422,
@@ -122,6 +145,7 @@ export function createDockerRuntime(socket: string, network: string) {
           Labels: { [ownerLabel]: network, [releaseLabel]: release.id },
           HostConfig: {
             NetworkMode: network,
+            Sysctls: { "net.mptcp.enabled": "0" },
             CapDrop: ["ALL"],
             SecurityOpt: ["no-new-privileges:true"],
             Memory: 512 * 1024 * 1024,
@@ -138,6 +162,7 @@ export function createDockerRuntime(socket: string, network: string) {
         await check(release);
       } catch (error) {
         await remove(created.Id).catch(() => {});
+        await removeUnusedImage(image.Id).catch(() => {});
         throw error;
       }
     },
@@ -195,6 +220,7 @@ export function createDockerRuntime(socket: string, network: string) {
       });
       const containers = JSON.parse((await request(`/containers/json?${filter}`))!) as Array<{
         Id: string;
+        ImageID: string;
         Created: number;
         Labels: Record<string, string>;
       }>;
@@ -208,6 +234,7 @@ export function createDockerRuntime(socket: string, network: string) {
           Date.now() - container.Created * 1000 > 10 * 60_000
         ) {
           await remove(container.Id);
+          if (container.ImageID) await removeUnusedImage(container.ImageID);
         }
       }
     },

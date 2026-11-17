@@ -1,6 +1,9 @@
+import { createHash } from "node:crypto";
+
 const DEFAULT_WINDOW_MS = 10 * 60 * 1000;
 const DEFAULT_BLOCK_MS = 15 * 60 * 1000;
 const DEFAULT_MAX_ATTEMPTS = 5;
+const MAX_BUCKETS = 10_000;
 
 type AttemptBucket = {
   failedAttempts: number;
@@ -9,6 +12,7 @@ type AttemptBucket = {
 };
 
 const buckets = new Map<string, AttemptBucket>();
+let nextPruneAt = 0;
 
 export class LoginRateLimitError extends Error {
   retryAfterMs: number;
@@ -54,12 +58,12 @@ function normalizeFingerprint(fingerprint: string | null | undefined): string {
   return primary || "global";
 }
 
-function buildPerLoginKey(login: string, fingerprint: string): string {
-  return `login:${fingerprint}:${normalizeLogin(login)}`;
+function buildPerLoginKey(login: string): string {
+  return `login:${createHash("sha256").update(normalizeLogin(login)).digest("hex")}`;
 }
 
 function buildFingerprintKey(fingerprint: string): string {
-  return `fingerprint:${fingerprint}`;
+  return `fingerprint:${createHash("sha256").update(fingerprint).digest("hex")}`;
 }
 
 function getFreshBucket(now: number): AttemptBucket {
@@ -74,6 +78,17 @@ function getBucket(key: string, now: number): AttemptBucket {
   const bucket = buckets.get(key);
 
   if (!bucket) {
+    if (now >= nextPruneAt || buckets.size >= MAX_BUCKETS) {
+      for (const [storedKey, stored] of buckets) {
+        if (stored.blockedUntil <= now && stored.windowStartedAt + getWindowMs() <= now) {
+          buckets.delete(storedKey);
+        }
+      }
+      nextPruneAt = now + 30_000;
+    }
+    if (buckets.size >= MAX_BUCKETS) {
+      throw new LoginRateLimitError(getWindowMs());
+    }
     const fresh = getFreshBucket(now);
     buckets.set(key, fresh);
     return fresh;
@@ -139,7 +154,7 @@ export function assertLoginAllowed(
 ): void {
   const normalizedFingerprint = normalizeFingerprint(fingerprint);
   assertBucketAllowed(buildFingerprintKey(normalizedFingerprint), now);
-  assertBucketAllowed(buildPerLoginKey(login, normalizedFingerprint), now);
+  assertBucketAllowed(buildPerLoginKey(login), now);
 }
 
 export function recordFailedLoginAttempt(
@@ -149,18 +164,16 @@ export function recordFailedLoginAttempt(
 ): void {
   const normalizedFingerprint = normalizeFingerprint(fingerprint);
   recordBucketFailure(buildFingerprintKey(normalizedFingerprint), now);
-  recordBucketFailure(buildPerLoginKey(login, normalizedFingerprint), now);
+  recordBucketFailure(buildPerLoginKey(login), now);
 }
 
-export function clearLoginRateLimit(
-  login: string,
-  fingerprint: string | null | undefined,
-): void {
+export function clearLoginRateLimit(login: string, fingerprint: string | null | undefined): void {
   const normalizedFingerprint = normalizeFingerprint(fingerprint);
   clearBucket(buildFingerprintKey(normalizedFingerprint));
-  clearBucket(buildPerLoginKey(login, normalizedFingerprint));
+  clearBucket(buildPerLoginKey(login));
 }
 
 export function resetLoginRateLimitStore(): void {
   buckets.clear();
+  nextPruneAt = 0;
 }

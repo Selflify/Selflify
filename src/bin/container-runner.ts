@@ -1,6 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 
+import { ContainerError } from "@/lib/containers/runner-contract";
 import { createDockerRuntime } from "@/lib/containers/docker";
 import { createContainerRunner } from "@/lib/containers/runner";
 
@@ -12,7 +13,19 @@ async function main() {
   await fs.mkdir(path.dirname(socket), { recursive: true });
   await fs.rm(socket, { force: true });
   createContainerRunner(
-    createDockerRuntime(process.env.SELFLIFY_DOCKER_SOCKET ?? "/var/run/docker.sock", network),
+    createDockerRuntime(
+      process.env.SELFLIFY_DOCKER_SOCKET ?? "/var/run/docker.sock",
+      network,
+      async () => {
+        const disk = await fs.statfs("/host-docker-data");
+        if (disk.bavail * disk.bsize < 2 * 1024 * 1024 * 1024) {
+          throw new ContainerError(
+            507,
+            "Less than 2 GiB remains on the Docker filesystem. Free space before publishing.",
+          );
+        }
+      },
+    ),
   ).listen(socket);
 }
 

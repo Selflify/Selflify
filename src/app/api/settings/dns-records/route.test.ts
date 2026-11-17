@@ -12,9 +12,8 @@ vi.mock("@/lib/auth/session", () => ({
 }));
 
 vi.mock("@/lib/config/service", async () => {
-  const actual = await vi.importActual<typeof import("@/lib/config/service")>(
-    "@/lib/config/service",
-  );
+  const actual =
+    await vi.importActual<typeof import("@/lib/config/service")>("@/lib/config/service");
 
   return {
     ...actual,
@@ -29,9 +28,8 @@ vi.mock("@/lib/system/cloudflare", () => ({
 }));
 
 vi.mock("@/lib/system/runtime", async () => {
-  const actual = await vi.importActual<typeof import("@/lib/system/runtime")>(
-    "@/lib/system/runtime",
-  );
+  const actual =
+    await vi.importActual<typeof import("@/lib/system/runtime")>("@/lib/system/runtime");
 
   return {
     ...actual,
@@ -46,6 +44,11 @@ describe("GET /api/settings/dns-records", () => {
 
   it("returns expected mocked dns records without calling Cloudflare", async () => {
     const config = createDefaultConfig();
+    config.admin = {
+      login: "owner",
+      passwordHash: "hash",
+      configuredAt: "2026-03-28T00:00:00.000Z",
+    };
     config.server.domain = "example.dev";
     config.server.serverIp = "1.1.1.1";
     config.sites = [
@@ -67,7 +70,7 @@ describe("GET /api/settings/dns-records", () => {
     ];
 
     vi.mocked(readOptionalSession).mockResolvedValue({
-      user: { name: "owner" },
+      user: { name: "owner", adminConfiguredAt: "2026-03-28T00:00:00.000Z" },
       expires: "2026-03-30T00:00:00.000Z",
     });
     vi.mocked(readSelflifyConfig).mockResolvedValue(config);
@@ -92,10 +95,15 @@ describe("GET /api/settings/dns-records", () => {
 
   it("returns missing-token message when Cloudflare is not configured", async () => {
     const config = createDefaultConfig();
+    config.admin = {
+      login: "owner",
+      passwordHash: "hash",
+      configuredAt: "2026-03-28T00:00:00.000Z",
+    };
     config.server.cloudflareApiToken = "";
 
     vi.mocked(readOptionalSession).mockResolvedValue({
-      user: { name: "owner" },
+      user: { name: "owner", adminConfiguredAt: "2026-03-28T00:00:00.000Z" },
       expires: "2026-03-30T00:00:00.000Z",
     });
     vi.mocked(readSelflifyConfig).mockResolvedValue(config);
@@ -116,10 +124,15 @@ describe("GET /api/settings/dns-records", () => {
 
   it("surfaces Cloudflare errors without failing the request", async () => {
     const config = createDefaultConfig();
+    config.admin = {
+      login: "owner",
+      passwordHash: "hash",
+      configuredAt: "2026-03-28T00:00:00.000Z",
+    };
     config.server.cloudflareApiToken = "cf-token";
 
     vi.mocked(readOptionalSession).mockResolvedValue({
-      user: { name: "owner" },
+      user: { name: "owner", adminConfiguredAt: "2026-03-28T00:00:00.000Z" },
       expires: "2026-03-30T00:00:00.000Z",
     });
     vi.mocked(readSelflifyConfig).mockResolvedValue(config);

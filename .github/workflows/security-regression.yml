@@ -1,0 +1,30 @@
+name: Security regression
+on:
+  pull_request:
+    branches: [stable]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: .nvmrc
+      - run: corepack enable
+      - run: yarn install --immutable
+      - run: yarn lint
+      - run: yarn test:run --maxWorkers=2
+      - run: yarn typecheck
+      - run: yarn build
+      - name: Bootstrap HTTP boundary
+        run: |
+          bash -n scripts/install-selflify.sh
+          python3 -m unittest discover -s bootstrap -p 'test_*.py'
+          SELFLIFY_HTTP_BIND=127.0.0.1 docker compose config --quiet
+          docker compose -f docker-compose.dev.yml config --quiet
+      - name: Verify actual Docker network policy
+        run: docker run --rm --sysctl net.mptcp.enabled=0 alpine:3.24 sh -ec 'test "$(cat /proc/sys/net/mptcp/enabled)" = 0'

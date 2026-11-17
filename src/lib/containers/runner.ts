@@ -7,6 +7,7 @@ import { containerReleaseSchema, releaseIdSchema } from "./schema";
 import { readBody } from "./unix-http";
 
 export function createContainerRunner(runtime: ReturnType<typeof createDockerRuntime>) {
+  let mutating = false;
   return http.createServer(async (req, res) => {
     const respond = (status: number, body: unknown) => {
       res.writeHead(status, { "Content-Type": "application/json", "Cache-Control": "no-store" });
@@ -18,7 +19,16 @@ export function createContainerRunner(runtime: ReturnType<typeof createDockerRun
       switch (req.url) {
         case "/prepare": {
           const { release, secrets } = prepareSchema.parse(payload);
-          await runtime.prepare(release, secrets);
+          if (mutating)
+            return respond(429, {
+              error: "Another image publication is in progress. Retry later.",
+            });
+          mutating = true;
+          try {
+            await runtime.prepare(release, secrets);
+          } finally {
+            mutating = false;
+          }
           break;
         }
         case "/check":
@@ -28,9 +38,20 @@ export function createContainerRunner(runtime: ReturnType<typeof createDockerRun
           const { id } = z.object({ id: releaseIdSchema }).parse(payload);
           return respond(200, { logs: await runtime.logs(id) });
         }
-        case "/prune":
-          await runtime.prune(pruneSchema.parse(payload).keep);
+        case "/prune": {
+          const { keep } = pruneSchema.parse(payload);
+          if (mutating)
+            return respond(429, {
+              error: "Another container operation is in progress. Retry later.",
+            });
+          mutating = true;
+          try {
+            await runtime.prune(keep);
+          } finally {
+            mutating = false;
+          }
           break;
+        }
         default:
           return respond(404, { error: "Runner operation not found." });
       }
