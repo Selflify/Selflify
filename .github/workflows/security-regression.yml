@@ -28,3 +28,58 @@ jobs:
           docker compose -f docker-compose.dev.yml config --quiet
       - name: Verify actual Docker network policy
         run: docker run --rm --sysctl net.mptcp.enabled=0 alpine:3.24 sh -ec 'test "$(cat /proc/sys/net/mptcp/enabled)" = 0'
+
+  bootstrap-candidate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: .nvmrc
+      - run: corepack enable
+      - run: yarn install --immutable
+      - run: yarn exec playwright install --with-deps chromium
+      - name: Build candidate images locally without publishing
+        run: |
+          set -euo pipefail
+          for target in runner cleanup deploy-init upload; do
+            image=selflify-$target
+            if [ "$target" = runner ]; then image=selflify; fi
+            docker build -f docker/selflify/Dockerfile --target "$target" -t "ghcr.io/selflify/$image:pr-candidate" .
+          done
+          docker build -f docker/caddy/Dockerfile -t ghcr.io/selflify/selflify-caddy:pr-candidate .
+      - name: Install local candidate bundle with loopback setup
+        env:
+          SELFLIFY_MOCK_CLOUDFLARE: "1"
+        run: |
+          set -euo pipefail
+          yarn bootstrap:bundle
+          bash scripts/install-selflify.sh --archive-url "file://$PWD/dist/bootstrap/selflify-bootstrap.tar.gz" --skip-start
+          printf '\nSELFLIFY_IMAGE_TAG=pr-candidate\n' >> /opt/selflify/.env
+          cd /opt/selflify
+          sudo python3 bootstrap/configure-mptcp.py
+          docker compose up -d --pull never
+          bash bootstrap/verify-mptcp-disabled.sh -f docker-compose.yml
+          for attempt in $(seq 1 60); do
+            if curl -fsS http://127.0.0.1/setup >/dev/null; then exit 0; fi
+            sleep 2
+          done
+          exit 1
+      - name: Bootstrap browser control
+        env:
+          PLAYWRIGHT_BASE_URL: http://127.0.0.1
+          E2E_SERVER_IP: 127.0.0.1
+        run: yarn e2e:bootstrap-install
+      - name: Verify HTTP can open only after setup
+        run: |
+          cd /opt/selflify
+          python3 bootstrap/enable-public-http.py
+          grep -q '^SELFLIFY_HTTP_BIND=0.0.0.0$' .env
+      - name: Stop isolated stack
+        if: always()
+        run: |
+          if [ -f /opt/selflify/docker-compose.yml ]; then
+            cd /opt/selflify
+            docker compose down --volumes --remove-orphans
+          fi
