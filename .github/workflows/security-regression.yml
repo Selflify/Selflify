@@ -43,7 +43,7 @@ jobs:
       - name: Build candidate images locally without publishing
         run: |
           set -euo pipefail
-          for target in runner cleanup deploy-init upload; do
+          for target in runner cleanup deploy-init upload container-runner; do
             image=selflify-$target
             if [ "$target" = runner ]; then image=selflify; fi
             docker build -f docker/selflify/Dockerfile --target "$target" -t "ghcr.io/selflify/$image:pr-candidate" .
@@ -59,7 +59,7 @@ jobs:
           printf '\nSELFLIFY_IMAGE_TAG=pr-candidate\n' >> /opt/selflify/.env
           cd /opt/selflify
           sudo python3 bootstrap/configure-mptcp.py
-          docker compose up -d --pull never
+          docker compose --profile containers up -d --pull never
           bash bootstrap/verify-mptcp-disabled.sh -f docker-compose.yml
           test "$(docker compose port caddy 80)" = "127.0.0.1:80"
           for _ in $(seq 1 60); do
@@ -67,6 +67,25 @@ jobs:
             sleep 2
           done
           exit 1
+      - name: Container runner publication control
+        run: |
+          set -euo pipefail
+          docker pull nginx:stable-alpine
+          digest=$(docker image inspect nginx:stable-alpine --format '{{index .RepoDigests 0}}')
+          cd /opt/selflify
+          app=$(docker compose ps -q selflify)
+          docker exec -e RUNNER_TEST_IMAGE="$digest" "$app" node --input-type=module -e '
+            import http from "node:http";
+            const image = "docker.io/library/nginx@" + process.env.RUNNER_TEST_IMAGE.split("@")[1];
+            const body = JSON.stringify({release:{id:"364ba140-a198-4132-b02b-6f5456ff2e4a",image,port:80,healthPath:"/",publishedAt:new Date().toISOString()},secrets:{env:{}}});
+            await new Promise((resolve,reject)=>{
+              const req=http.request({socketPath:"/run/selflify-runner/runner.sock",path:"/prepare",method:"POST",headers:{"Content-Type":"application/json","Content-Length":Buffer.byteLength(body)}},res=>{
+                let text="";res.on("data",chunk=>text+=chunk);res.on("end",()=>res.statusCode===200?resolve():reject(new Error(text)));
+              });req.on("error",reject);req.end(body);
+            });
+          '
+          test "$(docker exec selflify-release-364ba140-a198-4132-b02b-6f5456ff2e4a cat /proc/sys/net/mptcp/enabled)" = 0
+          docker rm -f selflify-release-364ba140-a198-4132-b02b-6f5456ff2e4a
       - name: Bootstrap browser control
         env:
           PLAYWRIGHT_BASE_URL: http://127.0.0.1
@@ -84,5 +103,6 @@ jobs:
         run: |
           if [ -f /opt/selflify/docker-compose.yml ]; then
             cd /opt/selflify
-            docker compose down --volumes --remove-orphans
+            docker rm -f selflify-release-364ba140-a198-4132-b02b-6f5456ff2e4a 2>/dev/null || true
+            docker compose --profile containers down --volumes --remove-orphans
           fi
