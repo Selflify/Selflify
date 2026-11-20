@@ -17,18 +17,38 @@ export function createContainerRunner(runtime: ReturnType<typeof createDockerRun
       if (req.method !== "POST") return respond(405, { error: "Method not allowed." });
       const payload = JSON.parse(await readBody(req, 600_000));
       switch (req.url) {
-        case "/prepare": {
+        case "/prepare":
+        case "/stage": {
           const { release, secrets } = prepareSchema.parse(payload);
+          const staged = req.url === "/stage";
+          if (release.storage && !staged) {
+            throw new ContainerError(400, "A container with persistent volumes must be staged.");
+          }
           if (mutating)
             return respond(429, {
               error: "Another image publication is in progress. Retry later.",
             });
           mutating = true;
           try {
-            await runtime.prepare(release, secrets);
+            await runtime.prepare(release, secrets, staged);
           } finally {
             mutating = false;
           }
+          break;
+        }
+        case "/activate": {
+          const { release, replaceId } = z
+            .object({
+              release: containerReleaseSchema,
+              replaceId: releaseIdSchema.optional(),
+            })
+            .parse(payload);
+          await runtime.activate(release, replaceId);
+          break;
+        }
+        case "/stop": {
+          const { id } = z.object({ id: releaseIdSchema }).parse(payload);
+          await runtime.stop(id);
           break;
         }
         case "/check":

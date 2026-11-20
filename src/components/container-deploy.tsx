@@ -2,6 +2,7 @@ import { Box, Heading, Input, Stack, Text } from "@chakra-ui/react";
 
 import { publishContainerAction, saveContainerAction } from "@/app/container-actions";
 import { ContainerEnvironment, type EnvironmentEntry } from "@/components/container-environment";
+import { ContainerVolumes } from "@/components/container-volumes";
 import { FormField } from "@/components/form-field";
 import { FormSubmitButton } from "@/components/form-submit-button";
 import type { SiteConfig } from "@/lib/config/schema";
@@ -70,6 +71,7 @@ export function ContainerSettings({
                 required
               />
             </FormField>
+            <ContainerVolumes key={revision} volumes={container?.volumes ?? []} />
             <details>
               <summary>Registry access {secrets?.registry ? "· Configured" : ""}</summary>
               <Stack gap="3" mt="3">

@@ -18,6 +18,8 @@ describe("runner mutation concurrency", () => {
         started();
         await pending;
       }),
+      activate: vi.fn(async () => {}),
+      stop: vi.fn(async () => {}),
       check: vi.fn(async () => {}),
       logs: vi.fn(async () => ""),
       prune: vi.fn(async () => {}),
@@ -47,10 +49,13 @@ describe("runner mutation concurrency", () => {
       await ready;
       expect((await call("/prepare", payload)).status).toBe(429);
       expect((await call("/prune", { keep: [] })).status).toBe(429);
+      expect((await call("/stage", payload)).status).toBe(429);
       expect(runtime.prepare).toHaveBeenCalledTimes(1);
       expect(runtime.prune).not.toHaveBeenCalled();
       complete();
       expect((await first).status).toBe(200);
+      expect((await call("/stage", payload)).status).toBe(200);
+      expect(runtime.prepare).toHaveBeenLastCalledWith(payload.release, payload.secrets, true);
       expect((await call("/prune", { keep: [] })).status).toBe(200);
     } finally {
       complete();
