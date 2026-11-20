@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { POST } from "@/app/api/deploy/v1/images/route";
 import { createDefaultConfig, readSelflifyConfig, writeSelflifyConfig } from "@/lib/config/service";
+import { getDeploymentSiteId } from "@/lib/deploy/permissions";
 import { createDeployToken } from "@/lib/deploy/tokens";
 import { caddyGateway, generateCaddyfile } from "@/lib/system/caddy";
 
@@ -21,7 +22,13 @@ import { configureContainer, publishContainer } from "./service";
 
 vi.mock("./client", () => ({
   containerRunnerEnabled: () => true,
-  containerRunner: { prepare: vi.fn(), check: vi.fn() },
+  containerRunner: {
+    prepare: vi.fn(),
+    stage: vi.fn(),
+    activate: vi.fn(),
+    stop: vi.fn(),
+    check: vi.fn(),
+  },
 }));
 
 const settings = {
@@ -186,6 +193,43 @@ describe("stable container releases", () => {
     await expect(hasPendingContainerPublication()).resolves.toBe(false);
   });
 
+  it("keeps each release's volume mounts and switches single-writer releases on rollback", async () => {
+    const volumes = [{ name: "database", path: "/var/lib/app" }];
+    await configureContainer("storybook", { ...settings, volumes }, credentials, 1);
+    const first = await publishContainer("storybook", { image: imageA });
+    const site = (await readSelflifyConfig()).sites[0];
+    expect(first.storage).toEqual({ siteId: getDeploymentSiteId(site), volumes });
+    expect(containerRunner.stage).toHaveBeenCalledWith(first, expect.anything());
+    expect(containerRunner.activate).toHaveBeenCalledWith(first, undefined);
+    expect(containerRunner.prepare).not.toHaveBeenCalled();
+
+    const moved = [{ name: "database", path: "/data" }];
+    await configureContainer("storybook", { ...settings, volumes: moved }, credentials, 3);
+    const second = await publishContainer("storybook", { image: imageB });
+    expect(second.storage).toEqual({ siteId: first.storage?.siteId, volumes: moved });
+    expect(containerRunner.activate).toHaveBeenCalledWith(second, first.id);
+    await expect(publishContainer("storybook", { rollback: true })).resolves.toEqual(first);
+    expect(containerRunner.activate).toHaveBeenLastCalledWith(first, second.id);
+  });
+
+  it("stops an unsuccessful volume release and restarts the persisted release", async () => {
+    const volumes = [{ name: "database", path: "/var/lib/app" }];
+    await configureContainer("storybook", { ...settings, volumes }, credentials, 1);
+    const first = await publishContainer("storybook", { image: imageA });
+    vi.mocked(caddyGateway.reload).mockRejectedValueOnce(new Error("Reload failed."));
+    await expect(publishContainer("storybook", { image: imageB })).rejects.toThrow("Reload failed");
+    const second = vi.mocked(containerRunner.stage).mock.lastCall![0];
+    expect(containerRunner.stop).toHaveBeenLastCalledWith(second.id);
+    expect(containerRunner.activate).toHaveBeenLastCalledWith(first);
+    expect((await readSelflifyConfig()).sites[0].container?.active).toEqual(first);
+
+    vi.mocked(containerRunner.stop).mockClear();
+    await recoverContainerPublication();
+    expect(containerRunner.stop).toHaveBeenCalledWith(second.id);
+    expect(containerRunner.activate).toHaveBeenLastCalledWith(first);
+    await expect(hasPendingContainerPublication()).resolves.toBe(false);
+  });
+
   it("requires a site-scoped container token and an exact repository digest", async () => {
     const expiresAt = new Date(Date.now() + 3600_000).toISOString();
     const token = await createDeployToken("storybook", {
@@ -221,5 +265,15 @@ describe("stable container releases", () => {
     const retry = await request(token, imageA);
     expect((await retry.json()).release).toEqual(result.release);
     expect(containerRunner.prepare).toHaveBeenCalledTimes(1);
+    const { configRevision } = await readSelflifyConfig();
+    const volumes = [{ name: "database", path: "/var/lib/app" }];
+    await configureContainer("storybook", { ...settings, volumes }, credentials, configRevision);
+    const withVolumes = await request(token, imageA);
+    expect(withVolumes.status).toBe(200);
+    const updated = (await withVolumes.json()).release;
+    expect(updated.id).not.toBe(result.release.id);
+    expect(updated.storage.volumes).toEqual(volumes);
+    expect((await (await request(token, imageA)).json()).release).toEqual(updated);
+    expect(containerRunner.stage).toHaveBeenCalledTimes(1);
   });
 });

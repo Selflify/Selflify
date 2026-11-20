@@ -40,12 +40,20 @@ function readEnvironment(form: FormData) {
 export async function saveContainerAction(site: string, form: FormData) {
   await requireAdminSession();
   const query = new URLSearchParams({ view: "configuration" });
+  const volumeNames = form.getAll("volumeName");
+  const volumePaths = form.getAll("volumePath");
   const settings = containerSettingsSchema.safeParse({
     repository: String(form.get("repository") ?? "").trim(),
     port: Number(form.get("port")),
     healthPath: String(form.get("healthPath") ?? "").trim(),
+    volumes: volumeNames.map((name, index) => ({
+      name: String(name).trim(),
+      path: String(volumePaths[index] ?? "").trim(),
+    })),
   });
-  if (!settings.success) {
+  if (volumeNames.length !== volumePaths.length) {
+    query.set("error", "Invalid persistent volume mounts.");
+  } else if (!settings.success) {
     query.set("error", settings.error.issues[0].message);
   } else {
     try {

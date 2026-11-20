@@ -187,12 +187,19 @@ test("setup, login and key admin pages render without runtime errors", async ({ 
   await expect(page.locator("#site-settings-stable-alias")).toHaveValue("www.example.com");
   await runtimeErrors.assertClean();
 
-  // Configuring the repository does not require a running container.
+  // Saving container settings does not require a running container.
   await page.getByLabel("Image repository").fill("registry.example.com/account/storybook");
+  await page.getByRole("button", { name: "Add volume" }).click();
+  await page.getByLabel("Volume name").fill("database");
+  await page.getByLabel("Container path").fill("/var/lib/app");
   await page.getByRole("button", { name: "Save container settings" }).click();
   await expect
     .poll(() => new URL(page.url()).searchParams.get("notice"))
     .toBe("Container settings saved.");
+  await page.reload();
+  await expect(page.getByLabel("Volume name")).toHaveValue("database");
+  await expect(page.getByLabel("Container path")).toHaveValue("/var/lib/app");
+  await runtimeErrors.assertClean();
   const previewMode = page.getByRole("radio", { name: "Preview deployments", exact: true });
   const containerMode = page.getByRole("radio", { name: "Container deployments", exact: true });
   await expect(previewMode).toBeChecked();

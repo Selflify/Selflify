@@ -9,7 +9,8 @@ import { ContainerError } from "./runner-contract";
 import {
   clearContainerPublication,
   markContainerPublication,
-  recoverContainerPublication,
+  reconcileContainerPublication,
+  restoreContainerActivation,
 } from "./recovery";
 import {
   containerSecretsSchema,
@@ -164,8 +165,9 @@ export async function publishContainer(
   if (deploying) throw new ContainerError(409, "Another container deployment is in progress.");
   deploying = true;
   try {
-    await recoverContainerPublication();
     let candidate: ContainerRelease;
+    let current: ContainerRelease | undefined;
+    let activation: Parameters<typeof restoreContainerActivation>[1] | undefined;
     let existing = false;
     let rollback = false;
     const authorize = (config: SelflifyConfig) => {
@@ -177,9 +179,12 @@ export async function publishContainer(
       expectedRevision: options.expectedRevision,
       authorize,
       async mutate(config) {
+        await reconcileContainerPublication(config);
         const site = getSite(config, slug);
+        const siteId = getDeploymentSiteId(site);
         const container = site.container;
         if (!container) throw new ContainerError(409, "Configure the container repository first.");
+        current = container.active;
         if ("rollback" in input) {
           if (!container.previous)
             throw new ContainerError(409, "There is no previous container release.");
@@ -196,10 +201,15 @@ export async function publishContainer(
             port: container.port,
             healthPath: container.healthPath,
             publishedAt: new Date().toISOString(),
+            ...(container.volumes?.length
+              ? { storage: { siteId, volumes: container.volumes } }
+              : {}),
           };
-          if (container.active?.image === image) {
-            // A CI retry returns the existing release. The panel can redeploy
-            // the same image after changing its runtime settings.
+          if (
+            container.active?.image === image &&
+            JSON.stringify(container.active.storage) === JSON.stringify(candidate.storage)
+          ) {
+            // A CI retry reuses the active release unless its volume mounts changed.
             existing = options.authorization !== undefined;
             if (existing) candidate = container.active;
           }
@@ -212,7 +222,18 @@ export async function publishContainer(
         return { config, result: candidate };
       },
       async beforePersist(config) {
-        if (rollback || existing) {
+        if (!existing && (candidate.storage || current?.storage)) {
+          const site = getSite(config, slug);
+          if (!rollback) {
+            const { env, registry } = await readContainerSecrets(site.container?.secretsId);
+            await containerRunner.stage(candidate, { env, registry });
+          }
+          const pending = { siteId: getDeploymentSiteId(site), candidateId: candidate.id };
+          await markContainerPublication(pending);
+          activation = pending;
+          await containerRunner.activate(candidate, current?.id);
+          await containerRunner.check(candidate);
+        } else if (rollback || existing) {
           await containerRunner.check(candidate);
         } else {
           const secrets = await readContainerSecrets(getSite(config, slug).container?.secretsId);
@@ -222,7 +243,10 @@ export async function publishContainer(
           });
         }
         authorize(config);
-        await markContainerPublication();
+        if (!activation) await markContainerPublication();
+      },
+      async rollbackBeforePersist(config) {
+        if (activation) await restoreContainerActivation(config, activation);
       },
       afterApply: clearContainerPublication,
     });

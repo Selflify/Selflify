@@ -29,6 +29,11 @@ async function call(path: string, body: unknown, timeout: number): Promise<{ log
 export const containerRunner = {
   prepare: (release: ContainerRelease, secrets: ContainerSecrets) =>
     call("/prepare", { release, secrets }, 205_000),
+  stage: (release: ContainerRelease, secrets: ContainerSecrets) =>
+    call("/stage", { release, secrets }, 205_000),
+  activate: (release: ContainerRelease, replaceId?: string) =>
+    call("/activate", { release, replaceId }, 125_000),
+  stop: (id: string) => call("/stop", { id }, 55_000),
   check: (release: ContainerRelease) => call("/check", release, 32_000),
   prune: (keep: string[]) => call("/prune", { keep }, 30_000),
   logs: (id: string) => call("/logs", { id }, 12_000),

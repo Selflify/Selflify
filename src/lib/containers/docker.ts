@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import readline from "node:readline";
 import { setTimeout as delay } from "node:timers/promises";
 
@@ -8,6 +9,7 @@ import { readBody, unixRequest } from "./unix-http";
 const dockerApi = "/v1.44";
 const ownerLabel = "io.selflify.container-network";
 const releaseLabel = "io.selflify.release";
+const volumeLabel = "io.selflify.storage-site";
 
 export function createDockerRuntime(socket: string, network: string) {
   async function request(
@@ -15,8 +17,9 @@ export function createDockerRuntime(socket: string, network: string) {
     method = "GET",
     body?: unknown,
     ignoreMissing = false,
+    timeout?: number,
   ): Promise<string | null> {
-    const response = await unixRequest(socket, dockerApi + path, { method, body });
+    const response = await unixRequest(socket, dockerApi + path, { method, body, timeout });
     const status = response.statusCode ?? 500;
     const contents = await readBody(response, 4 * 1024 * 1024);
     if (ignoreMissing && status === 404) return null;
@@ -56,17 +59,26 @@ export function createDockerRuntime(socket: string, network: string) {
     }
   }
 
-  async function check(release: ContainerRelease) {
-    const name = containerHostname(release.id);
-    const container = JSON.parse((await request(`/containers/${name}/json`))!) as {
+  async function inspect(id: string) {
+    const data = await request(`/containers/${containerHostname(id)}/json`, "GET", undefined, true);
+    if (data === null) return null;
+    const container = JSON.parse(data) as {
+      Id: string;
       Config?: { Labels?: Record<string, string> };
       State?: { Running?: boolean };
     };
     if (
       container.Config?.Labels?.[ownerLabel] !== network ||
-      container.Config.Labels[releaseLabel] !== release.id ||
-      !container.State?.Running
+      container.Config.Labels[releaseLabel] !== id
     ) {
+      throw new ContainerError(404, "Container release not found.");
+    }
+    return container;
+  }
+
+  async function check(release: ContainerRelease) {
+    const name = containerHostname(release.id);
+    if (!(await inspect(release.id))?.State?.Running) {
       throw new ContainerError(422, "The container release is not running.");
     }
     const target = `http://${name}:${release.port}${release.healthPath}`;
@@ -96,9 +108,65 @@ export function createDockerRuntime(socket: string, network: string) {
     );
   }
 
+  function mountsFor(release: ContainerRelease) {
+    if (!release.storage) return [];
+    const { siteId, volumes } = release.storage;
+    const namespace = createHash("sha256")
+      .update(network + ":" + siteId)
+      .digest("hex");
+    return volumes.map(({ name, path }) => ({
+      Type: "volume",
+      Source: `selflify-${namespace}-${name}`,
+      Target: path,
+      VolumeOptions: { Labels: { [ownerLabel]: network, [volumeLabel]: siteId } },
+    }));
+  }
+
+  async function stopContainer(id: string) {
+    await request(
+      `/containers/${encodeURIComponent(id)}/stop?t=30`,
+      "POST",
+      undefined,
+      true,
+      40_000,
+    );
+  }
+
   return {
     check,
-    async prepare(release: ContainerRelease, secrets: ContainerSecrets) {
+    async stop(id: string) {
+      const container = await inspect(id);
+      if (container) await stopContainer(container.Id);
+    },
+    async activate(release: ContainerRelease, replaceId?: string) {
+      const target = await inspect(release.id);
+      if (!target) throw new ContainerError(404, "Container release not found.");
+
+      const replace = replaceId && replaceId !== release.id ? await inspect(replaceId) : null;
+      const toStop = new Set<string>(replace ? [replace.Id] : []);
+      const volumes = mountsFor(release).map(({ Source }) => Source);
+      if (volumes.length) {
+        const query = new URLSearchParams({ filters: JSON.stringify({ volume: volumes }) });
+        const holders = JSON.parse((await request(`/containers/json?${query}`))!) as Array<{
+          Id: string;
+          Labels: Record<string, string>;
+        }>;
+        for (const holder of holders) {
+          if (holder.Id === target.Id) continue;
+          if (holder.Labels[ownerLabel] !== network || !holder.Labels[releaseLabel]) {
+            throw new ContainerError(409, "A persistent volume is in use by another container.");
+          }
+          toStop.add(holder.Id);
+        }
+      }
+
+      const stops = await Promise.allSettled([...toStop].map(stopContainer));
+      for (const stop of stops) {
+        if (stop.status === "rejected") throw stop.reason;
+      }
+      if (!target.State?.Running) await request(`/containers/${target.Id}/start`, "POST");
+    },
+    async prepare(release: ContainerRelease, secrets: ContainerSecrets, staged = false) {
       await pull(release.image, secrets.registry);
       const image = JSON.parse(
         (await request(`/images/${encodeURIComponent(release.image)}/json`))!,
@@ -106,12 +174,25 @@ export function createDockerRuntime(socket: string, network: string) {
         Id: string;
         Config?: { Volumes?: Record<string, unknown> };
       };
-      if (Object.keys(image.Config?.Volumes ?? {}).length) {
+      const mounts = mountsFor(release);
+      const mountPaths = new Set(mounts.map(({ Target }) => Target));
+      const unmapped = Object.keys(image.Config?.Volumes ?? {}).filter(
+        (path) => !mountPaths.has(path),
+      );
+      if (unmapped.length) {
         throw new ContainerError(
           422,
-          "The image declares volumes. Container deployments require a stateless image.",
+          `Configure persistent volume mounts for these image paths: ${unmapped.join(", ")}.`,
         );
       }
+      // Let Docker initialize a new volume from the image. Once it exists,
+      // staging must leave it alone even if the active release emptied it.
+      const persistentMounts = await Promise.all(
+        mounts.map(async (mount) => {
+          const existing = await request(`/volumes/${mount.Source}`, "GET", undefined, true);
+          return { ...mount, VolumeOptions: { ...mount.VolumeOptions, NoCopy: existing !== null } };
+        }),
+      );
 
       const name = containerHostname(release.id);
       const env = { ...secrets.env, PORT: String(release.port) };
@@ -121,6 +202,7 @@ export function createDockerRuntime(socket: string, network: string) {
           Env: Object.entries(env).map(([key, value]) => `${key}=${value}`),
           Labels: { [ownerLabel]: network, [releaseLabel]: release.id },
           HostConfig: {
+            Mounts: persistentMounts,
             NetworkMode: network,
             CapDrop: ["ALL"],
             SecurityOpt: ["no-new-privileges:true"],
@@ -133,6 +215,7 @@ export function createDockerRuntime(socket: string, network: string) {
           NetworkingConfig: { EndpointsConfig: { [network]: {} } },
         }))!,
       ) as { Id: string };
+      if (staged) return;
       try {
         await request(`/containers/${created.Id}/start`, "POST");
         await check(release);
