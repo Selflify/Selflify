@@ -8,9 +8,23 @@ On a Selflify host with the updated Compose file and images, run:
 
 ```sh
 touch runtime/enable-containers
+SELFLIFY_DOCKER_IMAGE_ROOT="$(python3 bootstrap/docker-image-root.py)"
+export SELFLIFY_DOCKER_IMAGE_ROOT
 docker compose --profile containers pull
 docker compose --profile containers up -d
 ```
+
+The runner checks for 2 GiB of free space before and after pulling an image. The
+helper uses Docker's data root for classic storage and `/var/lib/containerd`
+for the default containerd image store. If the image store uses a custom path,
+set `SELFLIFY_DOCKER_IMAGE_ROOT` in the installation's `.env`. On classic storage
+the existing `SELFLIFY_DOCKER_DATA_ROOT` setting is also supported. The deploy
+workflow preserves these settings and resolves the mount when starting the
+container profile. For manual Compose runs in a new shell, repeat the export
+above or set the resolved path in `.env`. The space check does not impose a per-container storage quota.
+On classic storage, Selflify also removes unused digest references for retired
+releases. On containerd, Selflify cleans up retired containers and leaves image
+cleanup to the operator so Docker cannot remove tags used outside Selflify.
 
 The production workflow uses the marker to keep the profile enabled during updates. For local development, run `docker compose -f docker-compose.dev.yml --profile containers up --build`.
 

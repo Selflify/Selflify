@@ -25,7 +25,14 @@ need_cmd() {
 
 docker_compose() {
   if [ -n "${SUDO}" ]; then
-    $SUDO docker compose "$@"
+    local compose_env=()
+    if [ -n "${COMPOSE_PROFILES:-}" ]; then
+      compose_env+=("COMPOSE_PROFILES=${COMPOSE_PROFILES}")
+    fi
+    if [ -n "${SELFLIFY_DOCKER_IMAGE_ROOT:-}" ]; then
+      compose_env+=("SELFLIFY_DOCKER_IMAGE_ROOT=${SELFLIFY_DOCKER_IMAGE_ROOT}")
+    fi
+    $SUDO env "${compose_env[@]}" docker compose "$@"
     return
   fi
 
@@ -167,6 +174,7 @@ write_env_file() {
   cat > "${install_dir}/.env" <<EOF
 AUTH_SECRET=${auth_secret}
 SELFLIFY_SETUP_TOKEN=${setup_token}
+SELFLIFY_HTTP_BIND=127.0.0.1
 SELFLIFY_PREVIEW_TTL_DAYS=30
 SELFLIFY_ORPHAN_TTL_DAYS=30
 SELFLIFY_CLEANUP_INTERVAL_SECONDS=86400
@@ -217,6 +225,7 @@ mkdir -p \
 
 write_runtime_templates "${INSTALL_DIR}" "${SERVER_IP}" "${AUTH_SECRET_VALUE}"
 write_env_file "${INSTALL_DIR}" "${AUTH_SECRET_VALUE}" "${SETUP_TOKEN_VALUE}"
+(cd "${INSTALL_DIR}" && $SUDO python3 bootstrap/secure-bootstrap-http.py)
 
 rm -rf "${TMP_DIR}"
 
@@ -227,6 +236,11 @@ fi
 
 log "Starting Selflify stack"
 cd "${INSTALL_DIR}"
+if [ -f runtime/enable-containers ]; then
+  export COMPOSE_PROFILES=containers
+  SELFLIFY_DOCKER_IMAGE_ROOT="${SELFLIFY_DOCKER_IMAGE_ROOT:-$($SUDO python3 bootstrap/docker-image-root.py)}"
+  export SELFLIFY_DOCKER_IMAGE_ROOT
+fi
 docker_compose pull
 $SUDO python3 bootstrap/configure-mptcp.py
 docker_compose up -d
@@ -234,9 +248,9 @@ bash bootstrap/verify-mptcp-disabled.sh -f docker-compose.yml
 
 log "Bootstrap complete"
 printf '\n'
-if [ -n "${SERVER_IP}" ]; then
-  printf 'Open http://%s/setup to finish first launch.\n' "${SERVER_IP}"
-else
-  printf 'Open http://<server-ip>/setup to finish first launch.\n'
-fi
-printf 'Use the SELFLIFY_SETUP_TOKEN value from %s/.env to unlock setup, then create the first account and enter the infrastructure settings.\n' "${INSTALL_DIR}"
+printf 'First setup is available only through an SSH tunnel. On your computer run:\n'
+printf '  ssh -N -L 8080:127.0.0.1:80 <ssh-user>@%s\n' "${SERVER_IP:-<server-ip>}"
+printf 'Then open http://127.0.0.1:8080/setup. Do not enter setup secrets over public HTTP.\n'
+printf 'Use the SELFLIFY_SETUP_TOKEN value from %s/.env to unlock setup.\n' "${INSTALL_DIR}"
+printf 'After setup, open the configured HTTPS domain. To enable public HTTP redirects, run:\n'
+printf '  cd %s && %spython3 bootstrap/enable-public-http.py && docker compose up -d caddy\n' "${INSTALL_DIR}" "${SUDO:+sudo }"

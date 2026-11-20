@@ -1,6 +1,9 @@
+import { createHash } from "node:crypto";
+
 const DEFAULT_WINDOW_MS = 10 * 60 * 1000;
 const DEFAULT_BLOCK_MS = 15 * 60 * 1000;
 const DEFAULT_MAX_ATTEMPTS = 5;
+const MAX_BUCKETS = 10_000;
 
 type AttemptBucket = {
   failedAttempts: number;
@@ -8,7 +11,11 @@ type AttemptBucket = {
   blockedUntil: number;
 };
 
-const buckets = new Map<string, AttemptBucket>();
+const clientBuckets = new Map<string, AttemptBucket>();
+// Selflify has one configured admin. Client identities cannot consume this state.
+let account: { login: string; failures: AttemptBucket } | undefined;
+let inFlight = 0;
+let nextPruneAt = 0;
 
 export class LoginRateLimitError extends Error {
   retryAfterMs: number;
@@ -45,77 +52,57 @@ function getMaxAttempts(): number {
   );
 }
 
-function normalizeLogin(login: string): string {
-  return login.trim().toLowerCase();
-}
-
 function normalizeFingerprint(fingerprint: string | null | undefined): string {
   const primary = fingerprint?.split(",")[0]?.trim().toLowerCase();
   return primary || "global";
 }
 
-function buildPerLoginKey(login: string, fingerprint: string): string {
-  return `login:${fingerprint}:${normalizeLogin(login)}`;
+function freshBucket(now: number): AttemptBucket {
+  return { failedAttempts: 0, windowStartedAt: now, blockedUntil: 0 };
 }
 
-function buildFingerprintKey(fingerprint: string): string {
-  return `fingerprint:${fingerprint}`;
+function expired(bucket: AttemptBucket, now: number, windowMs: number): boolean {
+  return bucket.blockedUntil
+    ? bucket.blockedUntil <= now
+    : bucket.windowStartedAt + windowMs <= now;
 }
 
-function getFreshBucket(now: number): AttemptBucket {
-  return {
-    failedAttempts: 0,
-    windowStartedAt: now,
-    blockedUntil: 0,
-  };
+function fingerprintKey(fingerprint: string): string {
+  return createHash("sha256").update(normalizeFingerprint(fingerprint)).digest("hex");
 }
 
-function getBucket(key: string, now: number): AttemptBucket {
-  const bucket = buckets.get(key);
-
-  if (!bucket) {
-    const fresh = getFreshBucket(now);
-    buckets.set(key, fresh);
-    return fresh;
+function getClientBucket(key: string, now: number): AttemptBucket | undefined {
+  const windowMs = getWindowMs();
+  if (now >= nextPruneAt) {
+    for (const [storedKey, bucket] of clientBuckets) {
+      if (expired(bucket, now, windowMs)) clientBuckets.delete(storedKey);
+    }
+    nextPruneAt = now + 30_000;
   }
 
-  if (bucket.blockedUntil && bucket.blockedUntil <= now) {
-    const fresh = getFreshBucket(now);
-    buckets.set(key, fresh);
-    return fresh;
-  }
-
-  if (bucket.windowStartedAt + getWindowMs() <= now && bucket.blockedUntil <= now) {
-    const fresh = getFreshBucket(now);
-    buckets.set(key, fresh);
-    return fresh;
-  }
-
-  return bucket;
+  const current = clientBuckets.get(key);
+  if (current && !expired(current, now, windowMs)) return current;
+  if (!current && clientBuckets.size >= MAX_BUCKETS) return undefined;
+  const fresh = freshBucket(now);
+  clientBuckets.set(key, fresh);
+  return fresh;
 }
 
-function assertBucketAllowed(key: string, now: number): void {
-  const bucket = getBucket(key, now);
-
-  if (bucket.blockedUntil > now) {
+function assertAllowed(bucket: AttemptBucket | undefined, now: number): void {
+  if (bucket && bucket.blockedUntil > now) {
     throw new LoginRateLimitError(bucket.blockedUntil - now);
   }
 }
 
-function recordBucketFailure(key: string, now: number): void {
-  const bucket = getBucket(key, now);
-
+function recordFailure(bucket: AttemptBucket | undefined, now: number): void {
+  if (!bucket || bucket.blockedUntil > now) return;
   bucket.failedAttempts += 1;
-
-  if (bucket.failedAttempts >= getMaxAttempts()) {
-    bucket.blockedUntil = now + getBlockMs();
-  }
-
-  buckets.set(key, bucket);
+  if (bucket.failedAttempts >= getMaxAttempts()) bucket.blockedUntil = now + getBlockMs();
 }
 
-function clearBucket(key: string): void {
-  buckets.delete(key);
+function accountFailures(current: NonNullable<typeof account>, now: number): AttemptBucket {
+  if (expired(current.failures, now, getWindowMs())) current.failures = freshBucket(now);
+  return current.failures;
 }
 
 export function resolveLoginAttemptFingerprint(
@@ -132,35 +119,45 @@ export function resolveLoginAttemptFingerprint(
   );
 }
 
-export function assertLoginAllowed(
-  login: string,
-  fingerprint: string | null | undefined,
-  now = Date.now(),
-): void {
-  const normalizedFingerprint = normalizeFingerprint(fingerprint);
-  assertBucketAllowed(buildFingerprintKey(normalizedFingerprint), now);
-  assertBucketAllowed(buildPerLoginKey(login, normalizedFingerprint), now);
+export function assertLoginClientAllowed(fingerprint: string, now = Date.now()): void {
+  assertAllowed(clientBuckets.get(fingerprintKey(fingerprint)), now);
 }
 
-export function recordFailedLoginAttempt(
-  login: string,
-  fingerprint: string | null | undefined,
-  now = Date.now(),
-): void {
-  const normalizedFingerprint = normalizeFingerprint(fingerprint);
-  recordBucketFailure(buildFingerprintKey(normalizedFingerprint), now);
-  recordBucketFailure(buildPerLoginKey(login, normalizedFingerprint), now);
+export function recordUnknownLoginAttempt(fingerprint: string, now = Date.now()): void {
+  recordFailure(getClientBucket(fingerprintKey(fingerprint), now), now);
 }
 
-export function clearLoginRateLimit(
-  login: string,
-  fingerprint: string | null | undefined,
-): void {
-  const normalizedFingerprint = normalizeFingerprint(fingerprint);
-  clearBucket(buildFingerprintKey(normalizedFingerprint));
-  clearBucket(buildPerLoginKey(login, normalizedFingerprint));
+// Call only after matching the configured login. Reservations span both resets and windows.
+export function reserveLoginAttempt(login: string, fingerprint: string, now = Date.now()) {
+  if (account?.login !== login) account = { login, failures: freshBucket(now) };
+  const current = account;
+  assertAllowed(accountFailures(current, now), now);
+  const clientKey = fingerprintKey(fingerprint);
+  assertAllowed(clientBuckets.get(clientKey), now);
+  if (inFlight >= getMaxAttempts()) throw new LoginRateLimitError(1000);
+  inFlight += 1;
+
+  let released = false;
+  return {
+    fail(at = Date.now()) {
+      recordFailure(accountFailures(current, at), at);
+      recordFailure(getClientBucket(clientKey, at), at);
+    },
+    succeed(at = Date.now()) {
+      current.failures = freshBucket(at);
+      clientBuckets.delete(clientKey);
+    },
+    release() {
+      if (released) return;
+      released = true;
+      inFlight -= 1;
+    },
+  };
 }
 
 export function resetLoginRateLimitStore(): void {
-  buckets.clear();
+  clientBuckets.clear();
+  account = undefined;
+  inFlight = 0;
+  nextPruneAt = 0;
 }

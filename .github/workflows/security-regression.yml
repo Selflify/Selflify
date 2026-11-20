@@ -1,0 +1,154 @@
+name: Security regression
+on:
+  pull_request:
+    branches: [stable]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: .nvmrc
+      - run: corepack enable
+      - run: yarn install --immutable
+      - run: yarn lint
+      - run: yarn test:run --maxWorkers=2
+      - run: yarn typecheck
+      - run: yarn build
+      - name: Bootstrap HTTP boundary
+        run: |
+          bash -n scripts/install-selflify.sh
+          python3 -m unittest discover -s bootstrap -p 'test_*.py'
+          docker compose config --quiet
+          SELFLIFY_HTTP_BIND=127.0.0.1 docker compose config --quiet
+          docker compose -f docker-compose.dev.yml config --quiet
+      - name: Verify actual Docker network policy
+        run: docker run --rm --sysctl net.mptcp.enabled=0 alpine:3.24 sh -ec 'test "$(cat /proc/sys/net/mptcp/enabled)" = 0'
+
+  bootstrap-candidate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: .nvmrc
+      - run: corepack enable
+      - run: yarn install --immutable
+      - run: yarn exec playwright install --with-deps chromium
+      - name: Build candidate images locally without publishing
+        run: |
+          set -euo pipefail
+          for target in runner cleanup deploy-init upload container-runner; do
+            image=selflify-$target
+            if [ "$target" = runner ]; then image=selflify; fi
+            docker build -f docker/selflify/Dockerfile --target "$target" -t "ghcr.io/selflify/$image:pr-candidate" .
+          done
+          docker build -f docker/caddy/Dockerfile -t ghcr.io/selflify/selflify-caddy:pr-candidate .
+      - name: Install local candidate bundle with loopback setup
+        env:
+          SELFLIFY_MOCK_CLOUDFLARE: "1"
+        run: |
+          set -euo pipefail
+          yarn bootstrap:bundle
+          bash scripts/install-selflify.sh --archive-url "file://$PWD/dist/bootstrap/selflify-bootstrap.tar.gz" --skip-start
+          printf '\nSELFLIFY_IMAGE_TAG=pr-candidate\n' >> /opt/selflify/.env
+          cd /opt/selflify
+          sudo python3 bootstrap/configure-mptcp.py
+          SELFLIFY_DOCKER_IMAGE_ROOT="$(python3 bootstrap/docker-image-root.py)"
+          export SELFLIFY_DOCKER_IMAGE_ROOT
+          docker compose --profile containers up -d --pull never
+          bash bootstrap/verify-mptcp-disabled.sh -f docker-compose.yml
+          test "$(docker compose port caddy 80)" = "127.0.0.1:80"
+          for _ in $(seq 1 60); do
+            if curl -fsS http://127.0.0.1/setup >/dev/null; then exit 0; fi
+            sleep 2
+          done
+          exit 1
+      - name: Container runner publication control
+        run: |
+          set -euo pipefail
+          image=docker.io/nginxinc/nginx-unprivileged@sha256:f5116ed4606f3eb015dd4a8e28cb9b351476dc0ad4bc6e9f93b19cec130cdf03
+          docker pull "$image"
+          cd /opt/selflify
+          app=$(docker compose ps -q selflify)
+          runner() {
+            docker exec -e RUNNER_TEST_IMAGE="$image" "$app" node --input-type=module -e '
+              import http from "node:http";
+              const [operation, id, replaceId] = process.argv.slice(1);
+              const release = {
+                id, image: process.env.RUNNER_TEST_IMAGE, port: 8080,
+                healthPath: "/", publishedAt: new Date().toISOString(),
+                ...(operation === "prepare" ? {} : {
+                  storage: {
+                    siteId: "9d7a8173-4d50-4d57-9653-3af2af53b435",
+                    volumes: [{ name: "data", path: "/tmp/selflify-data" }],
+                  },
+                }),
+              };
+              const body = JSON.stringify(operation === "check" ? release : { release, replaceId, secrets: { env: {} } });
+              await new Promise((resolve, reject) => {
+                const req = http.request({
+                  socketPath: "/run/selflify-runner/runner.sock", path: "/" + operation,
+                  method: "POST", headers: {"Content-Type": "application/json", "Content-Length": Buffer.byteLength(body)},
+                }, res => {
+                  let text = "";
+                  res.on("data", chunk => text += chunk);
+                  res.on("end", () => res.statusCode === 200 ? resolve() : reject(new Error(text)));
+                });
+                req.on("error", reject);
+                req.end(body);
+              });
+            ' -- "$@"
+          }
+
+          stateless=364ba140-a198-4132-b02b-6f5456ff2e4a
+          first=366e8f70-41ac-4c42-947f-5a901aefa253
+          second=104bb1f4-1c17-4166-9ce5-f6c0ac4e4922
+          runner prepare "$stateless"
+          test "$(docker exec "selflify-release-$stateless" cat /proc/sys/net/mptcp/enabled)" = 0
+          runner stage "$first"
+          runner activate "$first"
+          runner check "$first"
+          docker exec -u 0 "selflify-release-$first" sh -ec 'printf selflify-volume > /tmp/selflify-data/marker'
+          runner stage "$second"
+          test "$(docker inspect --format '{{.State.Running}}' "selflify-release-$first")" = true
+          runner activate "$second" "$first"
+          runner check "$second"
+          test "$(docker inspect --format '{{.State.Running}}' "selflify-release-$first")" = false
+          test "$(docker exec "selflify-release-$second" cat /proc/sys/net/mptcp/enabled)" = 0
+          test "$(docker exec "selflify-release-$second" cat /tmp/selflify-data/marker)" = selflify-volume
+          runner activate "$first" "$second"
+          runner check "$first"
+          test "$(docker inspect --format '{{.State.Running}}' "selflify-release-$second")" = false
+          test "$(docker exec "selflify-release-$first" cat /tmp/selflify-data/marker)" = selflify-volume
+      - name: Bootstrap browser control
+        env:
+          PLAYWRIGHT_BASE_URL: http://127.0.0.1
+          E2E_SERVER_IP: 127.0.0.1
+        run: yarn e2e:bootstrap-install
+      - name: Verify HTTP can open only after setup
+        run: |
+          cd /opt/selflify
+          sudo python3 bootstrap/enable-public-http.py
+          grep -q '^SELFLIFY_HTTP_BIND=0.0.0.0$' .env
+          docker compose up -d --pull never caddy
+          test "$(docker compose port caddy 80)" = "0.0.0.0:80"
+      - name: Stop isolated stack
+        if: always()
+        run: |
+          if [ -f /opt/selflify/docker-compose.yml ]; then
+            cd /opt/selflify
+            docker rm -f \
+              selflify-release-364ba140-a198-4132-b02b-6f5456ff2e4a \
+              selflify-release-366e8f70-41ac-4c42-947f-5a901aefa253 \
+              selflify-release-104bb1f4-1c17-4166-9ce5-f6c0ac4e4922 2>/dev/null || true
+            volume=$(docker volume ls -q --filter label=io.selflify.storage-site=9d7a8173-4d50-4d57-9653-3af2af53b435)
+            if [ -n "$volume" ]; then docker volume rm "$volume"; fi
+            docker compose --profile containers down --volumes --remove-orphans
+          fi

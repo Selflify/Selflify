@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
+import { isActiveAdminSession } from "@/lib/auth/guards";
 import { readOptionalSession } from "@/lib/auth/session";
 import { readSelflifyConfig } from "@/lib/config/service";
 import { listPreviewDeployPage, DEFAULT_DEPLOY_PAGE_SIZE } from "@/lib/sites/service";
@@ -23,17 +24,14 @@ function readSiteSlug(params: unknown): string | null {
   return typeof slug === "string" ? slug : null;
 }
 
-export async function GET(
-  request: NextRequest,
-  context: { params: Promise<unknown> },
-) {
+export async function GET(request: NextRequest, context: { params: Promise<unknown> }) {
   const session = await readOptionalSession();
+  const config = await readSelflifyConfig();
 
-  if (!session?.user) {
+  if (!isActiveAdminSession(session, config)) {
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
   }
 
-  const config = await readSelflifyConfig();
   const slug = readSiteSlug(await context.params);
 
   if (!slug) {

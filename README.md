@@ -223,7 +223,7 @@ What the installer does:
 - creates initial `runtime/selflify.config.json` and `runtime/Caddyfile` from templates if they do not exist yet
 - pulls public runtime images from `ghcr.io/selflify/*`
 - starts the production stack with `docker compose pull && docker compose up -d`
-- brings the panel up on `http://<server-ip>/setup`, locked behind `SELFLIFY_SETUP_TOKEN`, so the first session can collect runtime settings
+- binds the setup HTTP port to `127.0.0.1` on the server and requires `SELFLIFY_SETUP_TOKEN`
 - downloads `selflify-bootstrap.tar.gz` from the latest GitHub release by default
 
 Production images are published to GitHub Container Registry. After the first successful image publish,
@@ -237,12 +237,15 @@ already, with `runtime/selflify.config.json` and `runtime/Caddyfile` persisted o
 
 What still happens in the UI after bootstrap:
 
-- open `http://<server-ip>/setup`
+- on your computer, run `ssh -N -L 8080:127.0.0.1:80 user@server` and open `http://127.0.0.1:8080/setup`
 - unlock setup with `SELFLIFY_SETUP_TOKEN` from `/opt/selflify/.env`
 - create the first account
 - enter the main domain, public server IP and Caddy contact email
 - paste the Cloudflare API token during first-start setup
-- after setup, plain HTTP access on the server IP stops serving the panel directly; use the primary domain instead
+- after setup, use the configured HTTPS domain
+
+To enable public HTTP redirects after setup, run `sudo python3 bootstrap/enable-public-http.py`
+and then `docker compose up -d caddy` in the installation directory.
 
 ## Cleanup job
 

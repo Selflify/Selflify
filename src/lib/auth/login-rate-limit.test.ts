@@ -1,10 +1,9 @@
 import { afterEach, describe, expect, it } from "vitest";
 
 import {
-  assertLoginAllowed,
-  clearLoginRateLimit,
   LoginRateLimitError,
-  recordFailedLoginAttempt,
+  recordUnknownLoginAttempt,
+  reserveLoginAttempt,
   resetLoginRateLimitStore,
   resolveLoginAttemptFingerprint,
 } from "@/lib/auth/login-rate-limit";
@@ -24,22 +23,58 @@ describe("login rate limit", () => {
     expect(fingerprint).toBe("203.0.113.10");
   });
 
-  it("blocks the same login after repeated failures", () => {
-    const now = 1_000;
-
-    for (let attempt = 0; attempt < 5; attempt += 1) {
-      recordFailedLoginAttempt("owner", "203.0.113.10", now + attempt);
+  it("keeps the configured account blocked when the client identity changes", () => {
+    for (let index = 0; index < 5; index += 1) {
+      const attempt = reserveLoginAttempt("owner", `client-${index}`, 1000 + index);
+      attempt.fail(1000 + index);
+      attempt.release();
     }
-
-    expect(() => assertLoginAllowed("owner", "203.0.113.10", now + 10)).toThrow(
-      LoginRateLimitError,
-    );
+    expect(() => reserveLoginAttempt("owner", "new-client", 1010)).toThrow(LoginRateLimitError);
+    reserveLoginAttempt("owner", "new-client", 20 * 60 * 1000).release();
   });
 
-  it("clears the limiter after a successful login", () => {
-    recordFailedLoginAttempt("owner", "203.0.113.10", 2_000);
-    clearLoginRateLimit("owner", "203.0.113.10");
+  it("shares the per-client limit between unknown and configured logins", () => {
+    for (let index = 0; index < 5; index += 1) {
+      recordUnknownLoginAttempt("same-client", 1000 + index);
+    }
+    expect(() => reserveLoginAttempt("owner", "same-client", 1010)).toThrow(LoginRateLimitError);
+    reserveLoginAttempt("owner", "new-client", 1010).release();
+  });
 
-    expect(() => assertLoginAllowed("owner", "203.0.113.10", 2_001)).not.toThrow();
+  it("keeps the account limiter available when the auxiliary client table is full", () => {
+    for (let index = 0; index < 10_000; index += 1) {
+      recordUnknownLoginAttempt(`client-${index}`, 1000);
+    }
+    const valid = reserveLoginAttempt("owner", "another-client", 1001);
+    valid.succeed(1001);
+    valid.release();
+
+    for (let index = 0; index < 5; index += 1) {
+      const attempt = reserveLoginAttempt("owner", `new-${index}`, 1002);
+      attempt.fail(1002);
+      attempt.release();
+    }
+    expect(() => reserveLoginAttempt("owner", "another-client", 1003)).toThrow(LoginRateLimitError);
+    reserveLoginAttempt("owner", "another-client", 20 * 60 * 1000).release();
+  });
+
+  it("keeps the password check limit through success and window rollover", () => {
+    const attempts = Array.from({ length: 5 }, (_, index) =>
+      reserveLoginAttempt("owner", `client-${index}`, 1000),
+    );
+    attempts[0].succeed(1001);
+    expect(() => reserveLoginAttempt("owner", "client-new", 1001)).toThrow(LoginRateLimitError);
+    expect(() => reserveLoginAttempt("owner", "client-new", 20 * 60 * 1000)).toThrow(
+      LoginRateLimitError,
+    );
+
+    attempts[0].release();
+    attempts[0].release();
+    const next = reserveLoginAttempt("owner", "client-new", 20 * 60 * 1000);
+    expect(() => reserveLoginAttempt("owner", "client-new", 20 * 60 * 1000)).toThrow(
+      LoginRateLimitError,
+    );
+    next.release();
+    attempts.forEach((attempt) => attempt.release());
   });
 });

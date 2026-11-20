@@ -440,6 +440,7 @@ jobs:
         run: |
           set -euo pipefail
 
+          umask 077
           cat <<EOF > .env.production
           AUTH_SECRET=${AUTH_SECRET}
           SELFLIFY_PREVIEW_TTL_DAYS=${SELFLIFY_PREVIEW_TTL_DAYS}
@@ -448,7 +449,7 @@ jobs:
           SELFLIFY_BACKUP_KEEP=${SELFLIFY_BACKUP_KEEP}
           EOF
 
-          scp -P "${DEPLOY_PORT:-22}" .env.production "${DEPLOY_USER}@${DEPLOY_HOST}:${DEPLOY_PATH}/.env"
+          scp -P "${DEPLOY_PORT:-22}" .env.production "${DEPLOY_USER}@${DEPLOY_HOST}:${DEPLOY_PATH}/.env.production"
 
       - name: Deploy on server
         shell: bash
@@ -471,8 +472,12 @@ jobs:
             exit 1
           fi
 
+          python3 bootstrap/merge-deploy-env.py
+
           if [ -f runtime/enable-containers ]; then
             export COMPOSE_PROFILES=containers
+            SELFLIFY_DOCKER_IMAGE_ROOT="$(python3 bootstrap/docker-image-root.py)"
+            export SELFLIFY_DOCKER_IMAGE_ROOT
           fi
           docker compose pull
           if [ "$(id -u)" = 0 ]; then

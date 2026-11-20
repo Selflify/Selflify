@@ -2,16 +2,26 @@ import { createHash } from "node:crypto";
 import readline from "node:readline";
 import { setTimeout as delay } from "node:timers/promises";
 
+import { dockerApi, readDockerInfo } from "./docker-info";
 import { ContainerError } from "./runner-contract";
-import { containerHostname, type ContainerRelease, type ContainerSecrets } from "./schema";
+import {
+  containerHostname,
+  imageReferenceSchema,
+  type ContainerRelease,
+  type ContainerSecrets,
+} from "./schema";
 import { readBody, unixRequest } from "./unix-http";
 
-const dockerApi = "/v1.44";
 const ownerLabel = "io.selflify.container-network";
 const releaseLabel = "io.selflify.release";
+const imageReferenceLabel = "io.selflify.image-reference";
 const volumeLabel = "io.selflify.storage-site";
 
-export function createDockerRuntime(socket: string, network: string) {
+export function createDockerRuntime(
+  socket: string,
+  network: string,
+  assertDiskBudget: () => Promise<void> = async () => {},
+) {
   async function request(
     path: string,
     method = "GET",
@@ -108,6 +118,29 @@ export function createDockerRuntime(socket: string, network: string) {
     );
   }
 
+  async function removeUnusedImage(reference: string, imageId: string) {
+    const filters = new URLSearchParams({
+      all: "true",
+      filters: JSON.stringify({ ancestor: [imageId] }),
+    });
+    const users = JSON.parse((await request(`/containers/json?${filters}`))!) as unknown[];
+    if (users.length) return;
+
+    // The classic store removes the digest alone. The containerd store can
+    // also remove same-repository tags when asked to delete a digest.
+    if ((await readDockerInfo(socket)).usesContainerd) return;
+    const response = await unixRequest(
+      socket,
+      `${dockerApi}/images/${encodeURIComponent(reference)}?noprune=true`,
+      { method: "DELETE" },
+    );
+    const status = response.statusCode ?? 500;
+    await readBody(response, 4 * 1024 * 1024);
+    if (status !== 404 && status !== 409 && status >= 400) {
+      throw new ContainerError(502, "Could not remove the retired container image.");
+    }
+  }
+
   function mountsFor(release: ContainerRelease) {
     if (!release.storage) return [];
     const { siteId, volumes } = release.storage;
@@ -167,13 +200,22 @@ export function createDockerRuntime(socket: string, network: string) {
       if (!target.State?.Running) await request(`/containers/${target.Id}/start`, "POST");
     },
     async prepare(release: ContainerRelease, secrets: ContainerSecrets, staged = false) {
+      await assertDiskBudget();
+      const inspectPath = `/images/${encodeURIComponent(release.image)}/json`;
+      const alreadyPresent = (await request(inspectPath, "GET", undefined, true)) !== null;
       await pull(release.image, secrets.registry);
-      const image = JSON.parse(
-        (await request(`/images/${encodeURIComponent(release.image)}/json`))!,
-      ) as {
+      const image = JSON.parse((await request(inspectPath))!) as {
         Id: string;
         Config?: { Volumes?: Record<string, unknown> };
       };
+      try {
+        await assertDiskBudget();
+      } catch (error) {
+        if (!alreadyPresent) {
+          await removeUnusedImage(release.image, image.Id).catch(() => {});
+        }
+        throw error;
+      }
       const mounts = mountsFor(release);
       const mountPaths = new Set(mounts.map(({ Target }) => Target));
       const unmapped = Object.keys(image.Config?.Volumes ?? {}).filter(
@@ -200,10 +242,15 @@ export function createDockerRuntime(socket: string, network: string) {
         (await request(`/containers/create?name=${name}`, "POST", {
           Image: image.Id,
           Env: Object.entries(env).map(([key, value]) => `${key}=${value}`),
-          Labels: { [ownerLabel]: network, [releaseLabel]: release.id },
+          Labels: {
+            [ownerLabel]: network,
+            [releaseLabel]: release.id,
+            [imageReferenceLabel]: release.image,
+          },
           HostConfig: {
             Mounts: persistentMounts,
             NetworkMode: network,
+            Sysctls: { "net.mptcp.enabled": "0" },
             CapDrop: ["ALL"],
             SecurityOpt: ["no-new-privileges:true"],
             Memory: 512 * 1024 * 1024,
@@ -221,6 +268,9 @@ export function createDockerRuntime(socket: string, network: string) {
         await check(release);
       } catch (error) {
         await remove(created.Id).catch(() => {});
+        if (!alreadyPresent) {
+          await removeUnusedImage(release.image, image.Id).catch(() => {});
+        }
         throw error;
       }
     },
@@ -278,6 +328,7 @@ export function createDockerRuntime(socket: string, network: string) {
       });
       const containers = JSON.parse((await request(`/containers/json?${filter}`))!) as Array<{
         Id: string;
+        ImageID: string;
         Created: number;
         Labels: Record<string, string>;
       }>;
@@ -291,6 +342,10 @@ export function createDockerRuntime(socket: string, network: string) {
           Date.now() - container.Created * 1000 > 10 * 60_000
         ) {
           await remove(container.Id);
+          const reference = imageReferenceSchema.safeParse(container.Labels[imageReferenceLabel]);
+          if (container.ImageID && reference.success) {
+            await removeUnusedImage(reference.data, container.ImageID);
+          }
         }
       }
     },

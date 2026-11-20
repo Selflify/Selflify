@@ -3,10 +3,10 @@ import Credentials from "next-auth/providers/credentials";
 import { z } from "zod";
 
 import {
-  assertLoginAllowed,
-  clearLoginRateLimit,
+  assertLoginClientAllowed,
+  reserveLoginAttempt,
   LoginRateLimitError,
-  recordFailedLoginAttempt,
+  recordUnknownLoginAttempt,
   resolveLoginAttemptFingerprint,
 } from "@/lib/auth/login-rate-limit";
 import { readSelflifyConfigSync } from "@/lib/config/service";
@@ -49,8 +49,16 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
         const fingerprint = resolveLoginAttemptFingerprint(request);
 
+        let attempt: ReturnType<typeof reserveLoginAttempt>;
+        let config: ReturnType<typeof readSelflifyConfigSync>;
         try {
-          assertLoginAllowed(parsed.data.login, fingerprint);
+          assertLoginClientAllowed(fingerprint);
+          config = readSelflifyConfigSync();
+          if (parsed.data.login !== config.admin.login || !config.admin.passwordHash) {
+            recordUnknownLoginAttempt(fingerprint);
+            return null;
+          }
+          attempt = reserveLoginAttempt(config.admin.login, fingerprint);
         } catch (error) {
           if (error instanceof LoginRateLimitError) {
             return null;
@@ -59,33 +67,25 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           throw error;
         }
 
-        const config = readSelflifyConfigSync();
+        try {
+          const valid = await verifyAdminPassword(parsed.data.password, config.admin.passwordHash);
 
-        if (!config.admin.login || !config.admin.passwordHash) {
-          recordFailedLoginAttempt(parsed.data.login, fingerprint);
-          return null;
+          if (!valid) {
+            attempt.fail();
+            return null;
+          }
+
+          attempt.succeed();
+
+          return {
+            id: "selflify-admin",
+            name: config.admin.login,
+            email: null,
+            adminConfiguredAt: config.admin.configuredAt,
+          };
+        } finally {
+          attempt.release();
         }
-
-        if (parsed.data.login !== config.admin.login) {
-          recordFailedLoginAttempt(parsed.data.login, fingerprint);
-          return null;
-        }
-
-        const valid = await verifyAdminPassword(parsed.data.password, config.admin.passwordHash);
-
-        if (!valid) {
-          recordFailedLoginAttempt(parsed.data.login, fingerprint);
-          return null;
-        }
-
-        clearLoginRateLimit(parsed.data.login, fingerprint);
-
-        return {
-          id: "selflify-admin",
-          name: config.admin.login,
-          email: null,
-          adminConfiguredAt: config.admin.configuredAt,
-        };
       },
     }),
   ],

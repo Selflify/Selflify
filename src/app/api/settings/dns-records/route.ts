@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { isActiveAdminSession } from "@/lib/auth/guards";
 import { readOptionalSession } from "@/lib/auth/session";
 import { readSelflifyConfig } from "@/lib/config/service";
 import { dnsGateway } from "@/lib/system/cloudflare";
@@ -39,12 +40,11 @@ function buildExpectedDnsRecords(
 
 export async function GET() {
   const session = await readOptionalSession();
+  const config = await readSelflifyConfig();
 
-  if (!session?.user) {
+  if (!isActiveAdminSession(session, config)) {
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
   }
-
-  const config = await readSelflifyConfig();
 
   if (shouldMockCloudflare()) {
     const records = buildExpectedDnsRecords(
@@ -108,8 +108,7 @@ export async function GET() {
       {
         records: [],
         message: null,
-        error:
-          error instanceof Error ? error.message : "Could not load Cloudflare DNS records.",
+        error: error instanceof Error ? error.message : "Could not load Cloudflare DNS records.",
       },
       {
         headers: {
