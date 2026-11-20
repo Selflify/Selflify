@@ -24,6 +24,7 @@ jobs:
         run: |
           bash -n scripts/install-selflify.sh
           python3 -m unittest discover -s bootstrap -p 'test_*.py'
+          docker compose config --quiet
           SELFLIFY_HTTP_BIND=127.0.0.1 docker compose config --quiet
           docker compose -f docker-compose.dev.yml config --quiet
       - name: Verify actual Docker network policy

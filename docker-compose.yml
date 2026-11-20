@@ -66,9 +66,7 @@ services:
       deploy-init:
         condition: service_completed_successfully
     ports:
-      - target: 80
-        published: "80"
-        host_ip: ${SELFLIFY_HTTP_BIND:-}
+      - "${SELFLIFY_HTTP_BIND:+${SELFLIFY_HTTP_BIND}:}80:80"
       - "443:443"
     networks: [default, container_apps]
     volumes:
