@@ -25,7 +25,14 @@ need_cmd() {
 
 docker_compose() {
   if [ -n "${SUDO}" ]; then
-    $SUDO docker compose "$@"
+    local compose_env=()
+    if [ -n "${COMPOSE_PROFILES:-}" ]; then
+      compose_env+=("COMPOSE_PROFILES=${COMPOSE_PROFILES}")
+    fi
+    if [ -n "${SELFLIFY_DOCKER_IMAGE_ROOT:-}" ]; then
+      compose_env+=("SELFLIFY_DOCKER_IMAGE_ROOT=${SELFLIFY_DOCKER_IMAGE_ROOT}")
+    fi
+    $SUDO env "${compose_env[@]}" docker compose "$@"
     return
   fi
 
@@ -229,6 +236,11 @@ fi
 
 log "Starting Selflify stack"
 cd "${INSTALL_DIR}"
+if [ -f runtime/enable-containers ]; then
+  export COMPOSE_PROFILES=containers
+  SELFLIFY_DOCKER_IMAGE_ROOT="${SELFLIFY_DOCKER_IMAGE_ROOT:-$($SUDO python3 bootstrap/docker-image-root.py)}"
+  export SELFLIFY_DOCKER_IMAGE_ROOT
+fi
 docker_compose pull
 $SUDO python3 bootstrap/configure-mptcp.py
 docker_compose up -d

@@ -223,7 +223,7 @@ What the installer does:
 - creates initial `runtime/selflify.config.json` and `runtime/Caddyfile` from templates if they do not exist yet
 - pulls public runtime images from `ghcr.io/selflify/*`
 - starts the production stack with `docker compose pull && docker compose up -d`
-- brings the panel up on `http://<server-ip>/setup`, locked behind `SELFLIFY_SETUP_TOKEN`, so the first session can collect runtime settings
+- binds the setup HTTP port to `127.0.0.1` on the server and requires `SELFLIFY_SETUP_TOKEN`
 - downloads `selflify-bootstrap.tar.gz` from the latest GitHub release by default
 
 Production images are published to GitHub Container Registry. After the first successful image publish,
@@ -237,12 +237,15 @@ already, with `runtime/selflify.config.json` and `runtime/Caddyfile` persisted o
 
 What still happens in the UI after bootstrap:
 
-- open `http://<server-ip>/setup`
+- on your computer, run `ssh -N -L 8080:127.0.0.1:80 user@server` and open `http://127.0.0.1:8080/setup`
 - unlock setup with `SELFLIFY_SETUP_TOKEN` from `/opt/selflify/.env`
 - create the first account
 - enter the main domain, public server IP and Caddy contact email
 - paste the Cloudflare API token during first-start setup
-- after setup, plain HTTP access on the server IP stops serving the panel directly; use the primary domain instead
+- after setup, use the configured HTTPS domain
+
+To enable public HTTP redirects after setup, run `sudo python3 bootstrap/enable-public-http.py`
+and then `docker compose up -d caddy` in the installation directory.
 
 ## Cleanup job
 
@@ -256,9 +259,3 @@ SELFLIFY_PREVIEW_TTL_DAYS=30
 SELFLIFY_ORPHAN_TTL_DAYS=30
 SELFLIFY_CLEANUP_INTERVAL_SECONDS=86400
 ```
-
-### Безопасная первая настройка
-
-Новая установка публикует HTTP только на `127.0.0.1` сервера. Откройте SSH-туннель `ssh -N -L 8080:127.0.0.1:80 user@server` и перейдите на `http://127.0.0.1:8080/setup`. Введите токен, пароль и настройки только через этот туннель. После настройки используйте HTTPS адрес панели. Чтобы также включить обычные публичные HTTP перенаправления, в каталоге установки выполните `sudo python3 bootstrap/enable-public-http.py` и `docker compose up -d caddy`. Скрипт откажется открывать HTTP, пока администратор и домен не настроены. Существующие установки без `SELFLIFY_HTTP_BIND` сохраняют прежние порты; при повторном запуске установщика ещё не настроенная старая установка также получает привязку HTTP к loopback.
-
-Для контейнерных сайтов runner проверяет свободное место на файловой системе Docker до и после скачивания образа (резерв2GiB), выполняет одну публикацию за раз и удаляет неиспользуемый образ после удаления старого релиза. Образы активного/предыдущего релиза и образы, нужные другим контейнерам, не удаляются принудительно. Если Docker использует другой каталог данных, задайте `SELFLIFY_DOCKER_DATA_ROOT` равным `DockerRootDir`. Эти проверки не заменяют жёсткую квоту writable слоя: её поддержка зависит от драйвера Docker и файловой системы; эта часть находки остаётся открытой.

@@ -66,7 +66,9 @@ services:
       deploy-init:
         condition: service_completed_successfully
     ports:
-      - "${SELFLIFY_HTTP_BIND:-0.0.0.0}:80:80"
+      - target: 80
+        published: "80"
+        host_ip: ${SELFLIFY_HTTP_BIND:-}
       - "443:443"
     networks: [default, container_apps]
     volumes:
@@ -138,6 +140,9 @@ services:
     cap_drop: [ALL]
     security_opt: [no-new-privileges:true]
     environment:
+      SELFLIFY_DOCKER_DISK_PATH: /host-docker-data
+      SELFLIFY_DOCKER_DATA_ROOT: ${SELFLIFY_DOCKER_DATA_ROOT:-}
+      SELFLIFY_DOCKER_IMAGE_ROOT: ${SELFLIFY_DOCKER_IMAGE_ROOT:-}
       SELFLIFY_CONTAINER_NETWORK: ${COMPOSE_PROJECT_NAME}_selflify-container-apps
     networks: [container_apps]
     volumes:
@@ -148,7 +153,7 @@ services:
           create_host_path: false
       - container_runner:/run/selflify-runner
       - type: bind
-        source: ${SELFLIFY_DOCKER_DATA_ROOT:-/var/lib/docker}
+        source: ${SELFLIFY_DOCKER_IMAGE_ROOT:-${SELFLIFY_DOCKER_DATA_ROOT:-/var/lib/docker}}
         target: /host-docker-data
         read_only: true
         bind:

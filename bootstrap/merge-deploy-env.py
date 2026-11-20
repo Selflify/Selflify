@@ -3,7 +3,7 @@
 import os
 from pathlib import Path
 
-PRESERVED = {"SELFLIFY_HTTP_BIND", "SELFLIFY_DOCKER_DATA_ROOT"}
+PRESERVED = {"SELFLIFY_HTTP_BIND", "SELFLIFY_DOCKER_DATA_ROOT", "SELFLIFY_DOCKER_IMAGE_ROOT"}
 
 
 def merge(root: Path) -> None:

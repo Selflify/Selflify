@@ -16,6 +16,7 @@ def load(name):
 secure = load("secure-bootstrap-http").secure
 enable = load("enable-public-http").enable
 merge = load("merge-deploy-env").merge
+image_root = load("docker-image-root").image_root
 
 
 class BootstrapHttpTests(unittest.TestCase):
@@ -55,7 +56,7 @@ class BootstrapHttpTests(unittest.TestCase):
             path = root / "runtime/selflify.config.json"
             path.write_text(json.dumps({"admin": {}}))
             env = root / ".env"
-            env.write_text("AUTH_SECRET=old-fixture\nSELFLIFY_HTTP_BIND=127.0.0.1\nSELFLIFY_DOCKER_DATA_ROOT=/srv/docker-data\nIGNORED_OLD=old\n")
+            env.write_text("AUTH_SECRET=old-fixture\nSELFLIFY_HTTP_BIND=127.0.0.1\nSELFLIFY_DOCKER_DATA_ROOT=/srv/docker-data\nSELFLIFY_DOCKER_IMAGE_ROOT=/srv/image-data\nIGNORED_OLD=old\n")
             (root / ".env.production").write_text("AUTH_SECRET=new-fixture\nSELFLIFY_BACKUP_KEEP=20\n")
             # Even an incomplete instance keeps its loopback listener through deployment.
             merge(root)
@@ -65,8 +66,24 @@ class BootstrapHttpTests(unittest.TestCase):
             self.assertNotIn("IGNORED_OLD", result)
             self.assertIn("SELFLIFY_HTTP_BIND=127.0.0.1", result)
             self.assertIn("SELFLIFY_DOCKER_DATA_ROOT=/srv/docker-data", result)
+            self.assertIn("SELFLIFY_DOCKER_IMAGE_ROOT=/srv/image-data", result)
             self.assertFalse((root / ".env.production").exists())
             self.assertEqual(os.stat(env).st_mode & 0o777, 0o600)
+
+
+class DockerImageRootTests(unittest.TestCase):
+    def test_classic_uses_daemon_root_or_legacy_override(self):
+        info = {"DockerRootDir": "/srv/docker", "DriverStatus": None}
+        self.assertEqual(image_root(info, "", ""), "/srv/docker")
+        self.assertEqual(image_root(info, "", "/srv/docker-legacy"), "/srv/docker-legacy")
+
+    def test_containerd_uses_its_separate_store_unless_explicitly_configured(self):
+        info = {
+            "DockerRootDir": "/srv/docker",
+            "DriverStatus": [["driver-type", "io.containerd.snapshotter.v1"]],
+        }
+        self.assertEqual(image_root(info, "", "/srv/docker-legacy"), "/var/lib/containerd")
+        self.assertEqual(image_root(info, "/srv/images", "/srv/docker-legacy"), "/srv/images")
 
 
 if __name__ == "__main__":

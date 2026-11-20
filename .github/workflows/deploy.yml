@@ -476,6 +476,8 @@ jobs:
 
           if [ -f runtime/enable-containers ]; then
             export COMPOSE_PROFILES=containers
+            SELFLIFY_DOCKER_IMAGE_ROOT="$(python3 bootstrap/docker-image-root.py)"
+            export SELFLIFY_DOCKER_IMAGE_ROOT
           fi
           docker compose pull
           if [ "$(id -u)" = 0 ]; then

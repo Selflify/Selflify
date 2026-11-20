@@ -48,6 +48,7 @@ describe("container network policy", () => {
         .mock.calls.find((call) => call[1].includes("/containers/create"));
       expect(created?.[2].body).toMatchObject({
         Env: ["EXAMPLE=value", "PORT=3000"],
+        Labels: { "io.selflify.image-reference": `example.test/app@sha256:${"a".repeat(64)}` },
         HostConfig: {
           NetworkMode: "sites",
           Sysctls: { "net.mptcp.enabled": "0" },
@@ -73,44 +74,57 @@ describe("container network policy", () => {
     expect(unixRequest).not.toHaveBeenCalled();
   });
 
-  it("removes only retired owned images and tolerates an image shared by active containers", async () => {
-    const old = Math.floor(Date.now() / 1000) - 3600;
-    vi.mocked(unixRequest).mockImplementation(async (_socket, path) => {
-      const items = [
-        {
-          Id: "active-container",
-          ImageID: "active-image",
-          Created: old,
-          Labels: { "io.selflify.release": "active" },
+  it.each(["classic", "containerd"])(
+    "prunes retired releases on %s storage safely",
+    async (store) => {
+      const old = Math.floor(Date.now() / 1000) - 3600;
+      const reference = (digit: string) => `example.test/app@sha256:${digit.repeat(64)}`;
+      const container = (release: string, image: string, digest?: string) => ({
+        Id: `${release}-container`,
+        ImageID: image,
+        Created: old,
+        Labels: {
+          "io.selflify.release": release,
+          ...(digest ? { "io.selflify.image-reference": digest } : {}),
         },
-        {
-          Id: "previous-container",
-          ImageID: "previous-image",
-          Created: old,
-          Labels: { "io.selflify.release": "previous" },
-        },
-        {
-          Id: "retired-container",
-          ImageID: "shared-image",
-          Created: old,
-          Labels: { "io.selflify.release": "retired" },
-        },
+      });
+      const releases = [
+        container("active", "active-image", reference("a")),
+        container("previous", "previous-image", reference("b")),
+        container("retired-shared", "shared-image", reference("c")),
+        container("retired", "retired-image", reference("d")),
+        container("legacy", "legacy-image"),
       ];
-      return Object.assign(
-        Readable.from([
-          Buffer.from(path.includes("/containers/json?") ? JSON.stringify(items) : ""),
-        ]),
-        { statusCode: path.includes("/images/") ? 409 : 200 },
-      ) as Awaited<ReturnType<typeof unixRequest>>;
-    });
-    await createDockerRuntime("socket", "sites").prune(["active", "previous"]);
-    const deletions = vi
-      .mocked(unixRequest)
-      .mock.calls.filter((call) => call[2].method === "DELETE")
-      .map((call) => call[1]);
-    expect(deletions).toEqual([
-      "/v1.44/containers/retired-container?force=true&v=true",
-      "/v1.44/images/shared-image",
-    ]);
-  });
+      vi.mocked(unixRequest).mockImplementation(async (_socket, path) => {
+        const filters = new URLSearchParams(path.split("?")[1]).get("filters");
+        const body = path.endsWith("/info")
+          ? JSON.stringify({
+              DockerRootDir: "/var/lib/docker",
+              DriverStatus:
+                store === "containerd" ? [["driver-type", "io.containerd.snapshotter.v1"]] : [],
+            })
+          : filters?.includes("ancestor")
+            ? JSON.stringify(filters.includes("shared-image") ? [{ Id: "other-project" }] : [])
+            : filters
+              ? JSON.stringify(releases)
+              : "";
+        return Object.assign(Readable.from([Buffer.from(body)]), { statusCode: 200 }) as Awaited<
+          ReturnType<typeof unixRequest>
+        >;
+      });
+      await createDockerRuntime("socket", "sites").prune(["active", "previous"]);
+      const deletions = vi
+        .mocked(unixRequest)
+        .mock.calls.filter((call) => call[2].method === "DELETE")
+        .map((call) => call[1]);
+      expect(deletions).toEqual([
+        "/v1.44/containers/retired-shared-container?force=true&v=true",
+        "/v1.44/containers/retired-container?force=true&v=true",
+        ...(store === "classic"
+          ? [`/v1.44/images/${encodeURIComponent(reference("d"))}?noprune=true`]
+          : []),
+        "/v1.44/containers/legacy-container?force=true&v=true",
+      ]);
+    },
+  );
 });
